@@ -51,33 +51,14 @@ type alias EdoInteractStates =
     { tini:String, tfim:String, h0:String, ag:String, ap:String }
             
 type Msg
-    = Increment
-    | Decrement
-    | Reset
-    | Increment10
-    | Decrement10
-    | RunEdo
+    = RunEdo
     | ChangeNumericInput EdoInteract String 
     | UpdateParameters 
 
 update : Msg -> Model -> Model
 update msg model =
   case msg of
-    Increment ->
-      { model | btValue = model.btValue + 1}
-
-    Decrement ->
-      { model | btValue = model.btValue - 1}
-
-    Reset ->
-      { model | btValue = 0}
-
-    Increment10 ->
-      { model | btValue = model.btValue + 10}
-
-    Decrement10 ->
-      { model | btValue = model.btValue - 10}
-          
+      
     RunEdo -> 
       let  
           newModel = update UpdateParameters model

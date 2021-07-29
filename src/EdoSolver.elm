@@ -102,11 +102,6 @@ rungeKutta fsist passo tempo xs =
         |> zipWith (\a b -> a + b/6.0) xs
             
 
-type alias F6 = Float -> Float -> Float -> Float -> Float -> Float
-sum5RK : F6
-sum5RK xs k1 k2 k3 k4 =  
-    xs + (k1 + 2.0*k2 + 2.0*k3 + k4)/6.0
-
 eulerSolver : Solver
 eulerSolver fsist passo tempo xs =
     let 
