@@ -4472,41 +4472,31 @@ var $elm$core$Set$toList = function (_v0) {
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
-var $author$project$Main$DataILevel = F2(
-	function (initState, levelParam) {
-		return {initState: initState, levelParam: levelParam};
-	});
 var $author$project$EdoSolver$EdoParam = F5(
 	function (tempo, tfim, passo, relPassoSaida, solver) {
 		return {passo: passo, relPassoSaida: relPassoSaida, solver: solver, tempo: tempo, tfim: tfim};
 	});
-var $author$project$Models$LevelParam = F2(
+var $author$project$Models$LevelGeoParam = F2(
 	function (ag, ap) {
 		return {ag: ag, ap: ap};
 	});
-var $author$project$Main$Model = F5(
-	function (btValue, chartData, dataLevel, edoParam, edoInteractStates) {
-		return {btValue: btValue, chartData: chartData, dataLevel: dataLevel, edoInteractStates: edoInteractStates, edoParam: edoParam};
-	});
-var $author$project$Main$EdoInteractStates = F5(
-	function (tini, tfim, h0, ag, ap) {
-		return {ag: ag, ap: ap, h0: h0, tfim: tfim, tini: tini};
-	});
+var $elm$core$Basics$identity = function (x) {
+	return x;
+};
+var $author$project$Models$LevelIS = function (a) {
+	return {$: 'LevelIS', a: a};
+};
+var $author$project$Models$LevelInitState = function (h0) {
+	return {h0: h0};
+};
+var $author$project$Models$LevelP = function (a) {
+	return {$: 'LevelP', a: a};
+};
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
 var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$String$fromFloat = _String_fromNumber;
-var $author$project$Main$initEdoInteractStates = F5(
-	function (tini, tfim, h0, ag, ap) {
-		return A5(
-			$author$project$Main$EdoInteractStates,
-			$elm$core$String$fromFloat(tini),
-			$elm$core$String$fromFloat(tfim),
-			$elm$core$String$fromFloat(h0),
-			$elm$core$String$fromFloat(ag),
-			$elm$core$String$fromFloat(ap));
-	});
 var $elm$core$Basics$add = _Basics_add;
 var $elm$core$Basics$apR = F2(
 	function (x, f) {
@@ -4729,18 +4719,33 @@ var $author$project$Main$init = function () {
 	var tfim = 10.0;
 	var relSaida = 2;
 	var passoInt = 0.01;
-	var levelParam = A2($author$project$Models$LevelParam, 1.0, 0.1);
-	var initState = 10.0;
+	var h0 = 10.0;
+	var levelInitState = $author$project$Models$LevelInitState(h0);
 	var edoParam = A5($author$project$EdoSolver$EdoParam, tini, tfim, passoInt, relSaida, $author$project$EdoSolver$rungeKutta);
-	var edoInteractStates = A5($author$project$Main$initEdoInteractStates, tini, tfim, initState, levelParam.ag, levelParam.ap);
+	var edoIStates = {
+		tfim: $elm$core$String$fromFloat(tfim),
+		tini: $elm$core$String$fromFloat(tini)
+	};
 	var data = _List_Nil;
-	return A5(
-		$author$project$Main$Model,
-		0,
-		data,
-		A2($author$project$Main$DataILevel, initState, levelParam),
-		edoParam,
-		edoInteractStates);
+	var ap = 0.1;
+	var ag = 1.0;
+	var levelGeoParam = A2($author$project$Models$LevelGeoParam, ag, ap);
+	var levelParam = {geoParam: levelGeoParam, initState: levelInitState};
+	var levelIStates = {
+		ag: $elm$core$String$fromFloat(ag),
+		ap: $elm$core$String$fromFloat(ap),
+		h0: $elm$core$String$fromFloat(h0)
+	};
+	var interactStates = {
+		edoIStates: edoIStates,
+		modelIStates: $author$project$Models$LevelIS(levelIStates)
+	};
+	return {
+		chartData: data,
+		edoParam: edoParam,
+		interactStates: interactStates,
+		modelParam: $author$project$Models$LevelP(levelParam)
+	};
 }();
 var $elm$core$Result$Err = function (a) {
 	return {$: 'Err', a: a};
@@ -5124,9 +5129,6 @@ var $elm$browser$Browser$External = function (a) {
 var $elm$browser$Browser$Internal = function (a) {
 	return {$: 'Internal', a: a};
 };
-var $elm$core$Basics$identity = function (x) {
-	return x;
-};
 var $elm$browser$Browser$Dom$NotFound = function (a) {
 	return {$: 'NotFound', a: a};
 };
@@ -5479,8 +5481,8 @@ var $elm$core$Basics$sqrt = _Basics_sqrt;
 var $author$project$Models$levelSyst = F3(
 	function (param, t, state) {
 		var g = 9.28;
-		var ap = param.ap;
-		var ag = param.ag;
+		var ap = param.geoParam.ap;
+		var ag = param.geoParam.ag;
 		if (state.b) {
 			if (!state.b.b) {
 				var h = state.a;
@@ -5523,43 +5525,39 @@ var $author$project$DataConvert$toChartDatumT1S = function (edoDatum) {
 };
 var $author$project$DataConvert$toChartDataT1S = $elm$core$List$map($author$project$DataConvert$toChartDatumT1S);
 var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Main$updateEdoIStates = F2(
+	function (edoIStates, interactStates) {
+		return _Utils_update(
+			interactStates,
+			{edoIStates: edoIStates});
+	});
+var $author$project$Main$updateModelIStates = F2(
+	function (modelIStates, interactStates) {
+		return _Utils_update(
+			interactStates,
+			{modelIStates: modelIStates});
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
-			case 'Increment':
-				return _Utils_update(
-					model,
-					{btValue: model.btValue + 1});
-			case 'Decrement':
-				return _Utils_update(
-					model,
-					{btValue: model.btValue - 1});
-			case 'Reset':
-				return _Utils_update(
-					model,
-					{btValue: 0});
-			case 'Increment10':
-				return _Utils_update(
-					model,
-					{btValue: model.btValue + 10});
-			case 'Decrement10':
-				return _Utils_update(
-					model,
-					{btValue: model.btValue - 10});
 			case 'RunEdo':
 				var newModel = A2($author$project$Main$update, $author$project$Main$UpdateParameters, model);
-				var levelParam = function ($) {
-					return $.dataLevel;
-				}(newModel).levelParam;
-				var initState = A2(
-					$elm$core$List$cons,
-					function ($) {
-						return $.dataLevel;
-					}(newModel).initState,
-					_List_Nil);
+				var modelParam = function ($) {
+					return $.modelParam;
+				}(newModel);
 				var edoParam = function ($) {
 					return $.edoParam;
 				}(newModel);
+				var levelParam = modelParam.a;
+				var initState = A2(
+					$elm$core$List$cons,
+					function ($) {
+						return $.initState;
+					}(levelParam).h0,
+					_List_Nil);
+				var geoParam = function ($) {
+					return $.geoParam;
+				}(levelParam);
 				var data = $author$project$DataConvert$toChartDataT1S(
 					A3(
 						$author$project$EdoSolver$edoSolver,
@@ -5570,67 +5568,109 @@ var $author$project$Main$update = F2(
 					newModel,
 					{chartData: data});
 			case 'ChangeNumericInput':
-				var edoInteract = msg.a;
+				var interact = msg.a;
 				var valueStr = msg.b;
-				var interactList = function ($) {
-					return $.edoInteractStates;
+				var interactStates = function ($) {
+					return $.interactStates;
 				}(model);
-				var tfimIL = _Utils_update(
-					interactList,
+				var modelIStates = function ($) {
+					return $.modelIStates;
+				}(interactStates);
+				var edoIStates = function ($) {
+					return $.edoIStates;
+				}(interactStates);
+				var tfimIS = _Utils_update(
+					edoIStates,
 					{tfim: valueStr});
-				var tiniIL = _Utils_update(
-					interactList,
+				var tiniIS = _Utils_update(
+					edoIStates,
 					{tini: valueStr});
-				var h0IL = _Utils_update(
-					interactList,
+				var levelIStates = modelIStates.a;
+				var h0IS = _Utils_update(
+					levelIStates,
 					{h0: valueStr});
-				var apIL = _Utils_update(
-					interactList,
+				var apIS = _Utils_update(
+					levelIStates,
 					{ap: valueStr});
-				var agIL = _Utils_update(
-					interactList,
+				var agIS = _Utils_update(
+					levelIStates,
 					{ag: valueStr});
-				switch (edoInteract.$) {
-					case 'Tini':
+				if (interact.$ === 'Edo') {
+					if (interact.a.$ === 'Tini') {
+						var _v4 = interact.a;
 						return _Utils_update(
 							model,
-							{edoInteractStates: tiniIL});
-					case 'Tfim':
+							{
+								interactStates: A2($author$project$Main$updateEdoIStates, tiniIS, interactStates)
+							});
+					} else {
+						var _v5 = interact.a;
 						return _Utils_update(
 							model,
-							{edoInteractStates: tfimIL});
-					case 'H0':
-						return _Utils_update(
-							model,
-							{edoInteractStates: h0IL});
-					case 'Ag':
-						return _Utils_update(
-							model,
-							{edoInteractStates: agIL});
-					default:
-						return _Utils_update(
-							model,
-							{edoInteractStates: apIL});
+							{
+								interactStates: A2($author$project$Main$updateEdoIStates, tfimIS, interactStates)
+							});
+					}
+				} else {
+					switch (interact.a.a.$) {
+						case 'H0':
+							var _v6 = interact.a.a;
+							return _Utils_update(
+								model,
+								{
+									interactStates: A2(
+										$author$project$Main$updateModelIStates,
+										$author$project$Models$LevelIS(h0IS),
+										interactStates)
+								});
+						case 'Ag':
+							var _v7 = interact.a.a;
+							return _Utils_update(
+								model,
+								{
+									interactStates: A2(
+										$author$project$Main$updateModelIStates,
+										$author$project$Models$LevelIS(agIS),
+										interactStates)
+								});
+						default:
+							var _v8 = interact.a.a;
+							return _Utils_update(
+								model,
+								{
+									interactStates: A2(
+										$author$project$Main$updateModelIStates,
+										$author$project$Models$LevelIS(apIS),
+										interactStates)
+								});
+					}
 				}
 			default:
-				var interactList = function ($) {
-					return $.edoInteractStates;
+				var interactStates = function ($) {
+					return $.interactStates;
 				}(model);
+				var modelIStates = function ($) {
+					return $.modelIStates;
+				}(interactStates);
+				var edoIStates = function ($) {
+					return $.edoIStates;
+				}(interactStates);
 				var tfimStr = function ($) {
 					return $.tfim;
-				}(interactList);
+				}(edoIStates);
 				var tiniStr = function ($) {
 					return $.tini;
-				}(interactList);
+				}(edoIStates);
+				var levelIStates = modelIStates.a;
 				var h0Str = function ($) {
 					return $.h0;
-				}(interactList);
+				}(levelIStates);
 				var apStr = function ($) {
 					return $.ap;
-				}(interactList);
+				}(levelIStates);
 				var agStr = function ($) {
 					return $.ag;
-				}(interactList);
+				}(levelIStates);
 				var listStr = _List_fromArray(
 					[tiniStr, tfimStr, h0Str, agStr, apStr]);
 				var listValues = A2($elm$core$List$filterMap, $elm$core$String$toFloat, listStr);
@@ -5639,32 +5679,31 @@ var $author$project$Main$update = F2(
 				if (_Utils_eq(lstr, lvalues)) {
 					if (((((listValues.b && listValues.b.b) && listValues.b.b.b) && listValues.b.b.b.b) && listValues.b.b.b.b.b) && (!listValues.b.b.b.b.b.b)) {
 						var tini = listValues.a;
-						var _v3 = listValues.b;
-						var tfim = _v3.a;
-						var _v4 = _v3.b;
-						var h0 = _v4.a;
-						var _v5 = _v4.b;
-						var ag = _v5.a;
-						var _v6 = _v5.b;
-						var ap = _v6.a;
+						var _v11 = listValues.b;
+						var tfim = _v11.a;
+						var _v12 = _v11.b;
+						var h0 = _v12.a;
+						var _v13 = _v12.b;
+						var ag = _v13.a;
+						var _v14 = _v13.b;
+						var ap = _v14.a;
+						var modelParam = function ($) {
+							return $.modelParam;
+						}(model);
 						var edoParamOld = function ($) {
 							return $.edoParam;
 						}(model);
 						var edoParam = _Utils_update(
 							edoParamOld,
 							{tempo: tini, tfim: tfim});
-						var dataLevelOld = function ($) {
-							return $.dataLevel;
-						}(model);
-						var dataLevel = _Utils_update(
-							dataLevelOld,
-							{
-								initState: h0,
-								levelParam: {ag: ag, ap: ap}
-							});
+						var levelParam = modelParam.a;
+						var initState = {h0: h0};
+						var geoParam = {ag: ag, ap: ap};
+						var levelParamNew = {geoParam: geoParam, initState: initState};
+						var modelParamNew = $author$project$Models$LevelP(levelParamNew);
 						return _Utils_update(
 							model,
-							{dataLevel: dataLevel, edoParam: edoParam});
+							{edoParam: edoParam, modelParam: modelParamNew});
 					} else {
 						return model;
 					}
@@ -5673,16 +5712,16 @@ var $author$project$Main$update = F2(
 				}
 		}
 	});
-var $author$project$Main$Ag = {$: 'Ag'};
-var $author$project$Main$Ap = {$: 'Ap'};
 var $author$project$Main$ChangeNumericInput = F2(
 	function (a, b) {
 		return {$: 'ChangeNumericInput', a: a, b: b};
 	});
-var $author$project$Main$H0 = {$: 'H0'};
+var $author$project$Main$Edo = function (a) {
+	return {$: 'Edo', a: a};
+};
 var $author$project$Main$RunEdo = {$: 'RunEdo'};
-var $author$project$Main$Tfim = {$: 'Tfim'};
-var $author$project$Main$Tini = {$: 'Tini'};
+var $author$project$EdoSolver$Tfim = {$: 'Tfim'};
+var $author$project$EdoSolver$Tini = {$: 'Tini'};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $terezka$elm_charts$Internal$Svg$Event = F2(
 	function (name, handler) {
@@ -12319,25 +12358,76 @@ var $author$project$Main$parameterInteractiveDiv = F4(
 					_List_Nil)
 				]));
 	});
-var $author$project$Main$view = function (model) {
-	var interactStates = function ($) {
-		return $.edoInteractStates;
-	}(model);
-	var tfimStr = function ($) {
-		return $.tfim;
-	}(interactStates);
-	var tiniStr = function ($) {
-		return $.tini;
-	}(interactStates);
+var $author$project$Models$Ag = {$: 'Ag'};
+var $author$project$Models$Ap = {$: 'Ap'};
+var $author$project$Models$H0 = {$: 'H0'};
+var $author$project$Models$LevelI = function (a) {
+	return {$: 'LevelI', a: a};
+};
+var $author$project$Main$Models = function (a) {
+	return {$: 'Models', a: a};
+};
+var $author$project$Main$viewISLevel = function (levelIStates) {
 	var h0Str = function ($) {
 		return $.h0;
-	}(interactStates);
+	}(levelIStates);
 	var apStr = function ($) {
 		return $.ap;
-	}(interactStates);
+	}(levelIStates);
 	var agStr = function ($) {
 		return $.ag;
+	}(levelIStates);
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A4(
+				$author$project$Main$parameterInteractiveDiv,
+				'h0    ',
+				'',
+				h0Str,
+				$author$project$Main$ChangeNumericInput(
+					$author$project$Main$Models(
+						$author$project$Models$LevelI($author$project$Models$H0)))),
+				A4(
+				$author$project$Main$parameterInteractiveDiv,
+				'A     ',
+				'',
+				agStr,
+				$author$project$Main$ChangeNumericInput(
+					$author$project$Main$Models(
+						$author$project$Models$LevelI($author$project$Models$Ag)))),
+				A4(
+				$author$project$Main$parameterInteractiveDiv,
+				'a     ',
+				'',
+				apStr,
+				$author$project$Main$ChangeNumericInput(
+					$author$project$Main$Models(
+						$author$project$Models$LevelI($author$project$Models$Ap))))
+			]));
+};
+var $author$project$Main$viewModelIStates = function (modelIStates) {
+	var levelIStates = modelIStates.a;
+	return $author$project$Main$viewISLevel(levelIStates);
+};
+var $author$project$Main$view = function (model) {
+	var interactStates = function ($) {
+		return $.interactStates;
+	}(model);
+	var modelIStates = function ($) {
+		return $.modelIStates;
 	}(interactStates);
+	var edoIStates = function ($) {
+		return $.edoIStates;
+	}(interactStates);
+	var tfimStr = function ($) {
+		return $.tfim;
+	}(edoIStates);
+	var tiniStr = function ($) {
+		return $.tini;
+	}(edoIStates);
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -12348,31 +12438,16 @@ var $author$project$Main$view = function (model) {
 				'tini  ',
 				'',
 				tiniStr,
-				$author$project$Main$ChangeNumericInput($author$project$Main$Tini)),
+				$author$project$Main$ChangeNumericInput(
+					$author$project$Main$Edo($author$project$EdoSolver$Tini))),
 				A4(
 				$author$project$Main$parameterInteractiveDiv,
 				'tfim  ',
 				'',
 				tfimStr,
-				$author$project$Main$ChangeNumericInput($author$project$Main$Tfim)),
-				A4(
-				$author$project$Main$parameterInteractiveDiv,
-				'h0    ',
-				'',
-				h0Str,
-				$author$project$Main$ChangeNumericInput($author$project$Main$H0)),
-				A4(
-				$author$project$Main$parameterInteractiveDiv,
-				'A     ',
-				'',
-				agStr,
-				$author$project$Main$ChangeNumericInput($author$project$Main$Ag)),
-				A4(
-				$author$project$Main$parameterInteractiveDiv,
-				'a     ',
-				'',
-				apStr,
-				$author$project$Main$ChangeNumericInput($author$project$Main$Ap)),
+				$author$project$Main$ChangeNumericInput(
+					$author$project$Main$Edo($author$project$EdoSolver$Tfim))),
+				$author$project$Main$viewModelIStates(modelIStates),
 				A2($elm$html$Html$div, _List_Nil, _List_Nil),
 				A2(
 				$elm$html$Html$button,

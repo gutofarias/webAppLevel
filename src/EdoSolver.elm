@@ -2,6 +2,10 @@ module EdoSolver exposing (..)
 
 import List
 
+------------------------------------------------
+-- Data Types
+------------------------------------------------
+
 type alias Tempo = Float
 type alias Passo = Float
 type alias PassoSaida = Int
@@ -21,6 +25,14 @@ type alias Solver = FuncSist -> Passo -> Tempo -> State -> State
 type alias Datum = (Tempo , State)
 type alias Data = List Datum
 
+type alias EdoIStates = { tini:String, tfim:String }
+type EdoInteract = Tini | Tfim
+
+    
+------------------------------------------------
+-- Functions
+------------------------------------------------
+    
 edoStep : EdoParam -> FuncSist -> State -> State
 
 edoStep param fsist xs =
@@ -134,14 +146,6 @@ zipWith func l1 l2 =
                y::ys -> (func x y):: zipWith func xs ys
 
 
-
-xs_ = 3.0 :: []
-tini_ = 0.0 
-tfim_ = 4.0
-passo_ = 0.4 
-relSaida_ = 2
-param_ = EdoParam tini_ tfim_ passo_ relSaida_ eulerSolver
-
 printState : State -> String
 printState list =
     case list of
@@ -155,3 +159,24 @@ printData data =
         [] -> ""
         (t,xs) :: [] -> (String.fromFloat t) ++ "\t" ++ printState xs
         (t,xs) :: dt -> (String.fromFloat t) ++ "\t" ++ printState xs ++ "\n" ++ printData dt
+
+
+-- type alias EdoIStates = { tini:String, tfim:String }
+updateTini : String -> EdoIStates -> EdoIStates
+updateTini str edoIStates = 
+    {edoIStates | tini = str}
+        
+updateTfim : String -> EdoIStates -> EdoIStates
+updateTfim  str edoIStates = 
+    {edoIStates | tfim = str}
+                        
+------------------------------------------------
+-- Variables
+------------------------------------------------
+
+xs_ = 3.0 :: []
+tini_ = 0.0 
+tfim_ = 4.0
+passo_ = 0.4 
+relSaida_ = 2
+param_ = EdoParam tini_ tfim_ passo_ relSaida_ eulerSolver
