@@ -35,7 +35,7 @@ main =
 type alias DataILevel = {initState:Float, levelParam:M.LevelParam}
 
 type alias Model =
-    { chartData : DC.DataT1S
+    { chartData : DC.ChartData
     , modelParam : M.ModelParam
     , edoParam : Edo.EdoParam
     , interactStates : InteractStates
@@ -79,7 +79,7 @@ init =
         passoInt = 0.01 
         relSaida = 2
         edoParam = Edo.EdoParam tini tfim passoInt relSaida Edo.rungeKutta
-        data = []
+        data = DC.Nodata
         levelIStates = {h0 = (String.fromFloat h0), ag =  (String.fromFloat ag), ap = (String.fromFloat ap)}
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
         interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates}
@@ -112,110 +112,48 @@ update msg model =
           newModel = update UpdateParameters model
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
+          data = M.runEdoModel modelParam edoParam
       in
-          case modelParam of
-              M.LevelP levelParam ->
-                  let
-                    initState = ( .h0 <| .initState levelParam ) :: []
-                    geoParam = .geoParam levelParam
-                    data = DC.toChartDataT1S <| Edo.edoSolver edoParam (M.level levelParam) initState
-                  in
-                    { newModel | chartData = data }
+          { newModel | chartData = data }
             
     ChangeNumericInput interact valueStr ->
         let
            interactStates = .interactStates model
            edoIStates = .edoIStates interactStates
-           tiniIS = {edoIStates | tini = valueStr}
-           tfimIS = {edoIStates | tfim = valueStr}
            modelIStates = .modelIStates interactStates
         in
-            case modelIStates of
-                M.LevelIS levelIStates ->
+            case interact of
+                Edo edoInteract ->
                     let
-                        h0IS = {levelIStates | h0 = valueStr}
-                        agIS = {levelIStates | ag = valueStr}
-                        apIS = {levelIStates | ap = valueStr}
+                        edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract valueStr
+                        interactStatesNew = {interactStates | edoIStates = edoIStatesNew}
                     in
-                        case interact of
-                            Edo Edo.Tini -> 
-                                {model | interactStates = (updateEdoIStates tiniIS interactStates)}
-                            Edo Edo.Tfim -> 
-                                {model | interactStates = (updateEdoIStates tfimIS interactStates)}
-                                    
-                            Models (M.LevelI M.H0) -> 
-                                {model | interactStates = (updateModelIStates (M.LevelIS h0IS) interactStates)}
-                            Models (M.LevelI M.Ag) -> 
-                                {model | interactStates = (updateModelIStates (M.LevelIS agIS) interactStates)}
-                            Models (M.LevelI M.Ap) ->
-                                {model | interactStates = (updateModelIStates (M.LevelIS apIS) interactStates)}
+                        {model | interactStates = interactStatesNew}
+                        
+                Models modelInteract ->
+                    let
+                        modelIStatesNew = M.changeModelIStates modelIStates modelInteract valueStr
+                        interactStatesNew = {interactStates | modelIStates = modelIStatesNew}
+                    in 
+                        {model | interactStates = interactStatesNew}
 
     UpdateParameters ->
-        -- model
         let
             interactStates = .interactStates model
             edoIStates = .edoIStates interactStates
-            tiniStr = .tini edoIStates
-            tfimStr = .tfim edoIStates
             modelIStates = .modelIStates interactStates
+            edoParam = .edoParam model
+            modelParam = .modelParam model
+            edoParamNew = Edo.updateEdoParam edoParam edoIStates
+            modelParamNew = M.updateModelParam modelParam modelIStates
         in
-            case modelIStates of
-                M.LevelIS levelIStates ->
-                    let 
-                        h0Str = .h0 levelIStates
-                        agStr = .ag levelIStates
-                        apStr = .ap levelIStates
-                        listStr = [tiniStr,tfimStr,h0Str,agStr,apStr]
-                        lstr = List.length listStr   
-                        listValues = List.filterMap String.toFloat listStr
-                        lvalues = List.length listValues
-                    in
-                    
-                        if (lstr == lvalues) then
-                            case listValues of
-                                (tini::tfim::h0::ag::ap::[]) ->
-
-                                    let
-                                        edoParamOld = .edoParam model
-                                        edoParam = {edoParamOld | tempo = tini, tfim = tfim}
-                                        modelParam = .modelParam model
-                                    in
-                                        case modelParam of
-                                            M.LevelP levelParam ->
-                                                let 
-                                                    initState = {h0 = h0}
-                                                    geoParam = {ag=ag, ap=ap}
-                                                    levelParamNew = {initState = initState, geoParam = geoParam}
-                                                    modelParamNew = M.LevelP levelParamNew
-                                                in
-                                                    {model | modelParam = modelParamNew, edoParam = edoParam}
-
-                                _ ->
-                                    model
-
-                        else
-                            model
+            {model | edoParam = edoParamNew, modelParam = modelParamNew}
 
 
-updateEdoParam : Edo.EdoParam -> Model -> Model
-updateEdoParam edoParam model =
-    { model | edoParam = edoParam }
-        
-updateTini : Float -> Edo.EdoParam -> Edo.EdoParam
-updateTini tini edoParam =
-        {edoParam | tempo = tini}
-
-updateH0 : Float -> DataILevel -> DataILevel
-updateH0 h0 dataLevel =
-    {dataLevel | initState = h0}
-
-           
-        
-        
         
         
 ------------------------------------------------
--- view
+-- View
 ------------------------------------------------
         
 view : Model -> Html Msg
@@ -224,45 +162,16 @@ view model =
     interactStates = .interactStates model
     edoIStates = .edoIStates interactStates
     modelIStates = .modelIStates interactStates
-    tiniStr = .tini edoIStates
-    tfimStr = .tfim edoIStates
   in
       
     div []
-        [ parameterInteractiveDiv "tini  " "" tiniStr (ChangeNumericInput (Edo Edo.Tini))
-        , parameterInteractiveDiv "tfim  " "" tfimStr (ChangeNumericInput (Edo Edo.Tfim)) 
-        , viewModelIStates modelIStates
+        [ Edo.viewEdoIStates edoIStates (ChangeNumericInput << Edo)
+        , M.viewModelIStates modelIStates (ChangeNumericInput << Models)
         , div [] []
         , button [ onClick RunEdo ] [ text "Edo" ]
         , chartContainer <| chart4 model.chartData 
         ]
- 
-        
-viewModelIStates : M.ModelIStates -> Html Msg
-viewModelIStates modelIStates = 
-    case modelIStates of
-        M.LevelIS levelIStates ->
-            viewISLevel levelIStates
-
-viewISLevel : M.LevelIStates -> Html Msg
-viewISLevel levelIStates =
-    let
-        h0Str = .h0 levelIStates
-        agStr = .ag levelIStates
-        apStr = .ap levelIStates
-    in 
-        div [] 
-            [ parameterInteractiveDiv "h0    " "" h0Str (ChangeNumericInput (Models (M.LevelI M.H0)))
-            , parameterInteractiveDiv "A     " "" agStr (ChangeNumericInput (Models (M.LevelI M.Ag)))
-            , parameterInteractiveDiv "a     " "" apStr (ChangeNumericInput (Models (M.LevelI M.Ap)))
-            ]
-
-parameterInteractiveDiv : String -> String -> String -> (String -> Msg) -> Html Msg
-parameterInteractiveDiv texto pholder valor msg =
-    div []
-    [ text texto
-    , input [ placeholder pholder, value valor, onInput msg] []
-    ]
+         
 
 chartContainer chart =
   div [  style "height" "300px"
@@ -272,19 +181,27 @@ chartContainer chart =
       ]
     
 
-chart4 data =     
-    C.chart
-        [ CA.height 300
-        , CA.width 300
-        , CA.margin { top = 10, bottom = 20, left = 25, right = 20 }
-        , CA.padding { top = 10, bottom = 5, left = 10, right = 10 }
-        ]
-        [ C.xLabels []
-        , C.yLabels [ CA.withGrid ]
-        , C.series .t
-            [ C.interpolated .x1 [ -- CA.monotone
-                                 ] [ ] --CA.circle ]
+chart4 chartData =     
+    let 
+        data = decodeData chartData
+    in 
+        C.chart
+            [ CA.height 300
+            , CA.width 300
+            , CA.margin { top = 10, bottom = 20, left = 25, right = 20 }
+            , CA.padding { top = 10, bottom = 5, left = 10, right = 10 }
             ]
-            
-            data
-        ]
+            [ C.xLabels []
+            , C.yLabels [ CA.withGrid ]
+            , C.series .t
+                [ C.interpolated .x1 [ -- CA.monotone
+                                    ] [ ] --CA.circle ]
+                ]
+
+                data
+            ]
+
+decodeData chartData =
+    case chartData of
+        DC.T1S data -> data
+        _ -> []

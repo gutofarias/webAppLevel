@@ -1,6 +1,9 @@
 module EdoSolver exposing (..)
 
 import List
+import Html exposing (Html,div,text,input)
+import Html.Attributes exposing (style, placeholder, value)
+import Html.Events exposing (onInput)
 
 ------------------------------------------------
 -- Data Types
@@ -28,6 +31,43 @@ type alias Data = List Datum
 type alias EdoIStates = { tini:String, tfim:String }
 type EdoInteract = Tini | Tfim
 
+changeEdoIStates : EdoIStates -> EdoInteract -> String -> EdoIStates
+changeEdoIStates edoIStates edoInteract valueStr =
+    case edoInteract of
+        Tini -> {edoIStates | tini = valueStr}
+        Tfim -> {edoIStates | tfim = valueStr}
+
+updateEdoParam : EdoParam -> EdoIStates -> EdoParam
+updateEdoParam edoParam edoIStates =
+    let
+        tiniStr = .tini edoIStates
+        tfimStr = .tfim edoIStates
+        listStr = [tiniStr,tfimStr]
+        listValues = List.filterMap String.toFloat listStr
+    in
+        case listValues of
+            (tini::tfim::[]) ->
+                {edoParam | tempo = tini, tfim = tfim}
+            _ -> 
+                edoParam
+
+viewEdoIStates : EdoIStates -> (EdoInteract -> String -> msg) -> Html msg
+viewEdoIStates edoIStates edoInteractToMsg = 
+  let
+    tiniStr = .tini edoIStates
+    tfimStr = .tfim edoIStates
+  in
+    div []
+        [ parameterInteractiveDiv "tini  " "" tiniStr (edoInteractToMsg Tini)
+        , parameterInteractiveDiv "tfim  " "" tfimStr (edoInteractToMsg Tfim)
+        ]
+    
+parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
+parameterInteractiveDiv texto pholder valor strToMsg =
+    div []
+    [ text texto
+    , input [ placeholder pholder, value valor, onInput <| strToMsg ] []
+    ]
     
 ------------------------------------------------
 -- Functions

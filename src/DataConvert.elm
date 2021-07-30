@@ -14,6 +14,14 @@ type alias DataT3S = List DatumT3S
 type alias DataT4S = List DatumT4S
 type alias DataT5S = List DatumT5S
 
+type ChartData
+    = Nodata
+    | T1S DataT1S
+    | T2S DataT2S
+    | T3S DataT3S
+    | T4S DataT4S
+    | T5S DataT5S
+    
 toChartDatumT1S : Edo.Datum -> DatumT1S
 toChartDatumT1S edoDatum =
     case edoDatum of
