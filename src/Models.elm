@@ -14,34 +14,13 @@ import Html.Events exposing (onInput)
 ------------------------------------------------
 
 ------------------------------------------------
--- Data Types
+-- ModelParam
 ------------------------------------------------
 
 type ModelParam 
     = LevelP LevelParam
-
-type ModelIStates
-    = LevelIS LevelIStates
-
-type ModelInteract
-    = LevelI LevelInteract
-
       
-changeModelIStates : ModelIStates -> ModelInteract -> String -> ModelIStates
-changeModelIStates modelIStates modelInteract valueStr =
-    case modelInteract of
-        LevelI levelInteract ->
-            case modelIStates of
-                LevelIS levelIStates ->
-                    LevelIS <| changeLevelIStates levelIStates levelInteract valueStr
-                        
-changeLevelIStates : LevelIStates -> LevelInteract -> String -> LevelIStates
-changeLevelIStates levelIStates levelInteract valueStr =
-    case levelInteract of
-        H0 -> {levelIStates | h0 = valueStr}
-        Ag -> {levelIStates | ag = valueStr}
-        Ap -> {levelIStates | ap = valueStr}
-        
+      
 updateModelParam : ModelParam -> ModelIStates -> ModelParam
 updateModelParam modelParam modelIStates =
     case modelParam of
@@ -50,6 +29,82 @@ updateModelParam modelParam modelIStates =
                 LevelIS levelIStates ->
                    LevelP <| updateLevelParam levelParam levelIStates
 
+                       
+------------------------------------------------
+-- ModelIStates
+------------------------------------------------
+
+type ModelIStates
+    = LevelIS LevelIStates
+      
+
+changeModelIStates : ModelIStates -> ModelInteract -> String -> ModelIStates
+changeModelIStates modelIStates modelInteract valueStr =
+    case modelInteract of
+        LevelI levelInteract ->
+            case modelIStates of
+                LevelIS levelIStates ->
+                    LevelIS <| changeLevelIStates levelIStates levelInteract valueStr
+                        
+                        
+                        
+------------------------------------------------
+-- ModelInteract
+------------------------------------------------
+                        
+type ModelInteract
+    = LevelI LevelInteract
+
+      
+------------------------------------------------
+-- viewModel
+------------------------------------------------
+                        
+viewModelIStates : ModelIStates -> (ModelInteract -> String -> msg) -> Html msg
+viewModelIStates modelIStates modelInteractToMsg = 
+    case modelIStates of
+        LevelIS levelIStates ->
+            viewLevelIStates levelIStates (modelInteractToMsg << LevelI)
+                
+                
+parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
+parameterInteractiveDiv texto pholder valor strToMsg =
+    div []
+    [ text texto
+    , input [ placeholder pholder, value valor, onInput <| strToMsg ] []
+    ]
+                
+------------------------------------------------
+-- runEdoModel
+------------------------------------------------
+
+runEdoModel : ModelParam -> Edo.EdoParam -> DC.ChartData
+runEdoModel modelParam edoParam =
+     case modelParam of
+         LevelP levelParam ->
+             runEdoLevel levelParam edoParam
+                 
+                 
+                 
+                 
+                 
+                 
+                 
+------------------------------------------------
+------------------------------------------------
+-- Nível
+------------------------------------------------
+------------------------------------------------
+
+------------------------------------------------
+-- LevelParam
+------------------------------------------------
+
+type alias LevelParam = { initState:LevelInitState, geoParam:LevelGeoParam }
+
+type alias LevelInitState = { h0 : Float }
+type alias LevelGeoParam = { ag : Float, ap : Float }
+    
 updateLevelParam : LevelParam -> LevelIStates -> LevelParam
 updateLevelParam levelParam levelIStates =
     let 
@@ -68,15 +123,33 @@ updateLevelParam levelParam levelIStates =
                    {levelParam | initState = initState, geoParam = geoParam}
             _ -> 
                 levelParam
+                    
+------------------------------------------------
+-- LevelIStates
+------------------------------------------------
+
+type alias LevelIStates = { h0:String, ag:String, ap:String }
     
+    
+changeLevelIStates : LevelIStates -> LevelInteract -> String -> LevelIStates
+changeLevelIStates levelIStates levelInteract valueStr =
+    case levelInteract of
+        H0 -> {levelIStates | h0 = valueStr}
+        Ag -> {levelIStates | ag = valueStr}
+        Ap -> {levelIStates | ap = valueStr}
         
-viewModelIStates : ModelIStates -> (ModelInteract -> String -> msg) -> Html msg
-viewModelIStates modelIStates modelInteractToMsg = 
-    case modelIStates of
-        LevelIS levelIStates ->
-            viewLevelIStates levelIStates (modelInteractToMsg << LevelI)
 
+------------------------------------------------
+-- LevelInteract
+------------------------------------------------
 
+type LevelInteract = H0 | Ag | Ap
+    
+    
+------------------------------------------------
+-- viewLevel
+------------------------------------------------
+    
 viewLevelIStates : LevelIStates -> (LevelInteract -> String -> msg) -> Html msg
 viewLevelIStates levelIStates levelInteractToMsg = 
     let 
@@ -90,44 +163,9 @@ viewLevelIStates levelIStates levelInteractToMsg =
             , parameterInteractiveDiv "a   " "" apStr (levelInteractToMsg Ap)
             ]
     
-parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
-parameterInteractiveDiv texto pholder valor strToMsg =
-    div []
-    [ text texto
-    , input [ placeholder pholder, value valor, onInput <| strToMsg ] []
-    ]
-      
-------------------------------------------------
--- Functions
-------------------------------------------------
-
-runEdoModel : ModelParam -> Edo.EdoParam -> DC.ChartData
-runEdoModel modelParam edoParam =
-     case modelParam of
-         LevelP levelParam ->
-             runEdoLevel levelParam edoParam
 
 ------------------------------------------------
-------------------------------------------------
--- Nível
-------------------------------------------------
-------------------------------------------------
-
-------------------------------------------------
--- Data Types
-------------------------------------------------
-
-type alias LevelParam = { initState:LevelInitState, geoParam:LevelGeoParam }
-
-type alias LevelIStates = { h0:String, ag:String, ap:String }
-    
-type LevelInteract = H0 | Ag | Ap
-    
-type alias LevelInitState = { h0 : Float }
-type alias LevelGeoParam = { ag : Float, ap : Float }
-
-------------------------------------------------
--- Functions
+-- runEdoLevel
 ------------------------------------------------
 
 runEdoLevel : LevelParam -> Edo.EdoParam -> DC.ChartData
@@ -138,6 +176,10 @@ runEdoLevel levelParam edoParam =
         in
             DC.T1S <| DC.toChartDataT1S <| Edo.edoSolver edoParam (levelSyst levelParam) initState
 
+                
+------------------------------------------------
+-- levelSyst
+------------------------------------------------
         
 levelSyst : LevelParam -> Edo.Tempo -> Edo.State -> Edo.DState
 levelSyst param t state =

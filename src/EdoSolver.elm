@@ -6,19 +6,12 @@ import Html.Attributes exposing (style, placeholder, value)
 import Html.Events exposing (onInput)
 
 ------------------------------------------------
--- Data Types
+-- Data Types Edo
 ------------------------------------------------
 
 type alias Tempo = Float
 type alias Passo = Float
 type alias PassoSaida = Int
-
-type alias EdoParam =  {
-                 tempo : Tempo,
-                 tfim : Tempo,
-                 passo : Passo,
-                 relPassoSaida : PassoSaida,
-                 solver : Solver} 
 
 type alias State = List Float
 type alias DState = List Float
@@ -28,15 +21,18 @@ type alias Solver = FuncSist -> Passo -> Tempo -> State -> State
 type alias Datum = (Tempo , State)
 type alias Data = List Datum
 
-type alias EdoIStates = { tini:String, tfim:String }
-type EdoInteract = Tini | Tfim
+------------------------------------------------
+-- EdoParam
+------------------------------------------------
 
-changeEdoIStates : EdoIStates -> EdoInteract -> String -> EdoIStates
-changeEdoIStates edoIStates edoInteract valueStr =
-    case edoInteract of
-        Tini -> {edoIStates | tini = valueStr}
-        Tfim -> {edoIStates | tfim = valueStr}
+type alias EdoParam =  {
+                 tempo : Tempo,
+                 tfim : Tempo,
+                 passo : Passo,
+                 relPassoSaida : PassoSaida,
+                 solver : Solver} 
 
+    
 updateEdoParam : EdoParam -> EdoIStates -> EdoParam
 updateEdoParam edoParam edoIStates =
     let
@@ -50,6 +46,32 @@ updateEdoParam edoParam edoIStates =
                 {edoParam | tempo = tini, tfim = tfim}
             _ -> 
                 edoParam
+    
+
+------------------------------------------------
+-- EdoIStates
+------------------------------------------------
+    
+type alias EdoIStates = { tini:String, tfim:String }
+
+    
+changeEdoIStates : EdoIStates -> EdoInteract -> String -> EdoIStates
+changeEdoIStates edoIStates edoInteract valueStr =
+    case edoInteract of
+        Tini -> {edoIStates | tini = valueStr}
+        Tfim -> {edoIStates | tfim = valueStr}
+
+
+------------------------------------------------
+-- EdoInteract
+------------------------------------------------
+
+type EdoInteract = Tini | Tfim
+    
+    
+------------------------------------------------
+-- viewEdo
+------------------------------------------------
 
 viewEdoIStates : EdoIStates -> (EdoInteract -> String -> msg) -> Html msg
 viewEdoIStates edoIStates edoInteractToMsg = 
@@ -62,6 +84,7 @@ viewEdoIStates edoIStates edoInteractToMsg =
         , parameterInteractiveDiv "tfim  " "" tfimStr (edoInteractToMsg Tfim)
         ]
     
+        
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
 parameterInteractiveDiv texto pholder valor strToMsg =
     div []
@@ -69,8 +92,10 @@ parameterInteractiveDiv texto pholder valor strToMsg =
     , input [ placeholder pholder, value valor, onInput <| strToMsg ] []
     ]
     
+    
+    
 ------------------------------------------------
--- Functions
+-- EdoSolver Functions
 ------------------------------------------------
     
 edoStep : EdoParam -> FuncSist -> State -> State
@@ -201,17 +226,8 @@ printData data =
         (t,xs) :: dt -> (String.fromFloat t) ++ "\t" ++ printState xs ++ "\n" ++ printData dt
 
 
--- type alias EdoIStates = { tini:String, tfim:String }
-updateTini : String -> EdoIStates -> EdoIStates
-updateTini str edoIStates = 
-    {edoIStates | tini = str}
-        
-updateTfim : String -> EdoIStates -> EdoIStates
-updateTfim  str edoIStates = 
-    {edoIStates | tfim = str}
-                        
 ------------------------------------------------
--- Variables
+-- Variables (teste)
 ------------------------------------------------
 
 xs_ = 3.0 :: []
