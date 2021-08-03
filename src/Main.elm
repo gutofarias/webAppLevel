@@ -5,13 +5,14 @@ import EdoSolver as Edo
 import Models as M
 
 import Browser
-import Html exposing (Html, button, div, text, pre, input)
-import Html.Attributes exposing (style, placeholder, value)
+import Html exposing (Html, button, div, text, pre, input, label, select, option)
+import Html.Attributes exposing (style, placeholder, value, for, name, selected)
 import Html.Events exposing (onClick, onInput)
 
 import Chart as C
 import Chart.Attributes as CA
 
+import MyChart as MC
 
 
 
@@ -39,17 +40,21 @@ type alias Model =
     , modelParam : M.ModelParam
     , edoParam : Edo.EdoParam
     , interactStates : InteractStates
+    , str : String
+    , chartParam : MC.ChartParam DC.DatumT1S
     }
 
     
 type Interact
     = Edo Edo.EdoInteract
     | Models M.ModelInteract
+    | MChart MC.ChartInteract
         
         
 type alias InteractStates =
     { edoIStates : Edo.EdoIStates
     , modelIStates : M.ModelIStates
+    , chartIStates : MC.ChartIStates
     }
 
 updateEdoIStates : Edo.EdoIStates -> InteractStates -> InteractStates
@@ -65,7 +70,7 @@ updateModelIStates modelIStates interactStates =
 -- init
 ------------------------------------------------
 
-init : Model
+init : Model 
 init =
     let
         ag = 1.0
@@ -79,15 +84,18 @@ init =
         passoInt = 0.01 
         relSaida = 2
         edoParam = Edo.EdoParam tini tfim passoInt relSaida Edo.rungeKutta
-        data = DC.Nodata
+        chartData = DC.Nodata
         levelIStates = {h0 = (String.fromFloat h0), ag =  (String.fromFloat ag), ap = (String.fromFloat ap)}
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
-        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates}
+        chartIStates = {axes = [ "t", "x1" ]}
+        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, chartIStates = chartIStates}
     in
-            { chartData = data
+            { chartData = chartData
             , modelParam = M.LevelP levelParam
             , edoParam = edoParam
             , interactStates = interactStates
+            , str = "teste"
+            , chartParam = {curves = []}
             }
 
         
@@ -102,6 +110,8 @@ type Msg
     = RunEdo
     | ChangeNumericInput Interact String 
     | UpdateParameters 
+    | ChangeStr String
+    | UpdateChart
 
 update : Msg -> Model -> Model
 update msg model =
@@ -109,7 +119,8 @@ update msg model =
       
     RunEdo -> 
       let  
-          newModel = update UpdateParameters model
+          newModelAlmost = update UpdateParameters model
+          newModel = update UpdateChart newModelAlmost
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
           data = M.runEdoModel modelParam edoParam
@@ -137,6 +148,8 @@ update msg model =
                     in 
                         {model | interactStates = interactStatesNew}
 
+                MChart _ -> model
+
     UpdateParameters ->
         let
             interactStates = .interactStates model
@@ -149,6 +162,20 @@ update msg model =
         in
             {model | edoParam = edoParamNew, modelParam = modelParamNew}
 
+    ChangeStr str -> 
+         {model | str = str}
+
+    UpdateChart ->
+        let
+            funcT = .t
+            funcX1 = .x1
+            curve : MC.Curve DC.DatumT1S
+            curve = {curveID = 1, axesFunc = (funcT,funcX1)}
+            curves = [curve]
+            chartParam = {curves = curves}
+        in
+            {model | chartParam = chartParam}
+                        
 
         
         
@@ -162,16 +189,76 @@ view model =
     interactStates = .interactStates model
     edoIStates = .edoIStates interactStates
     modelIStates = .modelIStates interactStates
+    chartParam = .chartParam model
+    curves = .curves chartParam
   in
       
     div []
-        [ Edo.viewEdoIStates edoIStates (ChangeNumericInput << Edo)
+        ([ Edo.viewEdoIStates edoIStates (ChangeNumericInput << Edo)
         , M.viewModelIStates modelIStates (ChangeNumericInput << Models)
         , div [] []
         , button [ onClick RunEdo ] [ text "Edo" ]
         , chartContainer <| chart4 model.chartData 
-        ]
+        , label [for "location" ] [ text "Your closest center:" ]
+        , select [ name "location" , onInput ChangeStr]
+            [ option [value "ny"] [text "New York"]
+            , option [value "il"] [text "Chicago"]
+            ]
+        , label [] [ text model.str]
+        -- , div [] []
+        -- , label [] [text "Curve 1 "]
+        -- , select [] (chartAxesOptions <| .chartData model)
+        -- , select [] (chartAxesOptions <| .chartData model)
+        ] ++ 
+         List.map (chartCurve (.chartData model) (.chartIStates <| .interactStates model)) curves)
          
+chartCurve :  DC.ChartData -> MC.ChartIStates -> MC.Curve data -> Html msg
+chartCurve chartData chartIStates curve =
+    let
+       (fstStr,sndStr) = case (.axes chartIStates) of
+                             a :: b :: [] -> (a,b)
+                             _ -> ("","")
+       axesFunc = .axesFunc curve 
+       -- testStr = axisFuncToStr <| Tuple.first axesFunc
+    in 
+        div []
+            [ label [] [text <| "Curve " ++ (String.fromInt <| .curveID curve)]
+            , select [] (chartAxesOptions chartData fstStr)
+            , select [] (chartAxesOptions chartData sndStr)
+            ]
+    
+-- -- axisFuncToStr : MC.AxisFunc data -> String
+-- axisFuncToStr axisFunc = 
+--     case (round <| axisFunc datumExample) of
+--         0 -> "t"
+--         1 -> "x1"
+--         _ -> "x2"
+
+-- datumExample =  
+--     { t = 0.0
+--     , x1 = 1.0
+--     , x2 = 2.0
+--     , x3 = 3.0
+--     , x4 = 4.0
+--     , x5 = 5.0
+--     }
+
+ 
+chartAxesOptions : DC.ChartData -> String -> List (Html msg)
+chartAxesOptions chartData selStr =
+    case chartData of
+        DC.T1S data -> 
+            [ chartAxisOption "t" "t" selStr
+            , chartAxisOption "x1" "x" selStr]
+        _ ->
+            []
+
+chartAxisOption : String -> String -> String -> Html msg
+chartAxisOption val txt selStr =
+        if (selStr == val) then
+            option [value val, selected True] [text txt]
+        else
+            option [value val] [text txt]
 
 chartContainer chart =
   div [  style "height" "300px"
