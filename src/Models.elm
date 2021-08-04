@@ -174,7 +174,7 @@ runEdoLevel levelParam edoParam =
             initState = ( .h0 <| .initState levelParam ) :: []
             geoParam = .geoParam levelParam
         in
-            DC.T1S <| DC.toChartDataT1S <| Edo.edoSolver edoParam (levelSyst levelParam) initState
+            DC.toChartDataT1S <| Edo.edoSolver edoParam (levelSyst levelParam) initState
 
                 
 ------------------------------------------------
