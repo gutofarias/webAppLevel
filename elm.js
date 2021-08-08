@@ -4492,12 +4492,62 @@ var $author$project$Models$LevelInitState = function (h0) {
 var $author$project$Models$LevelP = function (a) {
 	return {$: 'LevelP', a: a};
 };
+var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
-var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$core$Basics$add = _Basics_add;
+var $author$project$MyChart$t = function (chartDatum) {
+	var datum = chartDatum.a;
+	return datum.t;
+};
+var $author$project$MyChart$x1 = function (chartDatum) {
+	var datum = chartDatum.a;
+	return datum.x1;
+};
+var $author$project$MyChart$initCurve = function (maybeLastCurve) {
+	if (maybeLastCurve.$ === 'Nothing') {
+		return {
+			axesFunc: _Utils_Tuple2($author$project$MyChart$t, $author$project$MyChart$x1),
+			curveID: 1
+		};
+	} else {
+		var lastCurve = maybeLastCurve.a;
+		var lastCurveID = function ($) {
+			return $.curveID;
+		}(lastCurve);
+		var curveID = lastCurveID + 1;
+		return {
+			axesFunc: _Utils_Tuple2($author$project$MyChart$t, $author$project$MyChart$x1),
+			curveID: curveID
+		};
+	}
+};
+var $author$project$MyChart$initChartParam = function (maybeLastChartParam) {
+	if (maybeLastChartParam.$ === 'Nothing') {
+		return {
+			chartID: 1,
+			curves: _List_fromArray(
+				[
+					$author$project$MyChart$initCurve($elm$core$Maybe$Nothing)
+				])
+		};
+	} else {
+		var lastChartParam = maybeLastChartParam.a;
+		var lastChartID = function ($) {
+			return $.chartID;
+		}(lastChartParam);
+		var chartID = lastChartID + 1;
+		return {
+			chartID: chartID,
+			curves: _List_fromArray(
+				[
+					$author$project$MyChart$initCurve($elm$core$Maybe$Nothing)
+				])
+		};
+	}
+};
 var $elm$core$Basics$apR = F2(
 	function (x, f) {
 		return f(x);
@@ -4726,9 +4776,6 @@ var $author$project$Main$init = function () {
 		tfim: $elm$core$String$fromFloat(tfim),
 		tini: $elm$core$String$fromFloat(tini)
 	};
-	var chartIStates = {
-		axes: _Utils_Tuple2('t', 'x1')
-	};
 	var chartData = _List_Nil;
 	var ap = 0.1;
 	var ag = 1.0;
@@ -4740,17 +4787,18 @@ var $author$project$Main$init = function () {
 		h0: $elm$core$String$fromFloat(h0)
 	};
 	var interactStates = {
-		chartIStates: chartIStates,
 		edoIStates: edoIStates,
 		modelIStates: $author$project$Models$LevelIS(levelIStates)
 	};
 	return {
 		chartData: chartData,
-		chartParam: {chartID: 0, curves: _List_Nil},
+		chartsParam: _List_fromArray(
+			[
+				$author$project$MyChart$initChartParam($elm$core$Maybe$Nothing)
+			]),
 		edoParam: edoParam,
 		interactStates: interactStates,
-		modelParam: $author$project$Models$LevelP(levelParam),
-		str: 'teste'
+		modelParam: $author$project$Models$LevelP(levelParam)
 	};
 }();
 var $elm$core$Result$Err = function (a) {
@@ -5377,90 +5425,118 @@ var $elm$browser$Browser$sandbox = function (impl) {
 			view: impl.view
 		});
 };
-var $author$project$Main$UpdateChart = function (a) {
-	return {$: 'UpdateChart', a: a};
-};
 var $author$project$Main$UpdateParameters = {$: 'UpdateParameters'};
-var $author$project$MyChart$t = function (chartDatum) {
-	var datum = chartDatum.a;
-	return datum.t;
-};
-var $author$project$MyChart$x1 = function (chartDatum) {
-	var datum = chartDatum.a;
-	return datum.x1;
-};
-var $author$project$Main$stringToAxisFunc = function (str) {
-	switch (str) {
-		case 't':
-			return $author$project$MyChart$t;
-		case 'x1':
-			return $author$project$MyChart$x1;
-		default:
-			return $author$project$MyChart$t;
-	}
-};
-var $author$project$Main$axesStringToAxesFunc = function (axesString) {
-	var _v0 = axesString;
-	var xAxisStr = _v0.a;
-	var yAxisStr = _v0.b;
-	var xfunc = $author$project$Main$stringToAxisFunc(xAxisStr);
-	var yfunc = $author$project$Main$stringToAxisFunc(yAxisStr);
-	return _Utils_Tuple2(xfunc, yfunc);
-};
-var $author$project$EdoSolver$changeEdoIStates = F3(
-	function (edoIStates, edoInteract, valueStr) {
+var $author$project$EdoSolver$changeEdoIStates = F2(
+	function (edoIStates, edoInteract) {
 		if (edoInteract.$ === 'Tini') {
+			var valueStr = edoInteract.a;
 			return _Utils_update(
 				edoIStates,
 				{tini: valueStr});
 		} else {
+			var valueStr = edoInteract.a;
 			return _Utils_update(
 				edoIStates,
 				{tfim: valueStr});
 		}
 	});
-var $author$project$Models$changeLevelIStates = F3(
-	function (levelIStates, levelInteract, valueStr) {
+var $author$project$Models$changeLevelIStates = F2(
+	function (levelIStates, levelInteract) {
 		switch (levelInteract.$) {
 			case 'H0':
+				var valueStr = levelInteract.a;
 				return _Utils_update(
 					levelIStates,
 					{h0: valueStr});
 			case 'Ag':
+				var valueStr = levelInteract.a;
 				return _Utils_update(
 					levelIStates,
 					{ag: valueStr});
 			default:
+				var valueStr = levelInteract.a;
 				return _Utils_update(
 					levelIStates,
 					{ap: valueStr});
 		}
 	});
-var $author$project$Models$changeModelIStates = F3(
-	function (modelIStates, modelInteract, valueStr) {
+var $author$project$Models$changeModelIStates = F2(
+	function (modelIStates, modelInteract) {
 		var levelInteract = modelInteract.a;
 		var levelIStates = modelIStates.a;
 		return $author$project$Models$LevelIS(
-			A3($author$project$Models$changeLevelIStates, levelIStates, levelInteract, valueStr));
+			A2($author$project$Models$changeLevelIStates, levelIStates, levelInteract));
 	});
-var $author$project$MyChart$initCurve = function (maybeLastCurve) {
-	if (maybeLastCurve.$ === 'Nothing') {
-		return {
-			axesFunc: _Utils_Tuple2($author$project$MyChart$t, $author$project$MyChart$x1),
-			curveID: 1
-		};
+var $author$project$MyChart$changeChartParam = F3(
+	function (chartID, newChartParam, chartParam) {
+		return _Utils_eq(
+			chartID,
+			function ($) {
+				return $.chartID;
+			}(chartParam)) ? newChartParam : chartParam;
+	});
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
 	} else {
-		var lastCurve = maybeLastCurve.a;
-		var lastCurveID = function ($) {
-			return $.curveID;
-		}(lastCurve);
-		var curveID = lastCurveID + 1;
-		return {
-			axesFunc: _Utils_Tuple2($author$project$MyChart$t, $author$project$MyChart$x1),
-			curveID: curveID
-		};
+		return $elm$core$Maybe$Nothing;
 	}
 };
+var $author$project$MyChart$chartFromChartID = F2(
+	function (chartID, chartsParam) {
+		var filteredList = A2(
+			$elm$core$List$filter,
+			function (chartParam) {
+				return _Utils_eq(
+					function ($) {
+						return $.chartID;
+					}(chartParam),
+					chartID);
+			},
+			chartsParam);
+		return $elm$core$List$head(filteredList);
+	});
+var $author$project$MyChart$changeCurveAxis = F4(
+	function (curveID, axisType, axisFunc, curve) {
+		var otherCurveID = function ($) {
+			return $.curveID;
+		}(curve);
+		var _v0 = function ($) {
+			return $.axesFunc;
+		}(curve);
+		var xAxis = _v0.a;
+		var yAxis = _v0.b;
+		if (_Utils_eq(curveID, otherCurveID)) {
+			if (axisType.$ === 'XAxis') {
+				return _Utils_update(
+					curve,
+					{
+						axesFunc: _Utils_Tuple2(axisFunc, yAxis)
+					});
+			} else {
+				return _Utils_update(
+					curve,
+					{
+						axesFunc: _Utils_Tuple2(xAxis, axisFunc)
+					});
+			}
+		} else {
+			return curve;
+		}
+	});
 var $author$project$MyChart$lastElem = function (list) {
 	lastElem:
 	while (true) {
@@ -5480,6 +5556,104 @@ var $author$project$MyChart$lastElem = function (list) {
 		}
 	}
 };
+var $author$project$MyChart$stringToAxisFunc = function (str) {
+	switch (str) {
+		case 't':
+			return $author$project$MyChart$t;
+		case 'x1':
+			return $author$project$MyChart$x1;
+		default:
+			return $author$project$MyChart$t;
+	}
+};
+var $author$project$MyChart$chartInteractAction = F2(
+	function (chartParam, chartInteract) {
+		switch (chartInteract.$) {
+			case 'ChangeAxis':
+				var curveID = chartInteract.a;
+				var axisType = chartInteract.b;
+				var valueStr = chartInteract.c;
+				var curves = function ($) {
+					return $.curves;
+				}(chartParam);
+				var axisFunc = $author$project$MyChart$stringToAxisFunc(valueStr);
+				var newCurves = A2(
+					$elm$core$List$map,
+					A3($author$project$MyChart$changeCurveAxis, curveID, axisType, axisFunc),
+					curves);
+				return _Utils_update(
+					chartParam,
+					{curves: newCurves});
+			case 'AddCurve':
+				var curves = function ($) {
+					return $.curves;
+				}(chartParam);
+				var maybeLastCurve = $author$project$MyChart$lastElem(curves);
+				var newCurve = $author$project$MyChart$initCurve(maybeLastCurve);
+				var newCurves = _Utils_ap(
+					curves,
+					A2($elm$core$List$cons, newCurve, _List_Nil));
+				return _Utils_update(
+					chartParam,
+					{curves: newCurves});
+			default:
+				var curveID = chartInteract.a;
+				var curves = function ($) {
+					return $.curves;
+				}(chartParam);
+				var newCurves = A2(
+					$elm$core$List$filter,
+					function (c) {
+						return _Utils_eq(
+							function ($) {
+								return $.curveID;
+							}(c),
+							curveID) ? false : true;
+					},
+					curves);
+				return _Utils_update(
+					chartParam,
+					{curves: newCurves});
+		}
+	});
+var $author$project$MyChart$chartIndividualInteractAction = F3(
+	function (chartID, chartsParam, chartInteract) {
+		var _v0 = A2($author$project$MyChart$chartFromChartID, chartID, chartsParam);
+		if (_v0.$ === 'Nothing') {
+			return chartsParam;
+		} else {
+			var chartParam = _v0.a;
+			var newChartParam = A2($author$project$MyChart$chartInteractAction, chartParam, chartInteract);
+			return A2(
+				$elm$core$List$map,
+				A2($author$project$MyChart$changeChartParam, chartID, newChartParam),
+				chartsParam);
+		}
+	});
+var $elm$core$Basics$not = _Basics_not;
+var $author$project$MyChart$chartsInteractAction = F2(
+	function (chartsParam, chartsInteract) {
+		if (chartsInteract.$ === 'AddChart') {
+			var maybeLastChartParam = $author$project$MyChart$lastElem(chartsParam);
+			var newChartParam = $author$project$MyChart$initChartParam(maybeLastChartParam);
+			return _Utils_ap(
+				chartsParam,
+				_List_fromArray(
+					[newChartParam]));
+		} else {
+			var chartID = chartsInteract.a;
+			return A2(
+				$elm$core$List$filter,
+				function (chartParam) {
+					return !_Utils_eq(
+						function ($) {
+							return $.chartID;
+						}(chartParam),
+						chartID);
+				},
+				chartsParam);
+		}
+	});
 var $elm$core$Basics$ge = _Utils_ge;
 var $author$project$EdoSolver$edoStep = F3(
 	function (param, fsist, xs) {
@@ -5634,10 +5808,6 @@ var $author$project$Models$runEdoModel = F2(
 		var levelParam = modelParam.a;
 		return A2($author$project$Models$runEdoLevel, levelParam, edoParam);
 	});
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
-};
 var $elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
 		var _v0 = f(mx);
@@ -5717,194 +5887,143 @@ var $author$project$Models$updateModelParam = F2(
 	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		update:
-		while (true) {
-			switch (msg.$) {
-				case 'RunEdo':
-					var newModel = A2($author$project$Main$update, $author$project$Main$UpdateParameters, model);
-					var modelParam = function ($) {
-						return $.modelParam;
-					}(newModel);
-					var edoParam = function ($) {
-						return $.edoParam;
-					}(newModel);
-					var data = A2($author$project$Models$runEdoModel, modelParam, edoParam);
-					return _Utils_update(
-						newModel,
-						{chartData: data});
-				case 'ChangeInteract':
-					var interact = msg.a;
-					var valueStr = msg.b;
-					var interactStates = function ($) {
-						return $.interactStates;
-					}(model);
-					var modelIStates = function ($) {
-						return $.modelIStates;
-					}(interactStates);
-					var edoIStates = function ($) {
-						return $.edoIStates;
-					}(interactStates);
-					var chartIStates = function ($) {
-						return $.chartIStates;
-					}(interactStates);
-					switch (interact.$) {
-						case 'Edo':
-							var edoInteract = interact.a;
-							var edoIStatesNew = A3($author$project$EdoSolver$changeEdoIStates, edoIStates, edoInteract, valueStr);
-							var interactStatesNew = _Utils_update(
-								interactStates,
-								{edoIStates: edoIStatesNew});
-							return _Utils_update(
-								model,
-								{interactStates: interactStatesNew});
-						case 'Models':
-							var modelInteract = interact.a;
-							var modelIStatesNew = A3($author$project$Models$changeModelIStates, modelIStates, modelInteract, valueStr);
-							var interactStatesNew = _Utils_update(
-								interactStates,
-								{modelIStates: modelIStatesNew});
-							return _Utils_update(
-								model,
-								{interactStates: interactStatesNew});
-						default:
-							var chartInteract = interact.a;
-							if (chartInteract.$ === 'ChangeAxis') {
-								var curveID = chartInteract.a;
-								var axisType = chartInteract.b;
-								if (axisType.$ === 'XAxis') {
-									var yaxis = function ($) {
-										return $.axes;
-									}(chartIStates).b;
-									var newAxes = _Utils_Tuple2(valueStr, yaxis);
-									var newChartIStates = _Utils_update(
-										chartIStates,
-										{axes: newAxes});
-									var newInteractStates = _Utils_update(
-										interactStates,
-										{chartIStates: newChartIStates});
-									var newModel = _Utils_update(
-										model,
-										{interactStates: newInteractStates});
-									var chartParam = function ($) {
-										return $.chartParam;
-									}(model);
-									var $temp$msg = $author$project$Main$UpdateChart(curveID),
-										$temp$model = newModel;
-									msg = $temp$msg;
-									model = $temp$model;
-									continue update;
-								} else {
-									var xaxis = function ($) {
-										return $.axes;
-									}(chartIStates).a;
-									var newAxes = _Utils_Tuple2(xaxis, valueStr);
-									var newChartIStates = _Utils_update(
-										chartIStates,
-										{axes: newAxes});
-									var newInteractStates = _Utils_update(
-										interactStates,
-										{chartIStates: newChartIStates});
-									var newModel = _Utils_update(
-										model,
-										{interactStates: newInteractStates});
-									var $temp$msg = $author$project$Main$UpdateChart(curveID),
-										$temp$model = newModel;
-									msg = $temp$msg;
-									model = $temp$model;
-									continue update;
-								}
-							} else {
-								var chartParam = function ($) {
-									return $.chartParam;
-								}(model);
-								var curves = function ($) {
-									return $.curves;
-								}(chartParam);
-								var maybeLastCurve = $author$project$MyChart$lastElem(curves);
-								var newCurve = $author$project$MyChart$initCurve(maybeLastCurve);
-								var newCurves = _Utils_ap(
-									curves,
-									A2($elm$core$List$cons, newCurve, _List_Nil));
-								var newChartParam = _Utils_update(
-									chartParam,
-									{curves: newCurves});
-								return _Utils_update(
-									model,
-									{chartParam: newChartParam});
-							}
-					}
-				case 'UpdateParameters':
-					var modelParam = function ($) {
-						return $.modelParam;
-					}(model);
-					var interactStates = function ($) {
-						return $.interactStates;
-					}(model);
-					var modelIStates = function ($) {
-						return $.modelIStates;
-					}(interactStates);
-					var modelParamNew = A2($author$project$Models$updateModelParam, modelParam, modelIStates);
-					var edoParam = function ($) {
-						return $.edoParam;
-					}(model);
-					var edoIStates = function ($) {
-						return $.edoIStates;
-					}(interactStates);
-					var edoParamNew = A2($author$project$EdoSolver$updateEdoParam, edoParam, edoIStates);
-					return _Utils_update(
-						model,
-						{edoParam: edoParamNew, modelParam: modelParamNew});
-				case 'ChangeStr':
-					var str = msg.a;
-					return _Utils_update(
-						model,
-						{str: str});
-				default:
-					var curveID = msg.a;
-					var interactStates = function ($) {
-						return $.interactStates;
-					}(model);
-					var chartParam = function ($) {
-						return $.chartParam;
-					}(model);
-					var chartIStates = function ($) {
-						return $.chartIStates;
-					}(interactStates);
-					var axesStr = function ($) {
-						return $.axes;
-					}(chartIStates);
-					var axesFunc = $author$project$Main$axesStringToAxesFunc(axesStr);
-					var curve = {axesFunc: axesFunc, curveID: 1};
-					var curves = _List_fromArray(
-						[curve]);
-					var newChartParam = _Utils_update(
-						chartParam,
-						{curves: curves});
-					return _Utils_update(
-						model,
-						{chartParam: newChartParam});
-			}
+		switch (msg.$) {
+			case 'RunEdo':
+				var newModel = A2($author$project$Main$update, $author$project$Main$UpdateParameters, model);
+				var modelParam = function ($) {
+					return $.modelParam;
+				}(newModel);
+				var edoParam = function ($) {
+					return $.edoParam;
+				}(newModel);
+				var data = A2($author$project$Models$runEdoModel, modelParam, edoParam);
+				return _Utils_update(
+					newModel,
+					{chartData: data});
+			case 'ChangeInteract':
+				var interact = msg.a;
+				var interactStates = function ($) {
+					return $.interactStates;
+				}(model);
+				var modelIStates = function ($) {
+					return $.modelIStates;
+				}(interactStates);
+				var edoIStates = function ($) {
+					return $.edoIStates;
+				}(interactStates);
+				switch (interact.$) {
+					case 'Edo':
+						var edoInteract = interact.a;
+						var edoIStatesNew = A2($author$project$EdoSolver$changeEdoIStates, edoIStates, edoInteract);
+						var interactStatesNew = _Utils_update(
+							interactStates,
+							{edoIStates: edoIStatesNew});
+						return _Utils_update(
+							model,
+							{interactStates: interactStatesNew});
+					case 'Models':
+						var modelInteract = interact.a;
+						var modelIStatesNew = A2($author$project$Models$changeModelIStates, modelIStates, modelInteract);
+						var interactStatesNew = _Utils_update(
+							interactStates,
+							{modelIStates: modelIStatesNew});
+						return _Utils_update(
+							model,
+							{interactStates: interactStatesNew});
+					case 'MChart':
+						var chartID = interact.a;
+						var chartInteract = interact.b;
+						var chartsParam = function ($) {
+							return $.chartsParam;
+						}(model);
+						var newChartsParam = A3($author$project$MyChart$chartIndividualInteractAction, chartID, chartsParam, chartInteract);
+						return _Utils_update(
+							model,
+							{chartsParam: newChartsParam});
+					default:
+						var chartsInteract = interact.a;
+						var chartsParam = function ($) {
+							return $.chartsParam;
+						}(model);
+						var newChartsParam = A2($author$project$MyChart$chartsInteractAction, chartsParam, chartsInteract);
+						return _Utils_update(
+							model,
+							{chartsParam: newChartsParam});
+				}
+			default:
+				var modelParam = function ($) {
+					return $.modelParam;
+				}(model);
+				var interactStates = function ($) {
+					return $.interactStates;
+				}(model);
+				var modelIStates = function ($) {
+					return $.modelIStates;
+				}(interactStates);
+				var modelParamNew = A2($author$project$Models$updateModelParam, modelParam, modelIStates);
+				var edoParam = function ($) {
+					return $.edoParam;
+				}(model);
+				var edoIStates = function ($) {
+					return $.edoIStates;
+				}(interactStates);
+				var edoParamNew = A2($author$project$EdoSolver$updateEdoParam, edoParam, edoIStates);
+				return _Utils_update(
+					model,
+					{edoParam: edoParamNew, modelParam: modelParamNew});
 		}
 	});
-var $author$project$MyChart$AddCurve = {$: 'AddCurve'};
-var $author$project$Main$ChangeInteract = F2(
-	function (a, b) {
-		return {$: 'ChangeInteract', a: a, b: b};
-	});
-var $author$project$Main$ChangeStr = function (a) {
-	return {$: 'ChangeStr', a: a};
+var $author$project$Main$ChangeInteract = function (a) {
+	return {$: 'ChangeInteract', a: a};
 };
 var $author$project$Main$Edo = function (a) {
 	return {$: 'Edo', a: a};
 };
-var $author$project$Main$MChart = function (a) {
-	return {$: 'MChart', a: a};
+var $author$project$Main$MChart = F2(
+	function (a, b) {
+		return {$: 'MChart', a: a, b: b};
+	});
+var $author$project$Main$MCharts = function (a) {
+	return {$: 'MCharts', a: a};
 };
 var $author$project$Main$Models = function (a) {
 	return {$: 'Models', a: a};
 };
 var $author$project$Main$RunEdo = {$: 'RunEdo'};
 var $elm$html$Html$button = _VirtualDom_node('button');
+var $author$project$MyChart$AddChart = {$: 'AddChart'};
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$MyChart$addChartButtonView = function (chartsIToMsg) {
+	return A2(
+		$elm$html$Html$button,
+		_List_fromArray(
+			[
+				$elm$html$Html$Events$onClick(
+				chartsIToMsg($author$project$MyChart$AddChart))
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('AddChart')
+			]));
+};
 var $terezka$elm_charts$Internal$Svg$Event = F2(
 	function (name, handler) {
 		return {handler: handler, name: name};
@@ -6101,17 +6220,6 @@ var $terezka$elm_charts$Internal$Svg$decoder = F2(
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
 var $elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
-var $elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var $elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
 var $elm$svg$Svg$Events$on = $elm$html$Html$Events$on;
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$rect = $elm$svg$Svg$trustedNode('rect');
@@ -6620,7 +6728,6 @@ var $terezka$elm_charts$Internal$Svg$isWithinPlane = F3(
 			A3($elm$core$Basics$clamp, plane.y.min, plane.y.max, y),
 			y);
 	});
-var $elm$core$Basics$not = _Basics_not;
 var $elm$svg$Svg$path = $elm$svg$Svg$trustedNode('path');
 var $elm$core$Basics$pi = _Basics_pi;
 var $terezka$elm_charts$Internal$Svg$plusPath = F4(
@@ -6653,7 +6760,6 @@ var $elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
 var $elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
 var $elm$svg$Svg$Attributes$strokeOpacity = _VirtualDom_attribute('stroke-opacity');
 var $elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$svg$Svg$text = $elm$virtual_dom$VirtualDom$text;
 var $terezka$elm_charts$Internal$Coordinates$scaleSVGX = F2(
 	function (plane, value) {
@@ -8729,6 +8835,10 @@ var $terezka$elm_charts$Internal$Interpolation$monotoneSection = F2(
 			t0,
 			A2($elm$core$List$cons, commands, acc));
 	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
 var $terezka$elm_charts$Internal$Interpolation$monotone = function (sections) {
 	return A3(
 		$elm$core$List$foldr,
@@ -8810,15 +8920,6 @@ var $elm$core$List$drop = F2(
 			}
 		}
 	});
-var $elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(x);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
 var $terezka$elm_charts$Internal$Svg$last = function (list) {
 	return $elm$core$List$head(
 		A2(
@@ -9367,7 +9468,6 @@ var $terezka$elm_charts$Internal$Svg$toRadius = F2(
 		}
 	});
 var $elm$html$Html$td = _VirtualDom_node('td');
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$tr = _VirtualDom_node('tr');
 var $terezka$elm_charts$Internal$Produce$tooltipRow = F3(
 	function (color, title, text) {
@@ -9686,7 +9786,7 @@ var $terezka$elm_charts$Chart$series = F3(
 	function (toX, properties, data) {
 		return A4($terezka$elm_charts$Chart$seriesMap, $elm$core$Basics$identity, toX, properties, data);
 	});
-var $author$project$MyChart$curveToChartSeries = F2(
+var $author$project$MyChart$curveToChartSeriesView = F2(
 	function (chartData, curve) {
 		var _v0 = function ($) {
 			return $.axesFunc;
@@ -9992,17 +10092,6 @@ var $terezka$intervals$Intervals$correctFloat = function (prec) {
 			$elm$core$String$toFloat,
 			$elm$core$Maybe$withDefault(0)));
 };
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
 var $terezka$intervals$Intervals$getMultiples = F3(
 	function (magnitude, allowDecimals, hasTickAmount) {
 		var defaults = hasTickAmount ? _List_fromArray(
@@ -12445,7 +12534,7 @@ var $terezka$elm_charts$Chart$yLabels = function (edits) {
 						A2(toTicks, p, config)));
 			}));
 };
-var $author$project$MyChart$chart5 = F2(
+var $author$project$MyChart$chart5View = F2(
 	function (chartData, curves) {
 		return A2(
 			$terezka$elm_charts$Chart$chart,
@@ -12468,10 +12557,10 @@ var $author$project$MyChart$chart5 = F2(
 					]),
 				A2(
 					$elm$core$List$map,
-					$author$project$MyChart$curveToChartSeries(chartData),
+					$author$project$MyChart$curveToChartSeriesView(chartData),
 					curves)));
 	});
-var $author$project$Main$chartContainer = function (chart) {
+var $author$project$MyChart$chartContainerView = function (chart) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -12482,9 +12571,23 @@ var $author$project$Main$chartContainer = function (chart) {
 		_List_fromArray(
 			[chart]));
 };
-var $author$project$MyChart$ChangeAxis = F2(
-	function (a, b) {
-		return {$: 'ChangeAxis', a: a, b: b};
+var $author$project$MyChart$AddCurve = {$: 'AddCurve'};
+var $author$project$MyChart$addCurveButtonView = function (chartIToMsg) {
+	return A2(
+		$elm$html$Html$button,
+		_List_fromArray(
+			[
+				$elm$html$Html$Events$onClick(
+				chartIToMsg($author$project$MyChart$AddCurve))
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('+')
+			]));
+};
+var $author$project$MyChart$ChangeAxis = F3(
+	function (a, b, c) {
+		return {$: 'ChangeAxis', a: a, b: b, c: c};
 	});
 var $author$project$MyChart$XAxis = {$: 'XAxis'};
 var $author$project$MyChart$YAxis = {$: 'YAxis'};
@@ -12499,7 +12602,7 @@ var $elm$html$Html$Attributes$boolProperty = F2(
 	});
 var $elm$html$Html$Attributes$selected = $elm$html$Html$Attributes$boolProperty('selected');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Main$chartAxisOption = F3(
+var $author$project$MyChart$chartAxisOptionView = F3(
 	function (val, txt, selStr) {
 		return _Utils_eq(selStr, val) ? A2(
 			$elm$html$Html$option,
@@ -12522,7 +12625,7 @@ var $author$project$Main$chartAxisOption = F3(
 					$elm$html$Html$text(txt)
 				]));
 	});
-var $author$project$Main$chartAxesOptions = F2(
+var $author$project$MyChart$chartAxesOptionsView = F2(
 	function (chartData, selStr) {
 		if (!chartData.b) {
 			return _List_Nil;
@@ -12532,8 +12635,8 @@ var $author$project$Main$chartAxesOptions = F2(
 			var datum = chartDatum.a;
 			return _List_fromArray(
 				[
-					A3($author$project$Main$chartAxisOption, 't', 't', selStr),
-					A3($author$project$Main$chartAxisOption, 'x1', 'x', selStr)
+					A3($author$project$MyChart$chartAxisOptionView, 't', 't', selStr),
+					A3($author$project$MyChart$chartAxisOptionView, 'x1', 'x', selStr)
 				]);
 		}
 	});
@@ -12571,21 +12674,17 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
 var $elm$html$Html$select = _VirtualDom_node('select');
-var $author$project$Main$chartCurveSelection = F3(
-	function (chartData, chartIStates, curve) {
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $author$project$MyChart$chartCurveSelectionView = F3(
+	function (chartData, chartIToMsg, curve) {
 		var curveID = function ($) {
 			return $.curveID;
 		}(curve);
 		var axesFunc = function ($) {
 			return $.axesFunc;
 		}(curve);
-		var _v0 = function ($) {
-			return $.axes;
-		}(chartIStates);
-		var fstStr = _v0.a;
-		var sndStr = _v0.b;
 		return A2(
-			$elm$html$Html$div,
+			$elm$html$Html$span,
 			_List_Nil,
 			_List_fromArray(
 				[
@@ -12602,35 +12701,198 @@ var $author$project$Main$chartCurveSelection = F3(
 					_List_fromArray(
 						[
 							$elm$html$Html$Events$onInput(
-							$author$project$Main$ChangeInteract(
-								$author$project$Main$MChart(
-									A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$XAxis))))
+							A2(
+								$elm$core$Basics$composeL,
+								chartIToMsg,
+								A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$XAxis)))
 						]),
-					A2($author$project$Main$chartAxesOptions, chartData, fstStr)),
+					A2($author$project$MyChart$chartAxesOptionsView, chartData, 't')),
 					A2(
 					$elm$html$Html$select,
 					_List_fromArray(
 						[
 							$elm$html$Html$Events$onInput(
-							$author$project$Main$ChangeInteract(
-								$author$project$Main$MChart(
-									A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$YAxis))))
+							A2(
+								$elm$core$Basics$composeL,
+								chartIToMsg,
+								A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$YAxis)))
 						]),
-					A2($author$project$Main$chartAxesOptions, chartData, sndStr))
+					A2($author$project$MyChart$chartAxesOptionsView, chartData, 'x1'))
 				]));
 	});
-var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
-var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
-var $elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'click',
-		$elm$json$Json$Decode$succeed(msg));
+var $author$project$MyChart$RemoveCurve = function (a) {
+	return {$: 'RemoveCurve', a: a};
 };
-var $author$project$EdoSolver$Tfim = {$: 'Tfim'};
-var $author$project$EdoSolver$Tini = {$: 'Tini'};
+var $author$project$MyChart$removeCurveButtonView = F2(
+	function (chartIToMsg, curveID) {
+		return A2(
+			$elm$html$Html$button,
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick(
+					chartIToMsg(
+						$author$project$MyChart$RemoveCurve(curveID)))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('-')
+				]));
+	});
+var $author$project$MyChart$chartCurvesView = F3(
+	function (chartData, chartIToMsg, curves) {
+		if (!curves.b) {
+			return A2(
+				$elm$core$List$cons,
+				$author$project$MyChart$addCurveButtonView(chartIToMsg),
+				_List_Nil);
+		} else {
+			if (!curves.b.b) {
+				var c = curves.a;
+				return A2(
+					$elm$core$List$cons,
+					A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A3($author$project$MyChart$chartCurveSelectionView, chartData, chartIToMsg, c),
+								A2(
+								$author$project$MyChart$removeCurveButtonView,
+								chartIToMsg,
+								function ($) {
+									return $.curveID;
+								}(c)),
+								$author$project$MyChart$addCurveButtonView(chartIToMsg)
+							])),
+					_List_Nil);
+			} else {
+				var c = curves.a;
+				var cs = curves.b;
+				return A2(
+					$elm$core$List$cons,
+					A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A3($author$project$MyChart$chartCurveSelectionView, chartData, chartIToMsg, c),
+								A2(
+								$author$project$MyChart$removeCurveButtonView,
+								chartIToMsg,
+								function ($) {
+									return $.curveID;
+								}(c))
+							])),
+					A3($author$project$MyChart$chartCurvesView, chartData, chartIToMsg, cs));
+			}
+		}
+	});
+var $author$project$MyChart$chartView = F3(
+	function (chartData, chartParam, chartIDTochartIToMsg) {
+		var curves = function ($) {
+			return $.curves;
+		}(chartParam);
+		var chartID = function ($) {
+			return $.chartID;
+		}(chartParam);
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						$author$project$MyChart$chartContainerView(
+						A2($author$project$MyChart$chart5View, chartData, curves))
+					]),
+				A3(
+					$author$project$MyChart$chartCurvesView,
+					chartData,
+					chartIDTochartIToMsg(chartID),
+					curves)));
+	});
+var $author$project$MyChart$RemoveChart = function (a) {
+	return {$: 'RemoveChart', a: a};
+};
+var $author$project$MyChart$removeChartButtonView = F2(
+	function (chartsIToMsg, chartID) {
+		return A2(
+			$elm$html$Html$button,
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick(
+					chartsIToMsg(
+						$author$project$MyChart$RemoveChart(chartID)))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('RemoveChart')
+				]));
+	});
+var $author$project$MyChart$chartsView = F4(
+	function (chartData, chartsParam, chartsIToMsg, chartIDTochartIToMsg) {
+		if (!chartsParam.b) {
+			return A2(
+				$elm$core$List$cons,
+				$author$project$MyChart$addChartButtonView(chartsIToMsg),
+				_List_Nil);
+		} else {
+			if (!chartsParam.b.b) {
+				var chartParam = chartsParam.a;
+				return A2(
+					$elm$core$List$cons,
+					A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$author$project$MyChart$removeChartButtonView,
+								chartsIToMsg,
+								function ($) {
+									return $.chartID;
+								}(chartParam)),
+								$author$project$MyChart$addChartButtonView(chartsIToMsg),
+								A3($author$project$MyChart$chartView, chartData, chartParam, chartIDTochartIToMsg)
+							])),
+					_List_Nil);
+			} else {
+				var chartParam = chartsParam.a;
+				var ls = chartsParam.b;
+				return A2(
+					$elm$core$List$cons,
+					A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$author$project$MyChart$removeChartButtonView,
+								chartsIToMsg,
+								function ($) {
+									return $.chartID;
+								}(chartParam)),
+								A3($author$project$MyChart$chartView, chartData, chartParam, chartIDTochartIToMsg)
+							])),
+					A4($author$project$MyChart$chartsView, chartData, ls, chartsIToMsg, chartIDTochartIToMsg));
+			}
+		}
+	});
+var $author$project$Main$fcomposition23 = F3(
+	function (f2, f3, c) {
+		return A2(
+			$elm$core$Basics$composeL,
+			f2,
+			f3(c));
+	});
+var $author$project$EdoSolver$Tfim = function (a) {
+	return {$: 'Tfim', a: a};
+};
+var $author$project$EdoSolver$Tini = function (a) {
+	return {$: 'Tini', a: a};
+};
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $author$project$EdoSolver$parameterInteractiveDiv = F4(
 	function (texto, pholder, valor, strToMsg) {
 		return A2(
@@ -12643,6 +12905,7 @@ var $author$project$EdoSolver$parameterInteractiveDiv = F4(
 					$elm$html$Html$input,
 					_List_fromArray(
 						[
+							$elm$html$Html$Attributes$type_('number'),
 							$elm$html$Html$Attributes$placeholder(pholder),
 							$elm$html$Html$Attributes$value(valor),
 							$elm$html$Html$Events$onInput(strToMsg)
@@ -12668,21 +12931,27 @@ var $author$project$EdoSolver$viewEdoIStates = F2(
 					'tini  ',
 					'',
 					tiniStr,
-					edoInteractToMsg($author$project$EdoSolver$Tini)),
+					A2($elm$core$Basics$composeL, edoInteractToMsg, $author$project$EdoSolver$Tini)),
 					A4(
 					$author$project$EdoSolver$parameterInteractiveDiv,
 					'tfim  ',
 					'',
 					tfimStr,
-					edoInteractToMsg($author$project$EdoSolver$Tfim))
+					A2($elm$core$Basics$composeL, edoInteractToMsg, $author$project$EdoSolver$Tfim))
 				]));
 	});
 var $author$project$Models$LevelI = function (a) {
 	return {$: 'LevelI', a: a};
 };
-var $author$project$Models$Ag = {$: 'Ag'};
-var $author$project$Models$Ap = {$: 'Ap'};
-var $author$project$Models$H0 = {$: 'H0'};
+var $author$project$Models$Ag = function (a) {
+	return {$: 'Ag', a: a};
+};
+var $author$project$Models$Ap = function (a) {
+	return {$: 'Ap', a: a};
+};
+var $author$project$Models$H0 = function (a) {
+	return {$: 'H0', a: a};
+};
 var $author$project$Models$parameterInteractiveDiv = F4(
 	function (texto, pholder, valor, strToMsg) {
 		return A2(
@@ -12695,6 +12964,7 @@ var $author$project$Models$parameterInteractiveDiv = F4(
 					$elm$html$Html$input,
 					_List_fromArray(
 						[
+							$elm$html$Html$Attributes$type_('number'),
 							$elm$html$Html$Attributes$placeholder(pholder),
 							$elm$html$Html$Attributes$value(valor),
 							$elm$html$Html$Events$onInput(strToMsg)
@@ -12723,19 +12993,19 @@ var $author$project$Models$viewLevelIStates = F2(
 					'h0  ',
 					'',
 					h0Str,
-					levelInteractToMsg($author$project$Models$H0)),
+					A2($elm$core$Basics$composeL, levelInteractToMsg, $author$project$Models$H0)),
 					A4(
 					$author$project$Models$parameterInteractiveDiv,
 					'A   ',
 					'',
 					agStr,
-					levelInteractToMsg($author$project$Models$Ag)),
+					A2($elm$core$Basics$composeL, levelInteractToMsg, $author$project$Models$Ag)),
 					A4(
 					$author$project$Models$parameterInteractiveDiv,
 					'a   ',
 					'',
 					apStr,
-					levelInteractToMsg($author$project$Models$Ap))
+					A2($elm$core$Basics$composeL, levelInteractToMsg, $author$project$Models$Ap))
 				]));
 	});
 var $author$project$Models$viewModelIStates = F2(
@@ -12756,12 +13026,12 @@ var $author$project$Main$view = function (model) {
 	var edoIStates = function ($) {
 		return $.edoIStates;
 	}(interactStates);
-	var chartParam = function ($) {
-		return $.chartParam;
+	var chartsParam = function ($) {
+		return $.chartsParam;
 	}(model);
-	var curves = function ($) {
-		return $.curves;
-	}(chartParam);
+	var chartData = function ($) {
+		return $.chartData;
+	}(model);
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -12770,122 +13040,35 @@ var $author$project$Main$view = function (model) {
 				A2(
 				$elm$html$Html$div,
 				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						$author$project$EdoSolver$viewEdoIStates,
-						edoIStates,
-						A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Edo)),
-						A2(
-						$author$project$Models$viewModelIStates,
-						modelIStates,
-						A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Models)),
-						A2($elm$html$Html$div, _List_Nil, _List_Nil),
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Events$onClick($author$project$Main$RunEdo)
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Edo')
-							])),
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Events$onClick(
-								$author$project$Main$UpdateChart(1))
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('UpdateChart')
-							])),
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Events$onClick(
-								A2(
-									$author$project$Main$ChangeInteract,
-									$author$project$Main$MChart($author$project$MyChart$AddCurve),
-									''))
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('AddCurve')
-							])),
-						A2(
-						$elm$html$Html$label,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$for('location')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Your closest center:')
-							])),
-						A2(
-						$elm$html$Html$select,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$name('location'),
-								$elm$html$Html$Events$onInput($author$project$Main$ChangeStr)
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$option,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$value('ny')
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('New York')
-									])),
-								A2(
-								$elm$html$Html$option,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$value('il')
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Chicago')
-									]))
-							])),
-						A2(
-						$elm$html$Html$label,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(model.str)
-							]))
-					])),
-				A2(
-				$elm$html$Html$div,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$author$project$Main$chartContainer(
-						A2($author$project$MyChart$chart5, model.chartData, curves))
-					])),
-				A2(
-				$elm$html$Html$div,
-				_List_Nil,
-				A2(
-					$elm$core$List$map,
-					A2(
-						$author$project$Main$chartCurveSelection,
-						function ($) {
-							return $.chartData;
-						}(model),
-						function ($) {
-							return $.interactStates;
-						}(model).chartIStates),
-					curves))
+				_Utils_ap(
+					_List_fromArray(
+						[
+							A2(
+							$author$project$EdoSolver$viewEdoIStates,
+							edoIStates,
+							A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Edo)),
+							A2(
+							$author$project$Models$viewModelIStates,
+							modelIStates,
+							A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Models)),
+							A2($elm$html$Html$div, _List_Nil, _List_Nil),
+							A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Events$onClick($author$project$Main$RunEdo)
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Edo')
+								]))
+						]),
+					A4(
+						$author$project$MyChart$chartsView,
+						chartData,
+						chartsParam,
+						A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$MCharts),
+						A2($author$project$Main$fcomposition23, $author$project$Main$ChangeInteract, $author$project$Main$MChart))))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$sandbox(

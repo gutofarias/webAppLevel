@@ -2,7 +2,7 @@ module EdoSolver exposing (..)
 
 import List
 import Html exposing (Html,div,text,input)
-import Html.Attributes exposing (style, placeholder, value)
+import Html.Attributes exposing (style, placeholder, value, type_)
 import Html.Events exposing (onInput)
 
 ------------------------------------------------
@@ -55,33 +55,35 @@ updateEdoParam edoParam edoIStates =
 type alias EdoIStates = { tini:String, tfim:String }
 
     
-changeEdoIStates : EdoIStates -> EdoInteract -> String -> EdoIStates
-changeEdoIStates edoIStates edoInteract valueStr =
+changeEdoIStates : EdoIStates -> EdoInteract -> EdoIStates
+changeEdoIStates edoIStates edoInteract =
     case edoInteract of
-        Tini -> {edoIStates | tini = valueStr}
-        Tfim -> {edoIStates | tfim = valueStr}
+        Tini valueStr -> {edoIStates | tini = valueStr}
+        Tfim valueStr -> {edoIStates | tfim = valueStr}
 
 
 ------------------------------------------------
 -- EdoInteract
 ------------------------------------------------
 
-type EdoInteract = Tini | Tfim
+type EdoInteract
+    = Tini String
+    | Tfim String
     
     
 ------------------------------------------------
 -- viewEdo
 ------------------------------------------------
 
-viewEdoIStates : EdoIStates -> (EdoInteract -> String -> msg) -> Html msg
+viewEdoIStates : EdoIStates -> (EdoInteract -> msg) -> Html msg
 viewEdoIStates edoIStates edoInteractToMsg = 
   let
     tiniStr = .tini edoIStates
     tfimStr = .tfim edoIStates
   in
     div []
-        [ parameterInteractiveDiv "tini  " "" tiniStr (edoInteractToMsg Tini)
-        , parameterInteractiveDiv "tfim  " "" tfimStr (edoInteractToMsg Tfim)
+        [ parameterInteractiveDiv "tini  " "" tiniStr (edoInteractToMsg << Tini)
+        , parameterInteractiveDiv "tfim  " "" tfimStr (edoInteractToMsg << Tfim)
         ]
     
         
@@ -89,7 +91,7 @@ parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html 
 parameterInteractiveDiv texto pholder valor strToMsg =
     div []
     [ text texto
-    , input [ placeholder pholder, value valor, onInput <| strToMsg ] []
+    , input [type_ "number",placeholder pholder, value valor, onInput <| strToMsg ] []
     ]
     
     

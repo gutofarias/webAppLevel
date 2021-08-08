@@ -3,7 +3,7 @@ module Models exposing (..)
 import EdoSolver as Edo
 import DataConvert as DC
 import Html exposing (Html,div,text,input)
-import Html.Attributes exposing (style, placeholder, value)
+import Html.Attributes exposing (style, placeholder, value, type_)
 import Html.Events exposing (onInput)
 
 
@@ -38,13 +38,13 @@ type ModelIStates
     = LevelIS LevelIStates
       
 
-changeModelIStates : ModelIStates -> ModelInteract -> String -> ModelIStates
-changeModelIStates modelIStates modelInteract valueStr =
+changeModelIStates : ModelIStates -> ModelInteract -> ModelIStates
+changeModelIStates modelIStates modelInteract =
     case modelInteract of
         LevelI levelInteract ->
             case modelIStates of
                 LevelIS levelIStates ->
-                    LevelIS <| changeLevelIStates levelIStates levelInteract valueStr
+                    LevelIS <| changeLevelIStates levelIStates levelInteract 
                         
                         
                         
@@ -60,7 +60,7 @@ type ModelInteract
 -- viewModel
 ------------------------------------------------
                         
-viewModelIStates : ModelIStates -> (ModelInteract -> String -> msg) -> Html msg
+viewModelIStates : ModelIStates -> (ModelInteract -> msg) -> Html msg
 viewModelIStates modelIStates modelInteractToMsg = 
     case modelIStates of
         LevelIS levelIStates ->
@@ -71,7 +71,7 @@ parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html 
 parameterInteractiveDiv texto pholder valor strToMsg =
     div []
     [ text texto
-    , input [ placeholder pholder, value valor, onInput <| strToMsg ] []
+    , input [type_ "number", placeholder pholder, value valor, onInput <| strToMsg ] []
     ]
                 
 ------------------------------------------------
@@ -131,26 +131,29 @@ updateLevelParam levelParam levelIStates =
 type alias LevelIStates = { h0:String, ag:String, ap:String }
     
     
-changeLevelIStates : LevelIStates -> LevelInteract -> String -> LevelIStates
-changeLevelIStates levelIStates levelInteract valueStr =
+changeLevelIStates : LevelIStates -> LevelInteract -> LevelIStates
+changeLevelIStates levelIStates levelInteract =
     case levelInteract of
-        H0 -> {levelIStates | h0 = valueStr}
-        Ag -> {levelIStates | ag = valueStr}
-        Ap -> {levelIStates | ap = valueStr}
+        H0 valueStr -> {levelIStates | h0 = valueStr}
+        Ag valueStr -> {levelIStates | ag = valueStr}
+        Ap valueStr -> {levelIStates | ap = valueStr}
         
 
 ------------------------------------------------
 -- LevelInteract
 ------------------------------------------------
 
-type LevelInteract = H0 | Ag | Ap
+type LevelInteract
+    = H0 String
+    | Ag String
+    | Ap String
     
     
 ------------------------------------------------
 -- viewLevel
 ------------------------------------------------
     
-viewLevelIStates : LevelIStates -> (LevelInteract -> String -> msg) -> Html msg
+viewLevelIStates : LevelIStates -> (LevelInteract -> msg) -> Html msg
 viewLevelIStates levelIStates levelInteractToMsg = 
     let 
         h0Str = .h0 levelIStates
@@ -158,9 +161,9 @@ viewLevelIStates levelIStates levelInteractToMsg =
         apStr = .ap levelIStates
     in 
         div []
-            [ parameterInteractiveDiv "h0  " "" h0Str (levelInteractToMsg H0)
-            , parameterInteractiveDiv "A   " "" agStr (levelInteractToMsg Ag)
-            , parameterInteractiveDiv "a   " "" apStr (levelInteractToMsg Ap)
+            [ parameterInteractiveDiv "h0  " "" h0Str (levelInteractToMsg << H0)
+            , parameterInteractiveDiv "A   " "" agStr (levelInteractToMsg << Ag)
+            , parameterInteractiveDiv "a   " "" apStr (levelInteractToMsg << Ap)
             ]
     
 

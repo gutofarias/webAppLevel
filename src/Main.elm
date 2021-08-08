@@ -5,7 +5,7 @@ import EdoSolver as Edo
 import Models as M
 
 import Browser
-import Html exposing (Html, button, div, text, pre, input, label, select, option)
+import Html exposing (Html, button, div, text, pre, input, label, select, option, span)
 import Html.Attributes exposing (style, placeholder, value, for, name, selected)
 import Html.Events exposing (onClick, onInput)
 
@@ -40,21 +40,22 @@ type alias Model =
     , modelParam : M.ModelParam
     , edoParam : Edo.EdoParam
     , interactStates : InteractStates
-    , str : String
-    , chartParam : MC.ChartParam DC.ChartDatum
+    -- , str : String
+    , chartsParam : List (MC.ChartParam DC.ChartDatum)
     }
 
     
 type Interact
     = Edo Edo.EdoInteract
     | Models M.ModelInteract
-    | MChart MC.ChartInteract
+    | MChart MC.ChartID MC.ChartInteract
+    | MCharts MC.ChartsInteract
         
         
 type alias InteractStates =
     { edoIStates : Edo.EdoIStates
     , modelIStates : M.ModelIStates
-    , chartIStates : MC.ChartIStates
+    -- , chartIStates : MC.ChartIStates
     }
 
 updateEdoIStates : Edo.EdoIStates -> InteractStates -> InteractStates
@@ -87,15 +88,14 @@ init =
         chartData = []
         levelIStates = {h0 = (String.fromFloat h0), ag =  (String.fromFloat ag), ap = (String.fromFloat ap)}
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
-        chartIStates = {axes = ( "t", "x1" )}
-        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, chartIStates = chartIStates}
+        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates}
     in
             { chartData = chartData
             , modelParam = M.LevelP levelParam
             , edoParam = edoParam
             , interactStates = interactStates
-            , str = "teste"
-            , chartParam = {chartID = 0, curves = []}
+            -- , str = "teste"
+            , chartsParam = [(MC.initChartParam Nothing)]
             }
 
         
@@ -108,10 +108,9 @@ init =
             
 type Msg
     = RunEdo
-    | ChangeInteract Interact String 
+    | ChangeInteract Interact
     | UpdateParameters 
-    | ChangeStr String
-    | UpdateChart MC.CurveID
+    -- | ChangeStr String
 
 update : Msg -> Model -> Model
 update msg model =
@@ -120,76 +119,46 @@ update msg model =
     RunEdo -> 
       let  
           newModel = update UpdateParameters model
-          -- newModel = update UpdateChart newModelAlmost
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
           data = M.runEdoModel modelParam edoParam
       in
           { newModel | chartData = data }
             
-    ChangeInteract interact valueStr ->
+    ChangeInteract interact ->
         let
            interactStates = .interactStates model
            edoIStates = .edoIStates interactStates
            modelIStates = .modelIStates interactStates
-           chartIStates = .chartIStates interactStates
         in
             case interact of
                 Edo edoInteract ->
                     let
-                        edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract valueStr
+                        edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract 
                         interactStatesNew = {interactStates | edoIStates = edoIStatesNew}
                     in
                         {model | interactStates = interactStatesNew}
                         
                 Models modelInteract ->
                     let
-                        modelIStatesNew = M.changeModelIStates modelIStates modelInteract valueStr
+                        modelIStatesNew = M.changeModelIStates modelIStates modelInteract
                         interactStatesNew = {interactStates | modelIStates = modelIStatesNew}
                     in 
                         {model | interactStates = interactStatesNew}
 
-                MChart chartInteract -> 
-                    case chartInteract of
-                        MC.ChangeAxis curveID axisType ->
-                            case axisType of 
-                                MC.XAxis ->
-                                    let
-                                       chartParam = .chartParam model
-                                       yaxis = Tuple.second <| .axes chartIStates
-                                       newAxes = (valueStr,yaxis)
-                                       newChartIStates =
-                                           {chartIStates | axes = newAxes}
-                                       newInteractStates =
-                                           {interactStates | chartIStates = newChartIStates}
-                                       newModel =
-                                           {model | interactStates = newInteractStates}
-                                    in
-                                        update (UpdateChart curveID) newModel
+                MChart chartID chartInteract -> 
+                    let
+                        chartsParam = .chartsParam model
+                        newChartsParam = MC.chartIndividualInteractAction chartID chartsParam chartInteract
+                    in
+                        {model | chartsParam = newChartsParam}
 
-                                MC.YAxis ->
-                                    let
-                                       xaxis = Tuple.first <| .axes chartIStates
-                                       newAxes = (xaxis,valueStr)
-                                       newChartIStates =
-                                           {chartIStates | axes = newAxes}
-                                       newInteractStates =
-                                           {interactStates | chartIStates = newChartIStates}
-                                       newModel =
-                                           {model | interactStates = newInteractStates}
-                                    in
-                                        update (UpdateChart curveID) newModel
-
-                        MC.AddCurve ->
-                            let
-                                chartParam = .chartParam model
-                                curves = .curves chartParam
-                                maybeLastCurve = MC.lastElem curves
-                                newCurve = MC.initCurve maybeLastCurve
-                                newCurves = curves ++ (newCurve :: [])
-                                newChartParam = {chartParam | curves = newCurves}
-                            in
-                                {model | chartParam = newChartParam}
+                MCharts chartsInteract ->
+                    let
+                        chartsParam = .chartsParam model
+                        newChartsParam = MC.chartsInteractAction chartsParam chartsInteract
+                    in
+                        {model | chartsParam = newChartsParam}
 
     UpdateParameters ->
         let
@@ -203,40 +172,10 @@ update msg model =
         in
             {model | edoParam = edoParamNew, modelParam = modelParamNew}
 
-    ChangeStr str -> 
-         {model | str = str}
-
-    UpdateChart curveID ->
-        let
-            interactStates = .interactStates model
-            chartIStates = .chartIStates interactStates
-            axesStr = .axes chartIStates
-            chartParam = .chartParam model
-            axesFunc = axesStringToAxesFunc axesStr
-            curve = {curveID = 1, axesFunc = axesFunc}
-            curves = [curve]
-            newChartParam = {chartParam | curves = curves}
-        in
-            {model | chartParam = newChartParam}
-                        
+    -- ChangeStr str -> 
+    --      {model | str = str}
 
         
-axesStringToAxesFunc : MC.AxesString -> MC.AxesFunc DC.ChartDatum
-axesStringToAxesFunc axesString =
-    let
-        (xAxisStr,yAxisStr) = axesString
-        xfunc = stringToAxisFunc xAxisStr
-        yfunc = stringToAxisFunc yAxisStr
-    in
-        (xfunc,yfunc)
-
-
-stringToAxisFunc : String -> MC.AxisFunc DC.ChartDatum
-stringToAxisFunc str =
-    case str of
-        "t" -> MC.t
-        "x1" -> MC.x1
-        _ -> MC.t
         
 ------------------------------------------------
 -- View
@@ -248,68 +187,25 @@ view model =
     interactStates = .interactStates model
     edoIStates = .edoIStates interactStates
     modelIStates = .modelIStates interactStates
-    chartParam = .chartParam model
-    curves = .curves chartParam
+    chartData = .chartData model
+    chartsParam = .chartsParam model
   in
     div []
         [
         div []
+            (
             [ Edo.viewEdoIStates edoIStates (ChangeInteract << Edo)
             , M.viewModelIStates modelIStates (ChangeInteract << Models)
             , div [] []
             , button [ onClick RunEdo ] [ text "Edo" ]
-            , button [ onClick <| UpdateChart 1 ] [ text "UpdateChart" ]
-            , button [ onClick <| ChangeInteract  (MChart MC.AddCurve) "" ] [ text "AddCurve" ]
-            , label [for "location" ] [ text "Your closest center:" ]
-            , select [ name "location" , onInput ChangeStr]
-                [ option [value "ny"] [text "New York"]
-                , option [value "il"] [text "Chicago"]
-                ]
-            , label [] [ text model.str]
-            ]   
-        , div []
-            [ chartContainer <| MC.chart5 model.chartData curves ]
-        , div []
-            ( List.map (chartCurveSelection (.chartData model) (.chartIStates <| .interactStates model)) curves )
+            -- , label [] [ text model.str]
+            ]
+            ++ MC.chartsView chartData chartsParam (ChangeInteract << MCharts) (fcomposition23 ChangeInteract MChart)
+            )
+        -- , MC.chartView chartData chartParam (fcomposition23 ChangeInteract MChart)
         ]
          
-chartCurveSelection :  DC.ChartData -> MC.ChartIStates -> MC.Curve data -> Html Msg
-chartCurveSelection chartData chartIStates curve =
-    let
-       (fstStr,sndStr) = .axes chartIStates
-       axesFunc = .axesFunc curve 
-       curveID = .curveID curve
-    in 
-        div []
-            [ label [] [text <| "Curve " ++ (String.fromInt curveID)]
-            , select [onInput <| ChangeInteract <| MChart (MC.ChangeAxis curveID MC.XAxis)] (chartAxesOptions chartData fstStr)
-            , select [onInput <| ChangeInteract <| MChart (MC.ChangeAxis curveID MC.YAxis)] (chartAxesOptions chartData sndStr)
-            ]
-    
+fcomposition23 : (a -> b) -> (c -> d -> a) -> c -> d -> b 
+fcomposition23 f2 f3 c = 
+    f2 << (f3 c)
 
- 
-chartAxesOptions : DC.ChartData -> String -> List (Html msg)
-chartAxesOptions chartData selStr =
-    case chartData of
-        [] -> []
-        chartDatum :: ls ->
-            case chartDatum of
-                DC.T1S datum -> 
-                    [ chartAxisOption "t" "t" selStr
-                    , chartAxisOption "x1" "x" selStr]
-
-chartAxisOption : String -> String -> String -> Html msg
-chartAxisOption val txt selStr =
-        if (selStr == val) then
-            option [value val, selected True] [text txt]
-        else
-            option [value val] [text txt]
-
-chartContainer : Html msg -> Html msg
-chartContainer chart =
-  div [  style "height" "300px"
-      , style "width" "300px"]
-      [
-        chart
-      ]
-    
