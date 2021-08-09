@@ -41,7 +41,7 @@ type alias Model =
     , edoParam : Edo.EdoParam
     , interactStates : InteractStates
     -- , str : String
-    , chartsParam : List (MC.ChartParam DC.ChartDatum)
+    , chartsParam : List MC.ChartParam 
     }
 
     

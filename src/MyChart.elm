@@ -16,38 +16,26 @@ type alias AxisFunc data = data -> Float
 type alias AxesFunc data =
     (AxisFunc data, AxisFunc data)
 
-type alias Curve data =
+type alias AxesString = (String,String)
+    
+type alias Curve =
     { curveID : CurveID
-    , axesFunc : AxesFunc data
+    , axesString : AxesString
     }
 
--- initCurve : Maybe (Curve DC.ChartDatum) -> Curve DC.ChartDatum
--- initCurve maybeLastCurve =
---     case maybeLastCurve of
---         Nothing ->
---             {curveID = 1, axesFunc = (t,x1)}
---             -- {curveID = 1, axesFunc = (t,t)}
---         Just lastCurve ->
---             let
---                 lastCurveID = .curveID lastCurve
---                 curveID = lastCurveID + 1
---             in
---                 {curveID = curveID, axesFunc = (t,x1)}
---                 -- {curveID = curveID, axesFunc = (t,t)}
-
-initCurve : Maybe (Curve DC.ChartDatum) -> Curve DC.ChartDatum
+initCurve : Maybe Curve -> Curve 
 initCurve maybeLastCurve =
     case maybeLastCurve of
         Nothing ->
-            curveIStoCurve <| initCurveIStates Nothing
-
+            {curveID = 1, axesString = ("t","x1")}
+                
         Just lastCurve ->
             let
                 lastCurveID = .curveID lastCurve
-                sameIDCurveIS = {curveID = lastCurveID, axesString = ("t","x1")}
+                curveID = lastCurveID + 1
             in
-                curveIStoCurve <| initCurveIStates <| Just sameIDCurveIS
-                    
+                {curveID = curveID, axesString = ("t","x1")}
+
 type alias CurveID = Int
 type alias ChartID = Int
     
@@ -58,39 +46,23 @@ type alias ChartID = Int
 ------------------------------------------------
 ------------------------------------------------
         
-type alias ChartParam data =
+type alias ChartParam =
     { chartID : ChartID
-    , curves : List (Curve data)
+    , curves : List Curve 
     }
     
--- initChartParam : Maybe (ChartParam DC.ChartDatum) -> ChartParam DC.ChartDatum 
--- initChartParam maybeLastChartParam =
---     case maybeLastChartParam of
---         Nothing ->
---             {chartID = 1, curves = [(initCurve Nothing)]}
-
---         Just lastChartParam ->
---             let 
---                 lastChartID = .chartID lastChartParam
---                 chartID = lastChartID + 1
---             in
---                 {chartID = chartID, curves = [(initCurve Nothing)]}
-
-initChartParam : Maybe (ChartParam DC.ChartDatum) -> ChartParam DC.ChartDatum 
+initChartParam : Maybe ChartParam -> ChartParam 
 initChartParam maybeLastChartParam =
     case maybeLastChartParam of
         Nothing ->
-            chartIStoChartParam <| initChartIStates Nothing
+            {chartID = 1, curves = [(initCurve Nothing)]}
 
         Just lastChartParam ->
-            let
+            let 
                 lastChartID = .chartID lastChartParam
                 chartID = lastChartID + 1
-                sameIDChartIS = {chartID = chartID, curvesString = [(initCurveIStates Nothing)]}
             in
-                chartIStoChartParam <| initChartIStates <| Just sameIDChartIS
-
-
+                {chartID = chartID, curves = [(initCurve Nothing)]}
 
 ------------------------------------------------
 ------------------------------------------------
@@ -98,56 +70,12 @@ initChartParam maybeLastChartParam =
 ------------------------------------------------
 ------------------------------------------------
 
-type alias AxesString = (String,String)
-type alias CurveIStates = {curveID : CurveID, axesString : AxesString}
+-- type alias CurveIStates = {curveID : CurveID, axesString : AxesString}
     
 -- nao estou precisando no momento
-type alias ChartIStates = { chartID : ChartID, curvesString : List CurveIStates }
+-- type alias ChartIStates = { chartID : ChartID, curvesString : List CurveIStates }
 
-initCurveIStates : Maybe CurveIStates -> CurveIStates
-initCurveIStates maybeLastCurveIS =
-    case maybeLastCurveIS of
-        Nothing ->
-            {curveID = 1, axesString = ("t", "x1")}
-                
-        Just lastCurveIS ->
-            let
-                lastCurveID = .curveID lastCurveIS
-                curveID = lastCurveID + 1
-            in
-                {curveID = curveID, axesString = ("t", "x1")}
 
-curveIStoCurve : CurveIStates -> Curve DC.ChartDatum
-curveIStoCurve curveIStates = 
-    let
-        curveID = .curveID curveIStates
-        xFunc = stringToAxisFunc <| Tuple.first <| .axesString curveIStates
-        yFunc = stringToAxisFunc <| Tuple.second <| .axesString curveIStates
-    in
-        {curveID = curveID, axesFunc = (xFunc,yFunc)}
-                    
-initChartIStates : Maybe ChartIStates -> ChartIStates
-initChartIStates maybeChartIS =
-    case maybeChartIS of
-        Nothing ->
-            {chartID = 1, curvesString = [(initCurveIStates Nothing)]}
-
-        Just lastChartIS ->
-            let
-                lastChartID = .chartID lastChartIS
-                chartID = lastChartID + 1
-            in
-             {chartID = chartID, curvesString = [(initCurveIStates Nothing)]}
-
-chartIStoChartParam : ChartIStates -> ChartParam DC.ChartDatum
-chartIStoChartParam chartIS =
-    let
-        chartID = .chartID chartIS
-        curves = List.map curveIStoCurve <| .curvesString chartIS
-    in
-        {chartID = chartID, curves = curves}
-
-                 
 ------------------------------------------------
 ------------------------------------------------
 -- ChartInteract
@@ -172,7 +100,7 @@ type ChartsInteract
 -- ChartsInteract
 ------------------------------------------------
 
-chartsInteractAction : List (ChartParam DC.ChartDatum) -> ChartsInteract -> List (ChartParam DC.ChartDatum)
+chartsInteractAction : List ChartParam -> ChartsInteract -> List ChartParam 
 chartsInteractAction chartsParam  chartsInteract =
     case chartsInteract of
         AddChart ->
@@ -190,7 +118,7 @@ chartsInteractAction chartsParam  chartsInteract =
 -- ChartInteract
 ------------------------------------------------
       
-chartIndividualInteractAction : ChartID -> List (ChartParam DC.ChartDatum) -> ChartInteract -> List (ChartParam DC.ChartDatum)
+chartIndividualInteractAction : ChartID -> List ChartParam -> ChartInteract -> List ChartParam 
 chartIndividualInteractAction chartID chartsParam chartInteract = 
     
     case (chartFromChartID chartID chartsParam) of
@@ -205,15 +133,15 @@ chartIndividualInteractAction chartID chartsParam chartInteract =
                 List.map (changeChartParam chartID newChartParam) chartsParam
 
             
-chartInteractAction : ChartParam DC.ChartDatum -> ChartInteract -> ChartParam DC.ChartDatum
+chartInteractAction : ChartParam -> ChartInteract -> ChartParam 
 chartInteractAction chartParam chartInteract = 
     case chartInteract of
         ChangeAxis curveID axisType valueStr ->
             let
                 curves = .curves chartParam
-                axisFunc = stringToAxisFunc valueStr
+                axisString = valueStr
                 newCurves =
-                    List.map (changeCurveAxis curveID axisType axisFunc) curves
+                    List.map (changeCurveAxis curveID axisType axisString) curves
             in
                 {chartParam | curves = newCurves}
 
@@ -238,7 +166,7 @@ chartInteractAction chartParam chartInteract =
                 {chartParam | curves = newCurves}
      
 
-changeChartParam : ChartID -> ChartParam DC.ChartDatum -> ChartParam DC.ChartDatum -> ChartParam DC.ChartDatum
+changeChartParam : ChartID -> ChartParam -> ChartParam -> ChartParam 
 changeChartParam chartID newChartParam chartParam =
     if (chartID == (.chartID chartParam)) then
         newChartParam
@@ -246,16 +174,16 @@ changeChartParam chartID newChartParam chartParam =
         chartParam
         
             
-changeCurveAxis : CurveID -> AxisType -> AxisFunc DC.ChartDatum -> Curve DC.ChartDatum -> Curve DC.ChartDatum 
-changeCurveAxis curveID axisType axisFunc curve =
+changeCurveAxis : CurveID -> AxisType -> String -> Curve -> Curve 
+changeCurveAxis curveID axisType axisString curve =
     let
-       (xAxis, yAxis) = .axesFunc curve 
+       (xAxis, yAxis) = .axesString curve 
        otherCurveID = .curveID curve
     in
         if curveID == otherCurveID then
             case axisType of
-                XAxis -> {curve | axesFunc = (axisFunc,yAxis)}
-                YAxis -> {curve | axesFunc = (xAxis,axisFunc)}
+                XAxis -> {curve | axesString = (axisString,yAxis)}
+                YAxis -> {curve | axesString = (xAxis,axisString)}
         else
             curve
 
@@ -270,7 +198,7 @@ changeCurveAxis curveID axisType axisFunc curve =
 -- ChartsView
 ------------------------------------------------
 
-chartsView : DC.ChartData -> List (ChartParam DC.ChartDatum) -> (ChartsInteract -> msg) -> (ChartID -> ChartInteract -> msg) -> List (Html msg)
+chartsView : DC.ChartData -> List ChartParam -> (ChartsInteract -> msg) -> (ChartID -> ChartInteract -> msg) -> List (Html msg)
 chartsView chartData chartsParam chartsIToMsg chartIDTochartIToMsg =
     case chartsParam of
         [] -> addChartButtonView chartsIToMsg :: []
@@ -302,7 +230,7 @@ removeChartButtonView chartsIToMsg chartID =
 -- ChartView
 ------------------------------------------------
         
-chartView : DC.ChartData -> ChartParam DC.ChartDatum -> (ChartID -> ChartInteract -> msg) -> Html msg
+chartView : DC.ChartData -> ChartParam -> (ChartID -> ChartInteract -> msg) -> Html msg
 chartView chartData chartParam chartIDTochartIToMsg =
     let
         curves = .curves chartParam
@@ -312,7 +240,7 @@ chartView chartData chartParam chartIDTochartIToMsg =
         ([ chartContainerView <| chart5View chartData curves ]
         ++ chartCurvesView chartData (chartIDTochartIToMsg chartID) curves)
 
-chart5View : DC.ChartData -> List (Curve DC.ChartDatum) -> Html msg
+chart5View : DC.ChartData -> List Curve -> Html msg
 chart5View chartData curves =     
     C.chart
         [ CA.height 300
@@ -333,10 +261,12 @@ chartContainerView chart =
         chart
       ]
       
-curveToChartSeriesView : DC.ChartData -> Curve DC.ChartDatum ->  C.Element DC.ChartDatum msg
+curveToChartSeriesView : DC.ChartData -> Curve -> C.Element DC.ChartDatum msg
 curveToChartSeriesView chartData curve = 
     let 
-        (xfunc,yfunc) = .axesFunc curve
+        (xstr,ystr) = .axesString curve
+        xfunc = stringToAxisFunc xstr
+        yfunc = stringToAxisFunc ystr
     in
     
         C.series xfunc
@@ -346,7 +276,7 @@ curveToChartSeriesView chartData curve =
 
         chartData
             
-chartCurvesView : DC.ChartData -> (ChartInteract -> msg) -> List (Curve data) -> List (Html msg)
+chartCurvesView : DC.ChartData -> (ChartInteract -> msg) -> List Curve -> List (Html msg)
 chartCurvesView chartData chartIToMsg curves =
     case curves of
         [] ->  addCurveButtonView chartIToMsg :: []
@@ -368,16 +298,16 @@ removeCurveButtonView : (ChartInteract -> msg) -> CurveID -> Html msg
 removeCurveButtonView chartIToMsg curveID =
     button [ onClick <| chartIToMsg (RemoveCurve curveID ) ] [ text "-" ]
     
-chartCurveSelectionView :  DC.ChartData -> (ChartInteract -> msg) -> Curve data -> Html msg
+chartCurveSelectionView :  DC.ChartData -> (ChartInteract -> msg) -> Curve -> Html msg
 chartCurveSelectionView chartData chartIToMsg curve =
     let
-       axesFunc = .axesFunc curve 
+       (xstr,ystr) = .axesString curve 
        curveID = .curveID curve
     in 
         span []
             [ label [] [text <| "Curve " ++ (String.fromInt curveID)]
-            , select [onInput <| chartIToMsg << (ChangeAxis curveID XAxis)] (chartAxesOptionsView chartData "t")
-            , select [onInput <| chartIToMsg << (ChangeAxis curveID YAxis)] (chartAxesOptionsView chartData "x1")
+            , select [onInput <| chartIToMsg << (ChangeAxis curveID XAxis)] (chartAxesOptionsView chartData xstr)
+            , select [onInput <| chartIToMsg << (ChangeAxis curveID YAxis)] (chartAxesOptionsView chartData ystr)
             ]
     
  
@@ -432,7 +362,7 @@ lastElem list =
         head :: rest ->
             lastElem rest
 
-chartFromChartID : ChartID -> List (ChartParam DC.ChartDatum) -> Maybe (ChartParam DC.ChartDatum)
+chartFromChartID : ChartID -> List ChartParam -> Maybe ChartParam 
 chartFromChartID chartID chartsParam = 
     let
         filteredList = List.filter
@@ -441,8 +371,3 @@ chartFromChartID chartID chartsParam =
     in
         List.head filteredList
 
-            
-                
-                
--- newCurves =
---     List.map (changeCurveAxis curveID axisType axisFunc) curves

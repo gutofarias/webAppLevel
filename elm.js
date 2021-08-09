@@ -4498,18 +4498,10 @@ var $elm$core$Maybe$Just = function (a) {
 };
 var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$core$Basics$add = _Basics_add;
-var $author$project$MyChart$t = function (chartDatum) {
-	var datum = chartDatum.a;
-	return datum.t;
-};
-var $author$project$MyChart$x1 = function (chartDatum) {
-	var datum = chartDatum.a;
-	return datum.x1;
-};
 var $author$project$MyChart$initCurve = function (maybeLastCurve) {
 	if (maybeLastCurve.$ === 'Nothing') {
 		return {
-			axesFunc: _Utils_Tuple2($author$project$MyChart$t, $author$project$MyChart$x1),
+			axesString: _Utils_Tuple2('t', 'x1'),
 			curveID: 1
 		};
 	} else {
@@ -4519,7 +4511,7 @@ var $author$project$MyChart$initCurve = function (maybeLastCurve) {
 		}(lastCurve);
 		var curveID = lastCurveID + 1;
 		return {
-			axesFunc: _Utils_Tuple2($author$project$MyChart$t, $author$project$MyChart$x1),
+			axesString: _Utils_Tuple2('t', 'x1'),
 			curveID: curveID
 		};
 	}
@@ -5510,12 +5502,12 @@ var $author$project$MyChart$chartFromChartID = F2(
 		return $elm$core$List$head(filteredList);
 	});
 var $author$project$MyChart$changeCurveAxis = F4(
-	function (curveID, axisType, axisFunc, curve) {
+	function (curveID, axisType, axisString, curve) {
 		var otherCurveID = function ($) {
 			return $.curveID;
 		}(curve);
 		var _v0 = function ($) {
-			return $.axesFunc;
+			return $.axesString;
 		}(curve);
 		var xAxis = _v0.a;
 		var yAxis = _v0.b;
@@ -5524,13 +5516,13 @@ var $author$project$MyChart$changeCurveAxis = F4(
 				return _Utils_update(
 					curve,
 					{
-						axesFunc: _Utils_Tuple2(axisFunc, yAxis)
+						axesString: _Utils_Tuple2(axisString, yAxis)
 					});
 			} else {
 				return _Utils_update(
 					curve,
 					{
-						axesFunc: _Utils_Tuple2(xAxis, axisFunc)
+						axesString: _Utils_Tuple2(xAxis, axisString)
 					});
 			}
 		} else {
@@ -5556,16 +5548,6 @@ var $author$project$MyChart$lastElem = function (list) {
 		}
 	}
 };
-var $author$project$MyChart$stringToAxisFunc = function (str) {
-	switch (str) {
-		case 't':
-			return $author$project$MyChart$t;
-		case 'x1':
-			return $author$project$MyChart$x1;
-		default:
-			return $author$project$MyChart$t;
-	}
-};
 var $author$project$MyChart$chartInteractAction = F2(
 	function (chartParam, chartInteract) {
 		switch (chartInteract.$) {
@@ -5576,10 +5558,10 @@ var $author$project$MyChart$chartInteractAction = F2(
 				var curves = function ($) {
 					return $.curves;
 				}(chartParam);
-				var axisFunc = $author$project$MyChart$stringToAxisFunc(valueStr);
+				var axisString = valueStr;
 				var newCurves = A2(
 					$elm$core$List$map,
-					A3($author$project$MyChart$changeCurveAxis, curveID, axisType, axisFunc),
+					A3($author$project$MyChart$changeCurveAxis, curveID, axisType, axisString),
 					curves);
 				return _Utils_update(
 					chartParam,
@@ -9786,13 +9768,33 @@ var $terezka$elm_charts$Chart$series = F3(
 	function (toX, properties, data) {
 		return A4($terezka$elm_charts$Chart$seriesMap, $elm$core$Basics$identity, toX, properties, data);
 	});
+var $author$project$MyChart$t = function (chartDatum) {
+	var datum = chartDatum.a;
+	return datum.t;
+};
+var $author$project$MyChart$x1 = function (chartDatum) {
+	var datum = chartDatum.a;
+	return datum.x1;
+};
+var $author$project$MyChart$stringToAxisFunc = function (str) {
+	switch (str) {
+		case 't':
+			return $author$project$MyChart$t;
+		case 'x1':
+			return $author$project$MyChart$x1;
+		default:
+			return $author$project$MyChart$t;
+	}
+};
 var $author$project$MyChart$curveToChartSeriesView = F2(
 	function (chartData, curve) {
 		var _v0 = function ($) {
-			return $.axesFunc;
+			return $.axesString;
 		}(curve);
-		var xfunc = _v0.a;
-		var yfunc = _v0.b;
+		var xstr = _v0.a;
+		var ystr = _v0.b;
+		var xfunc = $author$project$MyChart$stringToAxisFunc(xstr);
+		var yfunc = $author$project$MyChart$stringToAxisFunc(ystr);
 		return A3(
 			$terezka$elm_charts$Chart$series,
 			xfunc,
@@ -12680,9 +12682,11 @@ var $author$project$MyChart$chartCurveSelectionView = F3(
 		var curveID = function ($) {
 			return $.curveID;
 		}(curve);
-		var axesFunc = function ($) {
-			return $.axesFunc;
+		var _v0 = function ($) {
+			return $.axesString;
 		}(curve);
+		var xstr = _v0.a;
+		var ystr = _v0.b;
 		return A2(
 			$elm$html$Html$span,
 			_List_Nil,
@@ -12706,7 +12710,7 @@ var $author$project$MyChart$chartCurveSelectionView = F3(
 								chartIToMsg,
 								A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$XAxis)))
 						]),
-					A2($author$project$MyChart$chartAxesOptionsView, chartData, 't')),
+					A2($author$project$MyChart$chartAxesOptionsView, chartData, xstr)),
 					A2(
 					$elm$html$Html$select,
 					_List_fromArray(
@@ -12717,7 +12721,7 @@ var $author$project$MyChart$chartCurveSelectionView = F3(
 								chartIToMsg,
 								A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$YAxis)))
 						]),
-					A2($author$project$MyChart$chartAxesOptionsView, chartData, 'x1'))
+					A2($author$project$MyChart$chartAxesOptionsView, chartData, ystr))
 				]));
 	});
 var $author$project$MyChart$RemoveCurve = function (a) {
