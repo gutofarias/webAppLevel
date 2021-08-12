@@ -4,8 +4,8 @@ import EdoSolver as Edo
 import DataConvert as DC
 import Html exposing (Html,div,text,input)
 import Html.Attributes exposing (style, placeholder, value, type_)
+import Controller
 import Html.Events exposing (onInput)
-
 
 ------------------------------------------------
 ------------------------------------------------
@@ -78,11 +78,11 @@ parameterInteractiveDiv texto pholder valor strToMsg =
 -- runEdoModel
 ------------------------------------------------
 
-runEdoModel : ModelParam -> Edo.EdoParam -> DC.ChartData
-runEdoModel modelParam edoParam =
+runEdoModel : ModelParam -> Edo.EdoParam -> Maybe {refFunc: Edo.RefFunction, controller:Edo.Controller} -> DC.ChartData
+runEdoModel modelParam edoParam maybeRefAndController =
      case modelParam of
          LevelP levelParam ->
-             runEdoLevel levelParam edoParam
+             runEdoLevel levelParam edoParam maybeRefAndController
                  
                  
                  
@@ -171,37 +171,63 @@ viewLevelIStates levelIStates levelInteractToMsg =
 -- runEdoLevel
 ------------------------------------------------
 
-runEdoLevel : LevelParam -> Edo.EdoParam -> DC.ChartData
-runEdoLevel levelParam edoParam =
+runEdoLevel : LevelParam -> Edo.EdoParam -> Maybe {refFunc: Edo.RefFunction, controller:Edo.Controller} -> DC.ChartData
+runEdoLevel levelParam edoParam maybeRefFuncAndController =
+    case maybeRefFuncAndController of
+        Nothing ->
+            runEdoLevelUncontrolled levelParam edoParam
+
+        Just refFuncAndController ->
+            let
+                refFunc = .refFunc refFuncAndController
+                controller = .controller refFuncAndController
+            in
+                runEdoLevelControlled levelParam edoParam refFunc controller
+                
+runEdoLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> Edo.Controller -> DC.ChartData
+runEdoLevelControlled levelParam edoParam refFunc controller =
         let
             initState = ( .h0 <| .initState levelParam ) :: []
             geoParam = .geoParam levelParam
+            edoSist = Edo.Controlled
+                      { refFunc = refFunc
+                      , controller = controller
+                      , sistFunc = (levelSyst levelParam)}
         in
-            DC.toChartDataT1S <| Edo.edoSolver edoParam (levelSyst levelParam) initState
+            DC.toChartDataT1S <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
 
+runEdoLevelUncontrolled : LevelParam -> Edo.EdoParam -> DC.ChartData
+runEdoLevelUncontrolled levelParam edoParam =
+        let
+            initState = ( .h0 <| .initState levelParam ) :: []
+            geoParam = .geoParam levelParam
+            edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
+        in
+            DC.toChartDataT1S <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
                 
 ------------------------------------------------
 -- levelSyst
 ------------------------------------------------
         
-levelSyst : LevelParam -> Edo.Tempo -> Edo.State -> Edo.DState
-levelSyst param t state =
+levelSyst : LevelParam -> Edo.ControlEffort -> Edo.Tempo -> Edo.State -> Edo.DState
+levelSyst param us t state =
     let
        ag = .ag <| .geoParam <| param
        ap = .ap <| .geoParam <| param
        g = 9.28
+       u = Maybe.withDefault 0.0 (List.head us)
     in
        case state of
            h::[] ->
                let
                    hn = if h >= 0.0 then h else 0.0
                in 
-                   -(ap/ag)*sqrt(2.0*g)*sqrt(hn) :: []
+                   -(ap/ag)*sqrt(2.0*g)*sqrt(hn) + (u/ag) :: []
            h::ls -> 
                let
                    hn = if h >= 0.0 then h else 0.0
                in 
-                   -(ap/ag)*sqrt(2.0*g)*sqrt(hn) :: []
+                   -(ap/ag)*sqrt(2.0*g)*sqrt(hn) + (u/ag) :: []
            _ -> 0.0 :: []
       
 -- type alias FuncSist = Tempo -> State -> DState
