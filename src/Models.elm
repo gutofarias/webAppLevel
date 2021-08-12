@@ -216,7 +216,8 @@ levelSyst param us t state =
        ag = .ag <| .geoParam <| param
        ap = .ap <| .geoParam <| param
        g = 9.28
-       u = Maybe.withDefault 0.0 (List.head us)
+       uAux = Maybe.withDefault 0.0 (List.head us)
+       u = if (uAux<0.0) then 0.0 else uAux
     in
        case state of
            h::[] ->
