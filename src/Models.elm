@@ -191,6 +191,7 @@ runEdoLevelControlled levelParam edoParam refFunc controller =
             geoParam = .geoParam levelParam
             edoSist = Edo.Controlled
                       { refFunc = refFunc
+                      , outputFunc = outputX1
                       , controller = controller
                       , sistFunc = (levelSyst levelParam)}
         in
@@ -231,3 +232,9 @@ levelSyst param us t state =
            _ -> 0.0 :: []
       
 -- type alias FuncSist = Tempo -> State -> DState
+
+outputX1 : Edo.Tempo -> Edo.State -> Edo.Output
+outputX1 tempo xs =
+    case xs of
+        (x::ls) -> [x]
+        _ -> xs

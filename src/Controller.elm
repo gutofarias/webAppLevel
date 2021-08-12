@@ -156,12 +156,10 @@ initPidParam = {kp=0.0, ki=0.0, kd=0.0}
 initPidIStates : PidIStates
 initPidIStates = {kpStr = "0", kiStr = "0", kdStr = "0"}
 
-pid : Float -> Float -> Float -> Edo.ControlMemory -> Edo.Ref -> Edo.Passo -> Edo.Tempo -> Edo.State -> (Edo.ControlEffort, Edo.ControlMemory)
-pid kp ki kd mem ref passo tempo xs =
+pid : Float -> Float -> Float -> Edo.ControlMemory -> Edo.Error -> Edo.Passo -> Edo.Tempo -> Edo.State -> (Edo.ControlEffort, Edo.ControlMemory)
+pid kp ki kd mem errors passo tempo xs =
     let
-        y = Maybe.withDefault 0.0 (List.head xs)
-        r = Maybe.withDefault 0.0 (List.head ref)
-        error = r-y
+        error = Maybe.withDefault 0.0 (List.head errors)
         (error_ant, integral_mem) =
             case mem of
                 [err_mem, int_mem] -> (err_mem,int_mem)
