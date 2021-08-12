@@ -180,8 +180,6 @@ refTeste val tempo xs =
     [val]
 
     
--- type alias RefFunction = Tempo -> State -> Ref
-
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
 parameterInteractiveDiv texto pholder valor strToMsg =
     span []
@@ -189,9 +187,3 @@ parameterInteractiveDiv texto pholder valor strToMsg =
     , input [type_ "number", placeholder pholder, value valor, onInput <| strToMsg ] []
     ]
     
--- parameterInteractiveDiv : String -> String -> String -> Html msg
--- parameterInteractiveDiv texto pholder valor =
---     span []
---     [ text texto
---     , input [type_ "number", placeholder pholder, value valor ] []
---     ]
