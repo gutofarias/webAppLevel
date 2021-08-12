@@ -209,7 +209,7 @@ calcXsAndMaybeUR param edoSist xs =
                 (controlEffort,newControlMem) = 
                     controller controlMem error passo tempo xs
             in
-                List.foldl (++) [] [xs,ref,controlEffort]
+                List.foldr (++) [] [xs,ref,controlEffort]
                     
 calcFsist : EdoParam -> EdoSist -> State -> (FuncSistUncontrolled, EdoParam)
 calcFsist param edoSist xs =

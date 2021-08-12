@@ -4472,9 +4472,9 @@ var $elm$core$Set$toList = function (_v0) {
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
-var $author$project$EdoSolver$EdoParam = F5(
-	function (tempo, tfim, passo, relPassoSaida, solver) {
-		return {passo: passo, relPassoSaida: relPassoSaida, solver: solver, tempo: tempo, tfim: tfim};
+var $author$project$EdoSolver$EdoParam = F6(
+	function (tempo, tfim, passo, relPassoSaida, controlMemory, solver) {
+		return {controlMemory: controlMemory, passo: passo, relPassoSaida: relPassoSaida, solver: solver, tempo: tempo, tfim: tfim};
 	});
 var $author$project$Models$LevelGeoParam = F2(
 	function (ag, ap) {
@@ -4493,6 +4493,12 @@ var $author$project$Models$LevelP = function (a) {
 	return {$: 'LevelP', a: a};
 };
 var $elm$core$Maybe$Nothing = {$: 'Nothing'};
+var $author$project$Controller$PidIS = function (a) {
+	return {$: 'PidIS', a: a};
+};
+var $author$project$Controller$PidP = function (a) {
+	return {$: 'PidP', a: a};
+};
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
@@ -4540,6 +4546,8 @@ var $author$project$MyChart$initChartParam = function (maybeLastChartParam) {
 		};
 	}
 };
+var $author$project$Controller$initPidIStates = {kdStr: '0', kiStr: '0', kpStr: '0'};
+var $author$project$Controller$initPidParam = {kd: 0.0, ki: 0.0, kp: 0.0};
 var $elm$core$Basics$apR = F2(
 	function (x, f) {
 		return f(x);
@@ -4760,14 +4768,15 @@ var $author$project$Main$init = function () {
 	var tini = 0.0;
 	var tfim = 10.0;
 	var relSaida = 2;
-	var passoInt = 0.01;
+	var passoInt = 0.001;
 	var h0 = 10.0;
 	var levelInitState = $author$project$Models$LevelInitState(h0);
-	var edoParam = A5($author$project$EdoSolver$EdoParam, tini, tfim, passoInt, relSaida, $author$project$EdoSolver$rungeKutta);
+	var edoParam = A6($author$project$EdoSolver$EdoParam, tini, tfim, passoInt, relSaida, _List_Nil, $author$project$EdoSolver$rungeKutta);
 	var edoIStates = {
 		tfim: $elm$core$String$fromFloat(tfim),
 		tini: $elm$core$String$fromFloat(tini)
 	};
+	var controlIStates = $author$project$Controller$PidIS($author$project$Controller$initPidIStates);
 	var chartData = _List_Nil;
 	var ap = 0.1;
 	var ag = 1.0;
@@ -4779,6 +4788,7 @@ var $author$project$Main$init = function () {
 		h0: $elm$core$String$fromFloat(h0)
 	};
 	var interactStates = {
+		controlIStates: controlIStates,
 		edoIStates: edoIStates,
 		modelIStates: $author$project$Models$LevelIS(levelIStates)
 	};
@@ -4788,6 +4798,7 @@ var $author$project$Main$init = function () {
 			[
 				$author$project$MyChart$initChartParam($elm$core$Maybe$Nothing)
 			]),
+		controlParam: $author$project$Controller$PidP($author$project$Controller$initPidParam),
 		edoParam: edoParam,
 		interactStates: interactStates,
 		modelParam: $author$project$Models$LevelP(levelParam)
@@ -5418,6 +5429,33 @@ var $elm$browser$Browser$sandbox = function (impl) {
 		});
 };
 var $author$project$Main$UpdateParameters = {$: 'UpdateParameters'};
+var $author$project$Controller$changePidIStates = F2(
+	function (pidIStates, pidInteract) {
+		switch (pidInteract.$) {
+			case 'PidKp':
+				var valueStr = pidInteract.a;
+				return _Utils_update(
+					pidIStates,
+					{kpStr: valueStr});
+			case 'PidKi':
+				var valueStr = pidInteract.a;
+				return _Utils_update(
+					pidIStates,
+					{kiStr: valueStr});
+			default:
+				var valueStr = pidInteract.a;
+				return _Utils_update(
+					pidIStates,
+					{kdStr: valueStr});
+		}
+	});
+var $author$project$Controller$changeControlIStates = F2(
+	function (controlIStates, controlInteract) {
+		var pidInteract = controlInteract.a;
+		var pidIStates = controlIStates.a;
+		return $author$project$Controller$PidIS(
+			A2($author$project$Controller$changePidIStates, pidIStates, pidInteract));
+	});
 var $author$project$EdoSolver$changeEdoIStates = F2(
 	function (edoIStates, edoInteract) {
 		if (edoInteract.$ === 'Tini') {
@@ -5636,7 +5674,153 @@ var $author$project$MyChart$chartsInteractAction = F2(
 				chartsParam);
 		}
 	});
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Controller$pid = F8(
+	function (kp, ki, kd, mem, ref, passo, tempo, xs) {
+		var y = A2(
+			$elm$core$Maybe$withDefault,
+			0.0,
+			$elm$core$List$head(xs));
+		var r = A2(
+			$elm$core$Maybe$withDefault,
+			0.0,
+			$elm$core$List$head(ref));
+		var error = r - y;
+		var prop = kp * error;
+		var _v0 = function () {
+			if ((mem.b && mem.b.b) && (!mem.b.b.b)) {
+				var err_mem = mem.a;
+				var _v2 = mem.b;
+				var int_mem = _v2.a;
+				return _Utils_Tuple2(err_mem, int_mem);
+			} else {
+				return _Utils_Tuple2(error, 0.0);
+			}
+		}();
+		var error_ant = _v0.a;
+		var integral_mem = _v0.b;
+		var dif_error = (error - error_ant) / passo;
+		var dif = kd * dif_error;
+		var integral_error = integral_mem + (error * passo);
+		var integral = ki * integral_error;
+		return _Utils_Tuple2(
+			_List_fromArray(
+				[(prop + integral) + dif]),
+			_List_fromArray(
+				[error, integral_error]));
+	});
+var $author$project$Controller$pidFromPidParam = function (pidParam) {
+	var kp = function ($) {
+		return $.kp;
+	}(pidParam);
+	var ki = function ($) {
+		return $.ki;
+	}(pidParam);
+	var kd = function ($) {
+		return $.kd;
+	}(pidParam);
+	return A3($author$project$Controller$pid, kp, ki, kd);
+};
+var $author$project$Controller$controllerFromControlParam = function (controlParam) {
+	var pidParam = controlParam.a;
+	return $author$project$Controller$pidFromPidParam(pidParam);
+};
+var $author$project$Controller$refTeste = F3(
+	function (val, tempo, xs) {
+		return _List_fromArray(
+			[val]);
+	});
+var $author$project$EdoSolver$Controlled = function (a) {
+	return {$: 'Controlled', a: a};
+};
+var $author$project$EdoSolver$calcXsAndMaybeUR = F3(
+	function (param, edoSist, xs) {
+		if (edoSist.$ === 'Uncontrolled') {
+			var sistFunc = edoSist.a;
+			return xs;
+		} else {
+			var functions = edoSist.a;
+			var tempo = function ($) {
+				return $.tempo;
+			}(param);
+			var refFunc = function ($) {
+				return $.refFunc;
+			}(functions);
+			var passo = function ($) {
+				return $.passo;
+			}(param);
+			var outputFunc = function ($) {
+				return $.outputFunc;
+			}(functions);
+			var output = A2(outputFunc, tempo, xs);
+			var ref = A2(refFunc, tempo, output);
+			var error = A3($author$project$EdoSolver$zipWith, $elm$core$Basics$sub, ref, output);
+			var controller = function ($) {
+				return $.controller;
+			}(functions);
+			var controlMem = function ($) {
+				return $.controlMemory;
+			}(param);
+			var _v1 = A5(controller, controlMem, error, passo, tempo, xs);
+			var controlEffort = _v1.a;
+			var newControlMem = _v1.b;
+			return A3(
+				$elm$core$List$foldl,
+				$elm$core$Basics$append,
+				_List_Nil,
+				_List_fromArray(
+					[xs, ref, controlEffort]));
+		}
+	});
 var $elm$core$Basics$ge = _Utils_ge;
+var $author$project$EdoSolver$calcFsist = F3(
+	function (param, edoSist, xs) {
+		if (edoSist.$ === 'Uncontrolled') {
+			var sistFunc = edoSist.a;
+			return _Utils_Tuple2(sistFunc, param);
+		} else {
+			var functions = edoSist.a;
+			var tempo = function ($) {
+				return $.tempo;
+			}(param);
+			var sistFunc = function ($) {
+				return $.sistFunc;
+			}(functions);
+			var refFunc = function ($) {
+				return $.refFunc;
+			}(functions);
+			var ref = A2(refFunc, tempo, xs);
+			var passo = function ($) {
+				return $.passo;
+			}(param);
+			var outputFunc = function ($) {
+				return $.outputFunc;
+			}(functions);
+			var output = A2(outputFunc, tempo, xs);
+			var controller = function ($) {
+				return $.controller;
+			}(functions);
+			var controlMem = function ($) {
+				return $.controlMemory;
+			}(param);
+			var _v1 = A5(controller, controlMem, ref, passo, tempo, xs);
+			var controlEffort = _v1.a;
+			var newControlMem = _v1.b;
+			var fsist = sistFunc(controlEffort);
+			var newParam = _Utils_update(
+				param,
+				{controlMemory: newControlMem});
+			return _Utils_Tuple2(fsist, newParam);
+		}
+	});
 var $author$project$EdoSolver$edoStep = F3(
 	function (param, fsist, xs) {
 		var tempo = function ($) {
@@ -5651,7 +5835,7 @@ var $author$project$EdoSolver$edoStep = F3(
 		return A4(solver, fsist, passo, tempo, xs);
 	});
 var $author$project$EdoSolver$integrator = F4(
-	function (param, fsist, saidaCount, xs) {
+	function (param, edoSist, saidaCount, xs) {
 		integrator:
 		while (true) {
 			var tfim = function ($) {
@@ -5666,27 +5850,40 @@ var $author$project$EdoSolver$integrator = F4(
 			var passo = function ($) {
 				return $.passo;
 			}(param);
+			var controlMem = function ($) {
+				return $.controlMemory;
+			}(param);
 			if (_Utils_cmp(tfim - tempo, passo) < 1) {
-				var paramfinal = _Utils_update(
+				var newParam = _Utils_update(
 					param,
 					{passo: tfim - tempo});
+				var _v0 = A3($author$project$EdoSolver$calcFsist, newParam, edoSist, xs);
+				var fsist = _v0.a;
+				var paramfinal = _v0.b;
 				var xsfinal = A3($author$project$EdoSolver$edoStep, paramfinal, fsist, xs);
-				return _Utils_Tuple2(tfim, xsfinal);
+				return _Utils_Tuple2(
+					_Utils_Tuple2(tfim, xsfinal),
+					paramfinal);
 			} else {
-				var xs1 = A3($author$project$EdoSolver$edoStep, param, fsist, xs);
 				var tempo1 = tempo + passo;
+				var _v1 = A3($author$project$EdoSolver$calcFsist, param, edoSist, xs);
+				var fsist = _v1.a;
+				var newParam = _v1.b;
 				var param1 = _Utils_update(
-					param,
+					newParam,
 					{tempo: tempo1});
+				var xs1 = A3($author$project$EdoSolver$edoStep, newParam, fsist, xs);
 				if (_Utils_eq(saidaCount, relPassoSaida)) {
-					return _Utils_Tuple2(tempo1, xs1);
+					return _Utils_Tuple2(
+						_Utils_Tuple2(tempo1, xs1),
+						param1);
 				} else {
 					var $temp$param = param1,
-						$temp$fsist = fsist,
+						$temp$edoSist = edoSist,
 						$temp$saidaCount = saidaCount + 1,
 						$temp$xs = xs1;
 					param = $temp$param;
-					fsist = $temp$fsist;
+					edoSist = $temp$edoSist;
 					saidaCount = $temp$saidaCount;
 					xs = $temp$xs;
 					continue integrator;
@@ -5694,38 +5891,78 @@ var $author$project$EdoSolver$integrator = F4(
 			}
 		}
 	});
+var $author$project$EdoSolver$edoSolverAcc = F4(
+	function (param, edoSist, xs, _v0) {
+		edoSolverAcc:
+		while (true) {
+			var data = _v0.a;
+			var param2 = _v0.b;
+			var tfim = function ($) {
+				return $.tfim;
+			}(param);
+			var tempo = function ($) {
+				return $.tempo;
+			}(param);
+			if (_Utils_cmp(tempo, tfim) > -1) {
+				return _Utils_Tuple2(data, param2);
+			} else {
+				var _v1 = A4($author$project$EdoSolver$integrator, param, edoSist, 1, xs);
+				var _v2 = _v1.a;
+				var tempo1 = _v2.a;
+				var xs1 = _v2.b;
+				var param1 = _v1.b;
+				var param1b = _Utils_update(
+					param1,
+					{tempo: tempo1});
+				var xsAndMaybeUR = A3($author$project$EdoSolver$calcXsAndMaybeUR, param1b, edoSist, xs1);
+				var $temp$param = param1b,
+					$temp$edoSist = edoSist,
+					$temp$xs = xs1,
+					$temp$_v0 = _Utils_Tuple2(
+					A2(
+						$elm$core$List$cons,
+						_Utils_Tuple2(tempo1, xsAndMaybeUR),
+						data),
+					param1b);
+				param = $temp$param;
+				edoSist = $temp$edoSist;
+				xs = $temp$xs;
+				_v0 = $temp$_v0;
+				continue edoSolverAcc;
+			}
+		}
+	});
 var $author$project$EdoSolver$edoSolver = F3(
-	function (param, fsist, xs) {
-		var tfim = function ($) {
-			return $.tfim;
-		}(param);
+	function (param, edoSist, xs) {
 		var tempo = function ($) {
 			return $.tempo;
 		}(param);
-		if (_Utils_cmp(tempo, tfim) > -1) {
-			return A2(
-				$elm$core$List$cons,
-				_Utils_Tuple2(tempo, xs),
-				_List_Nil);
-		} else {
-			var _v0 = A4($author$project$EdoSolver$integrator, param, fsist, 1, xs);
-			var tempo1 = _v0.a;
-			var xs1 = _v0.b;
-			var param1 = _Utils_update(
-				param,
-				{tempo: tempo1});
-			return A2(
-				$elm$core$List$cons,
-				_Utils_Tuple2(tempo, xs),
-				A3($author$project$EdoSolver$edoSolver, param1, fsist, xs1));
-		}
+		var _v0 = A4(
+			$author$project$EdoSolver$edoSolverAcc,
+			param,
+			edoSist,
+			xs,
+			_Utils_Tuple2(
+				A2(
+					$elm$core$List$cons,
+					_Utils_Tuple2(tempo, xs),
+					_List_Nil),
+				param));
+		var reversedData = _v0.a;
+		var paramFinal = _v0.b;
+		var data = $elm$core$List$reverse(reversedData);
+		return _Utils_Tuple2(data, paramFinal);
 	});
 var $elm$core$Basics$negate = function (n) {
 	return -n;
 };
 var $elm$core$Basics$sqrt = _Basics_sqrt;
-var $author$project$Models$levelSyst = F3(
-	function (param, t, state) {
+var $author$project$Models$levelSyst = F4(
+	function (param, us, t, state) {
+		var u = A2(
+			$elm$core$Maybe$withDefault,
+			0.0,
+			$elm$core$List$head(us));
 		var g = 9.28;
 		var ap = param.geoParam.ap;
 		var ag = param.geoParam.ag;
@@ -5735,7 +5972,7 @@ var $author$project$Models$levelSyst = F3(
 				var hn = (h >= 0.0) ? h : 0.0;
 				return A2(
 					$elm$core$List$cons,
-					((-(ap / ag)) * $elm$core$Basics$sqrt(2.0 * g)) * $elm$core$Basics$sqrt(hn),
+					(((-(ap / ag)) * $elm$core$Basics$sqrt(2.0 * g)) * $elm$core$Basics$sqrt(hn)) + (u / ag),
 					_List_Nil);
 			} else {
 				var h = state.a;
@@ -5743,11 +5980,22 @@ var $author$project$Models$levelSyst = F3(
 				var hn = (h >= 0.0) ? h : 0.0;
 				return A2(
 					$elm$core$List$cons,
-					((-(ap / ag)) * $elm$core$Basics$sqrt(2.0 * g)) * $elm$core$Basics$sqrt(hn),
+					(((-(ap / ag)) * $elm$core$Basics$sqrt(2.0 * g)) * $elm$core$Basics$sqrt(hn)) + (u / ag),
 					_List_Nil);
 			}
 		} else {
 			return A2($elm$core$List$cons, 0.0, _List_Nil);
+		}
+	});
+var $author$project$Models$outputX1 = F2(
+	function (tempo, xs) {
+		if (xs.b) {
+			var x = xs.a;
+			var ls = xs.b;
+			return _List_fromArray(
+				[x]);
+		} else {
+			return xs;
 		}
 	});
 var $author$project$DataConvert$T1S = function (a) {
@@ -5767,7 +6015,31 @@ var $author$project$DataConvert$toChartDatumT1S = function (edoDatum) {
 	}
 };
 var $author$project$DataConvert$toChartDataT1S = $elm$core$List$map($author$project$DataConvert$toChartDatumT1S);
-var $author$project$Models$runEdoLevel = F2(
+var $author$project$Models$runEdoLevelControlled = F4(
+	function (levelParam, edoParam, refFunc, controller) {
+		var initState = A2(
+			$elm$core$List$cons,
+			function ($) {
+				return $.initState;
+			}(levelParam).h0,
+			_List_Nil);
+		var geoParam = function ($) {
+			return $.geoParam;
+		}(levelParam);
+		var edoSist = $author$project$EdoSolver$Controlled(
+			{
+				controller: controller,
+				outputFunc: $author$project$Models$outputX1,
+				refFunc: refFunc,
+				sistFunc: $author$project$Models$levelSyst(levelParam)
+			});
+		return $author$project$DataConvert$toChartDataT1S(
+			A3($author$project$EdoSolver$edoSolver, edoParam, edoSist, initState).a);
+	});
+var $author$project$EdoSolver$Uncontrolled = function (a) {
+	return {$: 'Uncontrolled', a: a};
+};
+var $author$project$Models$runEdoLevelUncontrolled = F2(
 	function (levelParam, edoParam) {
 		var initState = A2(
 			$elm$core$List$cons,
@@ -5778,17 +6050,34 @@ var $author$project$Models$runEdoLevel = F2(
 		var geoParam = function ($) {
 			return $.geoParam;
 		}(levelParam);
+		var edoSist = $author$project$EdoSolver$Uncontrolled(
+			A2(
+				$author$project$Models$levelSyst,
+				levelParam,
+				_List_fromArray(
+					[0.0])));
 		return $author$project$DataConvert$toChartDataT1S(
-			A3(
-				$author$project$EdoSolver$edoSolver,
-				edoParam,
-				$author$project$Models$levelSyst(levelParam),
-				initState));
+			A3($author$project$EdoSolver$edoSolver, edoParam, edoSist, initState).a);
 	});
-var $author$project$Models$runEdoModel = F2(
-	function (modelParam, edoParam) {
+var $author$project$Models$runEdoLevel = F3(
+	function (levelParam, edoParam, maybeRefFuncAndController) {
+		if (maybeRefFuncAndController.$ === 'Nothing') {
+			return A2($author$project$Models$runEdoLevelUncontrolled, levelParam, edoParam);
+		} else {
+			var refFuncAndController = maybeRefFuncAndController.a;
+			var refFunc = function ($) {
+				return $.refFunc;
+			}(refFuncAndController);
+			var controller = function ($) {
+				return $.controller;
+			}(refFuncAndController);
+			return A4($author$project$Models$runEdoLevelControlled, levelParam, edoParam, refFunc, controller);
+		}
+	});
+var $author$project$Models$runEdoModel = F3(
+	function (modelParam, edoParam, maybeRefAndController) {
 		var levelParam = modelParam.a;
-		return A2($author$project$Models$runEdoLevel, levelParam, edoParam);
+		return A3($author$project$Models$runEdoLevel, levelParam, edoParam, maybeRefAndController);
 	});
 var $elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
@@ -5809,6 +6098,40 @@ var $elm$core$List$filterMap = F2(
 			xs);
 	});
 var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Controller$updatePidParam = F2(
+	function (pidParam, pidIStates) {
+		var kpStr = function ($) {
+			return $.kpStr;
+		}(pidIStates);
+		var kiStr = function ($) {
+			return $.kiStr;
+		}(pidIStates);
+		var kdStr = function ($) {
+			return $.kdStr;
+		}(pidIStates);
+		var listStr = _List_fromArray(
+			[kpStr, kiStr, kdStr]);
+		var listValues = A2($elm$core$List$filterMap, $elm$core$String$toFloat, listStr);
+		if (((listValues.b && listValues.b.b) && listValues.b.b.b) && (!listValues.b.b.b.b)) {
+			var kp = listValues.a;
+			var _v1 = listValues.b;
+			var ki = _v1.a;
+			var _v2 = _v1.b;
+			var kd = _v2.a;
+			return _Utils_update(
+				pidParam,
+				{kd: kd, ki: ki, kp: kp});
+		} else {
+			return pidParam;
+		}
+	});
+var $author$project$Controller$updateControlParam = F2(
+	function (controlParam, controlIStates) {
+		var pidParam = controlParam.a;
+		var pidIStates = controlIStates.a;
+		return $author$project$Controller$PidP(
+			A2($author$project$Controller$updatePidParam, pidParam, pidIStates));
+	});
 var $author$project$EdoSolver$updateEdoParam = F2(
 	function (edoParam, edoIStates) {
 		var tiniStr = function ($) {
@@ -5871,6 +6194,7 @@ var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 'RunEdo':
+				var refFunc = $author$project$Controller$refTeste(15.0);
 				var newModel = A2($author$project$Main$update, $author$project$Main$UpdateParameters, model);
 				var modelParam = function ($) {
 					return $.modelParam;
@@ -5878,7 +6202,13 @@ var $author$project$Main$update = F2(
 				var edoParam = function ($) {
 					return $.edoParam;
 				}(newModel);
-				var data = A2($author$project$Models$runEdoModel, modelParam, edoParam);
+				var controlParam = function ($) {
+					return $.controlParam;
+				}(newModel);
+				var controller = $author$project$Controller$controllerFromControlParam(controlParam);
+				var refFuncAndController = {controller: controller, refFunc: refFunc};
+				var maybeRefFuncAndController = $elm$core$Maybe$Just(refFuncAndController);
+				var data = A3($author$project$Models$runEdoModel, modelParam, edoParam, maybeRefFuncAndController);
 				return _Utils_update(
 					newModel,
 					{chartData: data});
@@ -5892,6 +6222,9 @@ var $author$project$Main$update = F2(
 				}(interactStates);
 				var edoIStates = function ($) {
 					return $.edoIStates;
+				}(interactStates);
+				var controlIStates = function ($) {
+					return $.controlIStates;
 				}(interactStates);
 				switch (interact.$) {
 					case 'Edo':
@@ -5909,6 +6242,15 @@ var $author$project$Main$update = F2(
 						var interactStatesNew = _Utils_update(
 							interactStates,
 							{modelIStates: modelIStatesNew});
+						return _Utils_update(
+							model,
+							{interactStates: interactStatesNew});
+					case 'Control':
+						var controlInteract = interact.a;
+						var controlIStatesNew = A2($author$project$Controller$changeControlIStates, controlIStates, controlInteract);
+						var interactStatesNew = _Utils_update(
+							interactStates,
+							{controlIStates: controlIStatesNew});
 						return _Utils_update(
 							model,
 							{interactStates: interactStatesNew});
@@ -5950,13 +6292,23 @@ var $author$project$Main$update = F2(
 					return $.edoIStates;
 				}(interactStates);
 				var edoParamNew = A2($author$project$EdoSolver$updateEdoParam, edoParam, edoIStates);
+				var controlParam = function ($) {
+					return $.controlParam;
+				}(model);
+				var controlIStates = function ($) {
+					return $.controlIStates;
+				}(interactStates);
+				var controlParamNew = A2($author$project$Controller$updateControlParam, controlParam, controlIStates);
 				return _Utils_update(
 					model,
-					{edoParam: edoParamNew, modelParam: modelParamNew});
+					{controlParam: controlParamNew, edoParam: edoParamNew, modelParam: modelParamNew});
 		}
 	});
 var $author$project$Main$ChangeInteract = function (a) {
 	return {$: 'ChangeInteract', a: a};
+};
+var $author$project$Main$Control = function (a) {
+	return {$: 'Control', a: a};
 };
 var $author$project$Main$Edo = function (a) {
 	return {$: 'Edo', a: a};
@@ -6307,15 +6659,6 @@ var $terezka$elm_charts$Internal$Coordinates$Position = F4(
 var $elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
-	});
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
 	});
 var $terezka$elm_charts$Internal$Coordinates$foldPosition = F2(
 	function (func, data) {
@@ -12888,19 +13231,95 @@ var $author$project$Main$fcomposition23 = F3(
 			f2,
 			f3(c));
 	});
+var $author$project$Controller$PidI = function (a) {
+	return {$: 'PidI', a: a};
+};
+var $author$project$Controller$PidKd = function (a) {
+	return {$: 'PidKd', a: a};
+};
+var $author$project$Controller$PidKi = function (a) {
+	return {$: 'PidKi', a: a};
+};
+var $author$project$Controller$PidKp = function (a) {
+	return {$: 'PidKp', a: a};
+};
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $author$project$Controller$parameterInteractiveDiv = F4(
+	function (texto, pholder, valor, strToMsg) {
+		return A2(
+			$elm$html$Html$span,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text(texto),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('number'),
+							$elm$html$Html$Attributes$placeholder(pholder),
+							$elm$html$Html$Attributes$value(valor),
+							$elm$html$Html$Events$onInput(strToMsg)
+						]),
+					_List_Nil)
+				]));
+	});
+var $author$project$Controller$pidView = F2(
+	function (pidIStates, pidInteractToMsg) {
+		var kpStr = function ($) {
+			return $.kpStr;
+		}(pidIStates);
+		var kiStr = function ($) {
+			return $.kiStr;
+		}(pidIStates);
+		var kdStr = function ($) {
+			return $.kdStr;
+		}(pidIStates);
+		return A2(
+			$elm$html$Html$span,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A4(
+					$author$project$Controller$parameterInteractiveDiv,
+					'kp',
+					'',
+					kpStr,
+					A2($elm$core$Basics$composeL, pidInteractToMsg, $author$project$Controller$PidKp)),
+					A4(
+					$author$project$Controller$parameterInteractiveDiv,
+					'ki',
+					'',
+					kiStr,
+					A2($elm$core$Basics$composeL, pidInteractToMsg, $author$project$Controller$PidKi)),
+					A4(
+					$author$project$Controller$parameterInteractiveDiv,
+					'kd',
+					'',
+					kdStr,
+					A2($elm$core$Basics$composeL, pidInteractToMsg, $author$project$Controller$PidKd))
+				]));
+	});
+var $author$project$Controller$viewControlIStates = F2(
+	function (controlIStates, controlInteractToMsg) {
+		var pidIStates = controlIStates.a;
+		return A2(
+			$author$project$Controller$pidView,
+			pidIStates,
+			A2($elm$core$Basics$composeL, controlInteractToMsg, $author$project$Controller$PidI));
+	});
 var $author$project$EdoSolver$Tfim = function (a) {
 	return {$: 'Tfim', a: a};
 };
 var $author$project$EdoSolver$Tini = function (a) {
 	return {$: 'Tini', a: a};
 };
-var $elm$html$Html$input = _VirtualDom_node('input');
-var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $author$project$EdoSolver$parameterInteractiveDiv = F4(
 	function (texto, pholder, valor, strToMsg) {
 		return A2(
-			$elm$html$Html$div,
+			$elm$html$Html$span,
 			_List_Nil,
 			_List_fromArray(
 				[
@@ -12959,11 +13378,17 @@ var $author$project$Models$H0 = function (a) {
 var $author$project$Models$parameterInteractiveDiv = F4(
 	function (texto, pholder, valor, strToMsg) {
 		return A2(
-			$elm$html$Html$div,
+			$elm$html$Html$span,
 			_List_Nil,
 			_List_fromArray(
 				[
-					$elm$html$Html$text(texto),
+					A2(
+					$elm$html$Html$label,
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(texto)
+						])),
 					A2(
 					$elm$html$Html$input,
 					_List_fromArray(
@@ -13030,6 +13455,9 @@ var $author$project$Main$view = function (model) {
 	var edoIStates = function ($) {
 		return $.edoIStates;
 	}(interactStates);
+	var controlIStates = function ($) {
+		return $.controlIStates;
+	}(interactStates);
 	var chartsParam = function ($) {
 		return $.chartsParam;
 	}(model);
@@ -13055,6 +13483,10 @@ var $author$project$Main$view = function (model) {
 							$author$project$Models$viewModelIStates,
 							modelIStates,
 							A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Models)),
+							A2(
+							$author$project$Controller$viewControlIStates,
+							controlIStates,
+							A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Control)),
 							A2($elm$html$Html$div, _List_Nil, _List_Nil),
 							A2(
 							$elm$html$Html$button,

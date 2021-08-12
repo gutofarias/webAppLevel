@@ -9,6 +9,7 @@ type alias DatumT1S = {t : Float, x1 : Float }
 -- Adicionar os data types à medida em que for criando
 type ChartDatum
     = T1S DatumT1S
+    -- | T1S1R1U DatumT1S1R1U
 
 type alias ChartData = List ChartDatum
  
