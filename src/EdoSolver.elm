@@ -15,9 +15,33 @@ type alias PassoSaida = Int
 
 type alias State = List Float
 type alias DState = List Float
+type alias ControlEffort = List Float
+type alias ControlMemory = List Float
+type alias Ref = List Float
   
-type alias FuncSist = Tempo -> State -> DState
-type alias Solver = FuncSist -> Passo -> Tempo -> State -> State
+-- type alias FuncSist = Tempo -> ControlEffort -> State -> DState
+-- type alias Controller = Tempo -> State -> Ref -> ControlMemory -> (ControlEffort, ControlMemory)
+-- type alias RefFunction = Tempo -> State -> Ref
+
+type EdoSist
+    = Uncontrolled FuncSistUncontrolled
+    | Controlled {refFunc:RefFunction, controller:Controller, sistFunc:FuncSistControlled}
+      
+type alias FuncSistControlled = ControlEffort -> Tempo -> State -> DState
+type alias FuncSistUncontrolled = Tempo -> State -> DState
+type alias Controller = ControlMemory -> Ref -> Passo -> Tempo -> State -> (ControlEffort, ControlMemory)
+type alias RefFunction = Tempo -> State -> Ref
+    
+-- testeSolver : RefFunction -> ControlMemory -> Controller -> FuncSistControlled -> Tempo -> State -> DState
+-- testeSolver refFunc contMem contFunc fsist tempo state = 
+--     let 
+--         ref = refFunc tempo state
+--         controlEffort = Tuple.first (contFunc contMem ref tempo state)
+--     in
+--         fsist controlEffort tempo state
+    
+    
+type alias Solver = FuncSistUncontrolled -> Passo -> Tempo -> State -> State
 type alias Datum = (Tempo , State)
 type alias Data = List Datum
 
@@ -30,6 +54,7 @@ type alias EdoParam =  {
                  tfim : Tempo,
                  passo : Passo,
                  relPassoSaida : PassoSaida,
+                 controlMemory : ControlMemory,
                  solver : Solver} 
 
     
@@ -100,58 +125,137 @@ parameterInteractiveDiv texto pholder valor strToMsg =
 -- EdoSolver Functions
 ------------------------------------------------
     
-edoStep : EdoParam -> FuncSist -> State -> State
-
+edoStep : EdoParam -> FuncSistUncontrolled -> State -> State
 edoStep param fsist xs =
     let
         solver = .solver param
         passo =  .passo param
         tempo =  .tempo param
-        -- xps = fsist tempo xs
     in
-        solver fsist passo tempo xs 
-  
-
-edoSolver : EdoParam -> FuncSist -> State -> Data
-edoSolver param fsist xs =
+        solver fsist passo tempo xs
+                    
+                        
+-- Unoptimized for TCO
+edoSolverOld : EdoParam -> EdoSist -> State -> (Data, EdoParam)
+edoSolverOld param edoSist xs =
     let
         tempo = .tempo param
         tfim = .tfim param
     in
         if (tempo >= tfim) then
-            (tempo, xs)::[]
+            ((tempo, xs)::[], param)
         else
             let
-                (tempo1, xs1) = integrator param fsist 1 xs
-                param1 = { param | tempo = tempo1} 
+                ((tempo1, xs1), param1) = integrator param edoSist 1 xs
+                -- Nao sei porque mas se comentar a linha de baixo para de funcionar 
+                -- O valor de param1.tempo é pra ser o mesmo de tempo1
+                -- logo param1b == param1 mas se usar so param1 da erro de call stack
+                param1b = { param1 | tempo = tempo1} 
+                (data, param2) = edoSolverOld param1b edoSist xs1
             in
-                (tempo, xs) :: edoSolver param1 fsist xs1  
-    
+                -- (tempo, xs) :: edoSolver param1 edoSist xs1  
+                ((tempo,xs)::data, param2)
+                    
+edoSolver : EdoParam -> EdoSist -> State -> (Data, EdoParam)
+edoSolver param edoSist xs =
+    let
+        tempo = .tempo param
+        (reversedData,paramFinal) = edoSolverAcc param edoSist xs ((tempo,xs)::[],param)
+        data = List.reverse reversedData
+    in
+        (data,paramFinal)
 
-integrator : EdoParam -> FuncSist -> PassoSaida -> State -> Datum
-integrator param fsist saidaCount xs =
+edoSolverAcc : EdoParam -> EdoSist -> State -> (Data,EdoParam) -> (Data,EdoParam)
+edoSolverAcc param edoSist xs (data,param2) =
+    let
+        tempo = .tempo param
+        tfim = .tfim param
+    in
+        if (tempo >= tfim) then
+            (data, param2)
+        else
+            let
+                ((tempo1, xs1), param1) = integrator param edoSist 1 xs
+                param1b = { param1 | tempo = tempo1} 
+                xsAndMaybeUR = calcXsAndMaybeUR param1b edoSist xs1
+            in
+                edoSolverAcc param1b edoSist xs1 ((tempo1,xsAndMaybeUR)::data, param1b)
+
+
+calcXsAndMaybeUR : EdoParam -> EdoSist -> State -> State
+calcXsAndMaybeUR param edoSist xs =
+    case edoSist of
+        Uncontrolled sistFunc ->
+            xs
+
+        Controlled functions ->
+            let
+                tempo = .tempo param
+                passo = .passo param
+                controlMem = .controlMemory param
+                             
+                refFunc = .refFunc functions
+                ref = refFunc tempo xs
+                      
+                controller = .controller functions
+                (controlEffort,newControlMem) = 
+                    controller controlMem ref passo tempo xs
+            in
+                xs ++ (ref ++ controlEffort)
+                    
+calcFsist : EdoParam -> EdoSist -> State -> (FuncSistUncontrolled, EdoParam)
+calcFsist param edoSist xs =
+    case edoSist of
+        Uncontrolled sistFunc ->
+            (sistFunc,param)
+
+        Controlled functions ->
+            let
+                tempo = .tempo param
+                passo = .passo param
+                controlMem = .controlMemory param
+                             
+                refFunc = .refFunc functions
+                ref = refFunc tempo xs
+                      
+                controller = .controller functions
+                (controlEffort,newControlMem) = 
+                    controller controlMem ref passo tempo xs
+
+                sistFunc = .sistFunc functions
+                fsist = sistFunc controlEffort
+
+                newParam = { param | controlMemory = newControlMem }
+            in
+                (fsist,newParam)
+                    
+integrator : EdoParam -> EdoSist -> PassoSaida -> State -> (Datum, EdoParam)
+integrator param edoSist saidaCount xs =
     let
         tfim = .tfim param
         tempo = .tempo param
         passo = .passo param 
         relPassoSaida = .relPassoSaida param
+        controlMem = .controlMemory param
     in
         if (tfim - tempo <= passo) then
-            let
-                paramfinal = { param | passo = tfim - tempo }
+            let 
+                newParam = { param | passo = tfim - tempo }
+                (fsist,paramfinal) = calcFsist newParam edoSist xs
                 xsfinal = edoStep paramfinal fsist xs
             in
-                (tfim, xsfinal)
+                ((tfim, xsfinal),paramfinal)
         else
             let 
+                (fsist,newParam) = calcFsist param edoSist xs
+                xs1 = edoStep newParam fsist xs
                 tempo1 = tempo + passo
-                param1 = { param | tempo = tempo1 } 
-                xs1 = edoStep param fsist xs
+                param1 = { newParam | tempo = tempo1 } 
             in
                 if (saidaCount == relPassoSaida) then
-                    (tempo1, xs1)
+                    ((tempo1, xs1),param1)
                 else
-                    integrator param1 fsist (saidaCount + 1) xs1
+                    integrator param1 edoSist (saidaCount + 1) xs1
 
                         
 rungeKutta : Solver
@@ -190,7 +294,7 @@ eulerSolver fsist passo tempo xs =
         zipWith (+) xs xps2
                         
             
-funcSist : FuncSist
+funcSist : FuncSistUncontrolled
 funcSist t xs =
     case xs of
         (x::[]) -> t*x :: [] 
@@ -235,6 +339,6 @@ printData data =
 xs_ = 3.0 :: []
 tini_ = 0.0 
 tfim_ = 4.0
-passo_ = 0.4 
-relSaida_ = 2
-param_ = EdoParam tini_ tfim_ passo_ relSaida_ eulerSolver
+passo_ = 0.01
+relSaida_ = 10
+param_ = EdoParam tini_ tfim_ passo_ relSaida_ [] eulerSolver
