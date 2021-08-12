@@ -1,8 +1,8 @@
 module Models exposing (..)
 
-import EdoSolver as Edo
 import DataConvert as DC
-import Html exposing (Html,div,text,input)
+import EdoSolver as Edo
+import Html exposing (Html,div,text,input,span,pre,label)
 import Html.Attributes exposing (style, placeholder, value, type_)
 import Controller
 import Html.Events exposing (onInput)
@@ -69,8 +69,8 @@ viewModelIStates modelIStates modelInteractToMsg =
                 
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
 parameterInteractiveDiv texto pholder valor strToMsg =
-    div []
-    [ text texto
+    span []
+    [ label [] [text texto]
     , input [type_ "number", placeholder pholder, value valor, onInput <| strToMsg ] []
     ]
                 

@@ -1,7 +1,7 @@
 module EdoSolver exposing (..)
 
 import List
-import Html exposing (Html,div,text,input)
+import Html exposing (Html,div,text,input,span)
 import Html.Attributes exposing (style, placeholder, value, type_)
 import Html.Events exposing (onInput)
 
@@ -114,7 +114,7 @@ viewEdoIStates edoIStates edoInteractToMsg =
         
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
 parameterInteractiveDiv texto pholder valor strToMsg =
-    div []
+    span []
     [ text texto
     , input [type_ "number",placeholder pholder, value valor, onInput <| strToMsg ] []
     ]
