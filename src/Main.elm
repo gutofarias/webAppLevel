@@ -4,6 +4,7 @@ import DataConvert as DC
 import EdoSolver as Edo
 import Models as M
 import Controller as Control 
+import Reference as Ref
 
 import Browser
 import Html exposing (Html, button, div, text, pre, input, label, select, option, span)
@@ -44,6 +45,7 @@ type alias Model =
     -- , str : String
     , chartsParam : List MC.ChartParam 
     , controlParam : Control.ControlParam
+    , refParam : Ref.RefParam
     }
 
     
@@ -53,6 +55,7 @@ type Interact
     | MChart MC.ChartID MC.ChartInteract
     | MCharts MC.ChartsInteract
     | Control Control.ControlInteract  
+    | Ref Ref.RefInteract
         
         
 type alias InteractStates =
@@ -60,6 +63,7 @@ type alias InteractStates =
     , modelIStates : M.ModelIStates
     -- , chartIStates : MC.ChartIStates
     , controlIStates : Control.ControlIStates
+    , refIStates : Ref.RefIStates
     }
 
 updateEdoIStates : Edo.EdoIStates -> InteractStates -> InteractStates
@@ -87,13 +91,14 @@ init =
         tini = 0.0 
         tfim = 10.0
         passoInt = 0.001 
-        relSaida = 2
+        relSaida = 100
         edoParam = Edo.EdoParam tini tfim passoInt relSaida [] Edo.rungeKutta
         chartData = []
         levelIStates = {h0 = (String.fromFloat h0), ag =  (String.fromFloat ag), ap = (String.fromFloat ap)}
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
         controlIStates = Control.PidIS Control.initPidIStates
-        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, controlIStates = controlIStates}
+        refIStates = Ref.Step1IS Ref.initStep1IStates
+        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, controlIStates = controlIStates, refIStates = refIStates}
     in
             { chartData = chartData
             , modelParam = M.LevelP levelParam
@@ -102,6 +107,7 @@ init =
             -- , str = "teste"
             , chartsParam = [(MC.initChartParam Nothing)]
             , controlParam = Control.PidP Control.initPidParam
+            , refParam = Ref.Step1P Ref.initStep1Param
             }
 
         
@@ -128,8 +134,9 @@ update msg model =
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
           controlParam = .controlParam newModel
+          refParam = .refParam newModel
           controller = Control.controllerFromControlParam controlParam
-          refFunc = Control.refTeste 15.0
+          refFunc = Ref.refFromRefParam refParam 
           refFuncAndController = {refFunc = refFunc,controller = controller}
           maybeRefFuncAndController = Just refFuncAndController
           data = M.runEdoModel modelParam edoParam maybeRefFuncAndController
@@ -166,6 +173,14 @@ update msg model =
                     in
                         {model | interactStates = interactStatesNew}
 
+                Ref refInteract ->
+                    let
+                        refIStates = .refIStates interactStates
+                        refIStatesNew = Ref.changeRefIStates refIStates refInteract 
+                        interactStatesNew = {interactStates | refIStates = refIStatesNew}
+                    in
+                        {model | interactStates = interactStatesNew}
+
                 MChart chartID chartInteract -> 
                     let
                         chartsParam = .chartsParam model
@@ -187,14 +202,19 @@ update msg model =
             edoIStates = .edoIStates interactStates
             modelIStates = .modelIStates interactStates
             controlIStates = .controlIStates interactStates
+            refIStates = .refIStates interactStates
+                         
             edoParam = .edoParam model
             modelParam = .modelParam model
             controlParam = .controlParam model
+            refParam = .refParam model
+                       
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
             modelParamNew = M.updateModelParam modelParam modelIStates
             controlParamNew = Control.updateControlParam controlParam controlIStates
+            refParamNew = Ref.updateRefParam refParam refIStates
         in
-            {model | edoParam = edoParamNew, modelParam = modelParamNew, controlParam = controlParamNew}
+            {model | edoParam = edoParamNew, modelParam = modelParamNew, controlParam = controlParamNew, refParam = refParamNew}
 
     -- ChangeStr str -> 
     --      {model | str = str}
@@ -212,6 +232,7 @@ view model =
     edoIStates = .edoIStates interactStates
     modelIStates = .modelIStates interactStates
     controlIStates = .controlIStates interactStates
+    refIStates = .refIStates interactStates
     chartData = .chartData model
     chartsParam = .chartsParam model
   in
@@ -222,6 +243,7 @@ view model =
             [ Edo.viewEdoIStates edoIStates (ChangeInteract << Edo)
             , M.viewModelIStates modelIStates (ChangeInteract << Models)
             , Control.viewControlIStates controlIStates (ChangeInteract << Control)
+            , div [] [Ref.viewRefIStates refIStates (ChangeInteract << Ref)]
             , div [] []
             , button [ onClick RunEdo ] [ text "Edo" ]
             -- , label [] [ text model.str]
