@@ -163,7 +163,8 @@ edoSolver : EdoParam -> EdoSist -> State -> (Data, EdoParam)
 edoSolver param edoSist xs =
     let
         tempo = .tempo param
-        (reversedData,paramFinal) = edoSolverAcc param edoSist xs ((tempo,xs)::[],param)
+        xsAndMaybeUR = calcXsAndMaybeUR param edoSist xs
+        (reversedData,paramFinal) = edoSolverAcc param edoSist xs ((tempo,xsAndMaybeUR)::[],param)
         data = List.reverse reversedData
     in
         (data,paramFinal)
@@ -209,7 +210,7 @@ calcXsAndMaybeUR param edoSist xs =
                 (controlEffort,newControlMem) = 
                     controller controlMem error passo tempo xs
             in
-                List.foldr (++) [] [xs,ref,controlEffort]
+                List.foldr (++) [] [xs,error,ref,controlEffort,output]
                     
 calcFsist : EdoParam -> EdoSist -> State -> (FuncSistUncontrolled, EdoParam)
 calcFsist param edoSist xs =
