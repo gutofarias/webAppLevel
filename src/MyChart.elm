@@ -12,9 +12,9 @@ import Html.Events exposing (onInput,onClick)
 -- Data Types Charts
 ------------------------------------------------
 
-type alias AxisFunc data = data -> Float
-type alias AxesFunc data =
-    (AxisFunc data, AxisFunc data)
+-- type alias AxisFunc data = data -> Float
+type alias AxesFunc data = 
+    (DC.AxisFunc data, DC.AxisFunc data)
 
 type alias AxesString = (String,String)
     
@@ -326,7 +326,15 @@ chartAxesOptionsView chartData selStr =
                     , chartAxisOptionView "e1" "e" selStr
                     , chartAxisOptionView "r1" "r" selStr
                     , chartAxisOptionView "u1" "u" selStr]
-                    
+                DC.TS1E1R1U4 datum ->
+                    [ chartAxisOptionView "t" "t" selStr
+                    , chartAxisOptionView "x1" "x" selStr
+                    , chartAxisOptionView "e1" "e" selStr
+                    , chartAxisOptionView "r1" "r" selStr
+                    , chartAxisOptionView "u1" "u" selStr
+                    , chartAxisOptionView "u2" "up" selStr
+                    , chartAxisOptionView "u3" "ui" selStr
+                    , chartAxisOptionView "u4" "ud" selStr]
 
 chartAxisOptionView : String -> String -> String -> Html msg
 chartAxisOptionView val txt selStr =
@@ -340,47 +348,6 @@ chartAxisOptionView val txt selStr =
 ------------------------------------------------
 -- Auxiliary Functions
 ------------------------------------------------
-            
-stringToAxisFunc : String -> AxisFunc DC.ChartDatum
-stringToAxisFunc str =
-    case str of
-        "t" -> t
-        "x1" -> x1
-        "e1" -> e1
-        "r1" -> r1
-        "u1" -> u1
-        _ -> t
-             
-x1 : DC.ChartDatum -> Float
-x1 chartDatum = 
-    case chartDatum of
-        TS1 datum -> datum.x1
-        TS1E1R1U1 datum -> datum.x1
-
-t : DC.ChartDatum -> Float
-t chartDatum = 
-    case chartDatum of
-        TS1 datum -> datum.t
-        TS1E1R1U1 datum -> datum.t
-                                
-e1 : DC.ChartDatum -> Float
-e1 chartDatum = 
-    case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> datum.e1
-                     
-r1 : DC.ChartDatum -> Float
-r1 chartDatum = 
-    case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> datum.r1
-                                
-u1 : DC.ChartDatum -> Float
-u1 chartDatum = 
-    case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> datum.u1
-                                
 lastElem : List a -> Maybe a
 lastElem list =
     case list of
