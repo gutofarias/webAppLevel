@@ -317,9 +317,15 @@ chartAxesOptionsView chartData selStr =
         [] -> []
         chartDatum :: ls ->
             case chartDatum of
-                DC.T1S datum -> 
+                DC.TS1 datum -> 
                     [ chartAxisOptionView "t" "t" selStr
                     , chartAxisOptionView "x1" "x" selStr]
+                DC.TS1E1R1U1 datum ->
+                    [ chartAxisOptionView "t" "t" selStr
+                    , chartAxisOptionView "x1" "x" selStr
+                    , chartAxisOptionView "e1" "e" selStr
+                    , chartAxisOptionView "r1" "r" selStr
+                    , chartAxisOptionView "u1" "u" selStr]
                     
 
 chartAxisOptionView : String -> String -> String -> Html msg
@@ -340,18 +346,41 @@ stringToAxisFunc str =
     case str of
         "t" -> t
         "x1" -> x1
+        "e1" -> e1
+        "r1" -> r1
+        "u1" -> u1
         _ -> t
              
 x1 : DC.ChartDatum -> Float
 x1 chartDatum = 
     case chartDatum of
-        T1S datum -> datum.x1
+        TS1 datum -> datum.x1
+        TS1E1R1U1 datum -> datum.x1
 
 t : DC.ChartDatum -> Float
 t chartDatum = 
     case chartDatum of
-        T1S datum -> datum.t
+        TS1 datum -> datum.t
+        TS1E1R1U1 datum -> datum.t
+                                
+e1 : DC.ChartDatum -> Float
+e1 chartDatum = 
+    case chartDatum of
+        TS1 datum -> 0.0
+        TS1E1R1U1 datum -> datum.e1
                      
+r1 : DC.ChartDatum -> Float
+r1 chartDatum = 
+    case chartDatum of
+        TS1 datum -> 0.0
+        TS1E1R1U1 datum -> datum.r1
+                                
+u1 : DC.ChartDatum -> Float
+u1 chartDatum = 
+    case chartDatum of
+        TS1 datum -> 0.0
+        TS1E1R1U1 datum -> datum.u1
+                                
 lastElem : List a -> Maybe a
 lastElem list =
     case list of

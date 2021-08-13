@@ -195,7 +195,8 @@ runEdoLevelControlled levelParam edoParam refFunc controller =
                       , controller = controller
                       , sistFunc = (levelSyst levelParam)}
         in
-            DC.toChartDataT1S <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
+            DC.toChartDataTS1E1R1U1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
+            -- DC.toChartDataTS1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
 
 runEdoLevelUncontrolled : LevelParam -> Edo.EdoParam -> DC.ChartData
 runEdoLevelUncontrolled levelParam edoParam =
@@ -204,7 +205,8 @@ runEdoLevelUncontrolled levelParam edoParam =
             geoParam = .geoParam levelParam
             edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
         in
-            DC.toChartDataT1S <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
+            DC.toChartDataTS1E1R1U1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
+            -- DC.toChartDataTS1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
                 
 ------------------------------------------------
 -- levelSyst
