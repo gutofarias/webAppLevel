@@ -42,7 +42,7 @@ type alias Model =
     { chartData : DC.ChartData
     , modelParam : M.ModelParam
     , edoParam : Edo.EdoParam
-    , interactStates : InteractStates
+    , edoIStates : Edo.EdoIStates
     -- , str : String
     , chartsParam : List MC.ChartParam 
     , controlParam : Control.ControlParam
@@ -61,15 +61,6 @@ type Interact
     | Ref Ref.RefInteract
         
         
-type alias InteractStates =
-    { edoIStates : Edo.EdoIStates
-    , refIStates : Ref.RefIStates
-    }
-
-updateEdoIStates : Edo.EdoIStates -> InteractStates -> InteractStates
-updateEdoIStates edoIStates interactStates =
-    {interactStates | edoIStates = edoIStates}
-    
 ------------------------------------------------
 -- init
 ------------------------------------------------
@@ -84,20 +75,20 @@ init () =
         edoParam = Edo.EdoParam tini tfim passoInt relSaida [] Edo.rungeKutta
         chartData = []
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
-        refIStates = Ref.Step1IS Ref.initStep1IStates
-        interactStates = {edoIStates = edoIStates, refIStates = refIStates}
+        interactStates = {edoIStates = edoIStates}
     in
            ({ chartData = chartData
             , modelParam = M.initModelParam M.Level
             , edoParam = edoParam
-            , interactStates = interactStates
+            , edoIStates = 
             -- , str = "teste"
             , tfimAnimation = 0.0
             , animating = False
             , chartsParam = [(MC.initChartParam Nothing)]
-            , controlParam = Control.PidP Control.initPidParam
-            , refParam = Ref.Step1P Ref.initStep1Param
+            , controlParam = Control.initControlParam Control.Pid
+            , refParam = Ref.initRefParam Ref.Step1
             }, Cmd.none)
+              
 
         
 ------------------------------------------------
@@ -138,7 +129,7 @@ update msg model =
           refParam = .refParam newModel
                      
           controller = Control.controllerFromControlParam controlParam
-          refFunc = Ref.refFromRefParam refParam 
+          refFunc = Ref.refFunctionFromRefParam refParam 
           refFuncAndController = {refFunc = refFunc,controller = controller}
           maybeRefFuncAndController = Just refFuncAndController
                                       
@@ -178,11 +169,10 @@ update msg model =
 
                 Ref refInteract ->
                     let
-                        refIStates = .refIStates interactStates
-                        refIStatesNew = Ref.changeRefIStates refIStates refInteract 
-                        interactStatesNew = {interactStates | refIStates = refIStatesNew}
+                        refParam = .refParam model
+                        refParamNew = Ref.changeRefParam refParam refInteract 
                     in
-                        ({model | interactStates = interactStatesNew}, Cmd.none)
+                        ({model | refParam = refParamNew}, Cmd.none)
 
                 MChart chartID chartInteract -> 
                     let
@@ -203,15 +193,13 @@ update msg model =
         let
             interactStates = .interactStates model
             edoIStates = .edoIStates interactStates
-            refIStates = .refIStates interactStates
                          
             edoParam = .edoParam model
             refParam = .refParam model
                        
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
-            refParamNew = Ref.updateRefParam refParam refIStates
         in
-            ({model | edoParam = edoParamNew, refParam = refParamNew}, Cmd.none)
+            ({model | edoParam = edoParamNew}, Cmd.none)
 
     Tick dTime ->
         let
@@ -245,7 +233,7 @@ update msg model =
                     controlParam = .controlParam model
                     refParam = .refParam model
                     controller = Control.controllerFromControlParam controlParam
-                    refFunc = Ref.refFromRefParam refParam 
+                    refFunc = Ref.refFunctionFromRefParam refParam 
                     refFuncAndController = {refFunc = refFunc,controller = controller}
                     maybeRefFuncAndController = Just refFuncAndController
                     (data,newEdoParam) = M.runAnimationModel modelParam edoParam2 maybeRefFuncAndController
@@ -288,9 +276,7 @@ view : Model -> Html Msg
 view model =
   let
     controlParam = .controlParam model
-    interactStates = .interactStates model
-    edoIStates = .edoIStates interactStates
-    refIStates = .refIStates interactStates
+    edoIStates = .edoIStates model
     chartData = .chartData model
     chartsParam = .chartsParam model
     edoParam = .edoParam model
@@ -314,13 +300,13 @@ view model =
   in
     section []
         [ div [style "height" "30px"]
-            [ Edo.viewEdoIStates edoIStates (ChangeInteract << Edo)]
+            [ Edo.viewEdo edoIStates (ChangeInteract << Edo)]
         , div [style "height" "30px"]
             [ M.viewModel modelParam (ChangeInteract << Models)]
         , div [style "height" "30px"]
             [Control.viewController controlParam (ChangeInteract << Control)]
         , div [style "height" "30px"]
-            [Ref.viewRefIStates refIStates (ChangeInteract << Ref)]
+            [Ref.viewRef refParamI (ChangeInteract << Ref)]
         , div [style "height" "30px"]
             [ button [ onClick RunEdo ] [ text "Edo" ]
             , button [ onClick RunAnimation ] [ text "Animation" ]

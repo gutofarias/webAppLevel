@@ -54,11 +54,22 @@ type alias EdoParam =  {
                  solver : Solver} 
 
     
+initEdoParamAndIStates : (EdoParam,EdoIStates)
+initEdoParamAndIStates =
+    ({ tempo = 0.0
+    , tfim = 10.0
+    , passo = 0.001
+    , relPassoSaida = 100
+    , controlMemory = []
+    , solver = rungeKutta } ,
+    { tiniStr = "0"
+    , tfimStr = "10" })
+    
 updateEdoParam : EdoParam -> EdoIStates -> EdoParam
 updateEdoParam edoParam edoIStates =
     let
-        tiniStr = .tini edoIStates
-        tfimStr = .tfim edoIStates
+        tiniStr = .tiniStr edoIStates
+        tfimStr = .tfimStr edoIStates
         listStr = [tiniStr,tfimStr]
         listValues = List.filterMap String.toFloat listStr
     in
@@ -73,14 +84,14 @@ updateEdoParam edoParam edoIStates =
 -- EdoIStates
 ------------------------------------------------
     
-type alias EdoIStates = { tini:String, tfim:String }
+type alias EdoIStates = { tiniStr:String, tfimStr:String }
 
     
 changeEdoIStates : EdoIStates -> EdoInteract -> EdoIStates
 changeEdoIStates edoIStates edoInteract =
     case edoInteract of
-        Tini valueStr -> {edoIStates | tini = valueStr}
-        Tfim valueStr -> {edoIStates | tfim = valueStr}
+        Tini valueStr -> {edoIStates | tiniStr = valueStr}
+        Tfim valueStr -> {edoIStates | tfimStr = valueStr}
 
 
 ------------------------------------------------
@@ -96,11 +107,11 @@ type EdoInteract
 -- viewEdo
 ------------------------------------------------
 
-viewEdoIStates : EdoIStates -> (EdoInteract -> msg) -> Html msg
-viewEdoIStates edoIStates edoInteractToMsg = 
+viewEdo : EdoIStates -> (EdoInteract -> msg) -> Html msg
+viewEdo edoIStates edoInteractToMsg = 
   let
-    tiniStr = .tini edoIStates
-    tfimStr = .tfim edoIStates
+    tiniStr = .tiniStr edoIStates
+    tfimStr = .tfimStr edoIStates
   in
     div []
         [ parameterInteractiveDiv "tini  " "" tiniStr (edoInteractToMsg << Tini)
