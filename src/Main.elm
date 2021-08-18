@@ -63,7 +63,7 @@ type Interact
         
 type alias InteractStates =
     { edoIStates : Edo.EdoIStates
-    , modelIStates : M.ModelIStates
+    -- , modelIStates : M.ModelIStates
     -- , chartIStates : MC.ChartIStates
     , refIStates : Ref.RefIStates
     }
@@ -72,11 +72,6 @@ updateEdoIStates : Edo.EdoIStates -> InteractStates -> InteractStates
 updateEdoIStates edoIStates interactStates =
     {interactStates | edoIStates = edoIStates}
     
-updateModelIStates : M.ModelIStates -> InteractStates -> InteractStates
-updateModelIStates modelIStates interactStates =
-    {interactStates | modelIStates = modelIStates}
-
-
 ------------------------------------------------
 -- init
 ------------------------------------------------
@@ -84,25 +79,18 @@ updateModelIStates modelIStates interactStates =
 init : () -> (Model, Cmd Msg) 
 init () =
     let
-        ag = 1.0
-        ap = 0.1
-        levelGeoParam = M.LevelGeoParam ag ap
-        h0 = 10.0
-        levelInitState = M.LevelInitState h0
-        levelParam = {initState = levelInitState, geoParam = levelGeoParam}
         tini = 0.0 
         tfim = 10.0
         passoInt = 0.001 
         relSaida = 100
         edoParam = Edo.EdoParam tini tfim passoInt relSaida [] Edo.rungeKutta
         chartData = []
-        levelIStates = {h0 = (String.fromFloat h0), ag =  (String.fromFloat ag), ap = (String.fromFloat ap)}
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
         refIStates = Ref.Step1IS Ref.initStep1IStates
-        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, refIStates = refIStates}
+        interactStates = {edoIStates = edoIStates, refIStates = refIStates}
     in
            ({ chartData = chartData
-            , modelParam = M.LevelP levelParam
+            , modelParam = M.initModelParam M.Level
             , edoParam = edoParam
             , interactStates = interactStates
             -- , str = "teste"
@@ -167,7 +155,6 @@ update msg model =
         let
            interactStates = .interactStates model
            edoIStates = .edoIStates interactStates
-           modelIStates = .modelIStates interactStates
         in
             case interact of
                 Edo edoInteract ->
@@ -179,10 +166,10 @@ update msg model =
                         
                 Models modelInteract ->
                     let
-                        modelIStatesNew = M.changeModelIStates modelIStates modelInteract
-                        interactStatesNew = {interactStates | modelIStates = modelIStatesNew}
+                        modelParam = .modelParam model
+                        modelParamNew = M.changeModelParam modelParam modelInteract
                     in 
-                        ({model | interactStates = interactStatesNew}, Cmd.none)
+                        ({model | modelParam = modelParamNew}, Cmd.none)
                             
                 Control controlInteract ->
                     let 
@@ -218,18 +205,15 @@ update msg model =
         let
             interactStates = .interactStates model
             edoIStates = .edoIStates interactStates
-            modelIStates = .modelIStates interactStates
             refIStates = .refIStates interactStates
                          
             edoParam = .edoParam model
-            modelParam = .modelParam model
             refParam = .refParam model
                        
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
-            modelParamNew = M.updateModelParam modelParam modelIStates
             refParamNew = Ref.updateRefParam refParam refIStates
         in
-            ({model | edoParam = edoParamNew, modelParam = modelParamNew, refParam = refParamNew}, Cmd.none)
+            ({model | edoParam = edoParamNew, refParam = refParamNew}, Cmd.none)
 
     Tick dTime ->
         let
@@ -308,7 +292,6 @@ view model =
     controlParam = .controlParam model
     interactStates = .interactStates model
     edoIStates = .edoIStates interactStates
-    modelIStates = .modelIStates interactStates
     refIStates = .refIStates interactStates
     chartData = .chartData model
     chartsParam = .chartsParam model
@@ -335,7 +318,7 @@ view model =
         [ div [style "height" "30px"]
             [ Edo.viewEdoIStates edoIStates (ChangeInteract << Edo)]
         , div [style "height" "30px"]
-            [ M.viewModelIStates modelIStates (ChangeInteract << Models)]
+            [ M.viewModel modelParam (ChangeInteract << Models)]
         , div [style "height" "30px"]
             [Control.viewController controlParam (ChangeInteract << Control)]
         , div [style "height" "30px"]

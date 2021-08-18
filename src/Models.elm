@@ -26,17 +26,24 @@ import Polyline2d
 -- ModelParam
 ------------------------------------------------
 
+type ModelType 
+    = Level
+
 type ModelParam 
     = LevelP LevelParam
       
+initModelParam : ModelType -> ModelParam
+initModelParam modelType =
+    case modelType of
+        Level -> LevelP initLevelParam
       
-updateModelParam : ModelParam -> ModelIStates -> ModelParam
-updateModelParam modelParam modelIStates =
-    case modelParam of
-        LevelP levelParam ->
-            case modelIStates of
-                LevelIS levelIStates ->
-                   LevelP <| updateLevelParam levelParam levelIStates
+-- updateModelParam : ModelParam -> ModelIStates -> ModelParam
+-- updateModelParam modelParam modelIStates =
+--     case modelParam of
+--         LevelP levelParam ->
+--             case modelIStates of
+--                 LevelIS levelIStates ->
+--                    LevelP <| updateLevelParam levelParam levelIStates
 
 initStateModelFromXs : Edo.State -> ModelParam -> ModelParam
 initStateModelFromXs xs modelParam =
@@ -48,17 +55,17 @@ initStateModelFromXs xs modelParam =
 -- ModelIStates
 ------------------------------------------------
 
-type ModelIStates
-    = LevelIS LevelIStates
+-- type ModelIStates
+--     = LevelIS LevelIStates
       
 
-changeModelIStates : ModelIStates -> ModelInteract -> ModelIStates
-changeModelIStates modelIStates modelInteract =
+changeModelParam : ModelParam -> ModelInteract -> ModelParam
+changeModelParam modelParam modelInteract =
     case modelInteract of
         LevelI levelInteract ->
-            case modelIStates of
-                LevelIS levelIStates ->
-                    LevelIS <| changeLevelIStates levelIStates levelInteract 
+            case modelParam of
+                LevelP levelParam ->
+                    LevelP <| changeLevelParam levelParam levelInteract 
                         
                         
                         
@@ -74,11 +81,11 @@ type ModelInteract
 -- viewModel
 ------------------------------------------------
                         
-viewModelIStates : ModelIStates -> (ModelInteract -> msg) -> Html msg
-viewModelIStates modelIStates modelInteractToMsg = 
-    case modelIStates of
-        LevelIS levelIStates ->
-            viewLevelIStates levelIStates (modelInteractToMsg << LevelI)
+viewModel : ModelParam -> (ModelInteract -> msg) -> Html msg
+viewModel modelParam modelInteractToMsg = 
+    case modelParam of
+        LevelP levelParam ->
+            viewLevel levelParam (modelInteractToMsg << LevelI)
                 
                 
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
@@ -119,52 +126,84 @@ runAnimationModel modelParam edoParam maybeRefAndController =
 -- LevelParam
 ------------------------------------------------
 
-type alias LevelParam = { initState:LevelInitState, geoParam:LevelGeoParam }
+-- type alias LevelParam = { initState:LevelInitState, geoParam:LevelGeoParam }
 
-type alias LevelInitState = { h0 : Float }
-type alias LevelGeoParam = { ag : Float, ap : Float }
+type alias LevelParam =
+    { h0 : Float , ag : Float , ap : Float
+    , h0Str : String, agStr : String, apStr : String }
     
-updateLevelParam : LevelParam -> LevelIStates -> LevelParam
-updateLevelParam levelParam levelIStates =
-    let 
-        h0Str = .h0 levelIStates
-        agStr = .ag levelIStates
-        apStr = .ap levelIStates
-        listStr = [h0Str,agStr,apStr]
-        listValues = List.filterMap String.toFloat listStr
-    in
-        case listValues of
-            (h0::ag::ap::[]) ->
-                let
-                   initState = {h0=h0}
-                   geoParam = {ag=ag, ap=ap}
-                in
-                   {levelParam | initState = initState, geoParam = geoParam}
-            _ -> 
-                levelParam
+initLevelParam : LevelParam
+initLevelParam =
+    { h0 = 10.0
+    , ag = 1.0
+    , ap = 0.1
+    , h0Str = "10"
+    , agStr = "1"
+    , apStr = "0.1" }
+    
+-- type alias LevelInitState = { h0 : Float }
+-- type alias LevelGeoParam = { ag : Float, ap : Float }
+    
+-- updateLevelParam : LevelParam -> LevelIStates -> LevelParam
+-- updateLevelParam levelParam levelIStates =
+--     let 
+--         h0Str = .h0 levelIStates
+--         agStr = .ag levelIStates
+--         apStr = .ap levelIStates
+--         listStr = [h0Str,agStr,apStr]
+--         listValues = List.filterMap String.toFloat listStr
+--     in
+--         case listValues of
+--             (h0::ag::ap::[]) ->
+--                 let
+--                    initState = {h0=h0}
+--                    geoParam = {ag=ag, ap=ap}
+--                 in
+--                    {levelParam | initState = initState, geoParam = geoParam}
+--             _ -> 
+--                 levelParam
                     
 initStateLevelFromXs : Edo.State -> LevelParam -> LevelParam
 initStateLevelFromXs xs levelParam = 
     let
-        initState = .initState levelParam
-        newInitStateVal = Maybe.withDefault 30.0 <| List.head xs
-        newInitState = {h0 = newInitStateVal}
+        h0 = .h0 levelParam
+        newH0 = Maybe.withDefault h0 <| List.head xs
+        -- newInitState = {h0 = newInitStateVal}
     in
-        {levelParam | initState = newInitState}
+        {levelParam | h0 = newH0}
                     
 ------------------------------------------------
 -- LevelIStates
 ------------------------------------------------
 
-type alias LevelIStates = { h0:String, ag:String, ap:String }
+-- type alias LevelIStates = { h0:String, ag:String, ap:String }
     
     
-changeLevelIStates : LevelIStates -> LevelInteract -> LevelIStates
-changeLevelIStates levelIStates levelInteract =
+changeLevelParam : LevelParam -> LevelInteract -> LevelParam
+changeLevelParam levelParam levelInteract =
     case levelInteract of
-        H0 valueStr -> {levelIStates | h0 = valueStr}
-        Ag valueStr -> {levelIStates | ag = valueStr}
-        Ap valueStr -> {levelIStates | ap = valueStr}
+        H0 valueStr -> -- {levelIStates | h0 = valueStr}
+            let
+                h0 = .h0 levelParam
+                maybeVal = String.toFloat valueStr
+                val = Maybe.withDefault h0 maybeVal
+            in
+            { levelParam | h0Str = valueStr, h0 = val }
+        Ag valueStr -> -- {levelIStates | ag = valueStr}
+            let
+                ag = .ag levelParam
+                maybeVal = String.toFloat valueStr
+                val = Maybe.withDefault ag maybeVal
+            in
+            { levelParam | agStr = valueStr, ag = val }
+        Ap valueStr -> -- {levelIStates | ap = valueStr}
+            let
+                ap = .ap levelParam
+                maybeVal = String.toFloat valueStr
+                val = Maybe.withDefault ap maybeVal
+            in
+            { levelParam | apStr = valueStr, ap = val }
+
         
 
 ------------------------------------------------
@@ -181,12 +220,12 @@ type LevelInteract
 -- viewLevel
 ------------------------------------------------
     
-viewLevelIStates : LevelIStates -> (LevelInteract -> msg) -> Html msg
-viewLevelIStates levelIStates levelInteractToMsg = 
+viewLevel : LevelParam -> (LevelInteract -> msg) -> Html msg
+viewLevel levelParam levelInteractToMsg = 
     let 
-        h0Str = .h0 levelIStates
-        agStr = .ag levelIStates
-        apStr = .ap levelIStates
+        h0Str = .h0Str levelParam
+        agStr = .agStr levelParam
+        apStr = .apStr levelParam
     in 
         div []
             [ parameterInteractiveDiv "h0  " "" h0Str (levelInteractToMsg << H0)
@@ -229,8 +268,8 @@ runAnimationLevel levelParam edoParam maybeRefFuncAndController =
 runAnimationLevelUncontrolled : LevelParam -> Edo.EdoParam -> (DC.ChartData, Edo.EdoParam)
 runAnimationLevelUncontrolled levelParam edoParam =
         let
-            initState = ( .h0 <| .initState levelParam ) :: []
-            geoParam = .geoParam levelParam
+            initState = (.h0 levelParam) :: []
+            -- geoParam = .geoParam levelParam
             edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
             (edoData, edoParamNew) = Edo.edoSolverReversed edoParam edoSist initState
         in
@@ -241,8 +280,8 @@ runAnimationLevelUncontrolled levelParam edoParam =
 runAnimationLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> Edo.Controller -> (DC.ChartData, Edo.EdoParam)
 runAnimationLevelControlled levelParam edoParam refFunc controller =
         let
-            initState = ( .h0 <| .initState levelParam ) :: []
-            geoParam = .geoParam levelParam
+            initState = (.h0 levelParam) :: []
+            -- geoParam = .geoParam levelParam
             -- edoParam2 = Debug.log "edoParam" edoParam
             edoSist = Edo.Controlled
                       { refFunc = refFunc
@@ -257,8 +296,8 @@ runAnimationLevelControlled levelParam edoParam refFunc controller =
 runEdoLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> Edo.Controller -> DC.ChartData
 runEdoLevelControlled levelParam edoParam refFunc controller =
         let
-            initState = ( .h0 <| .initState levelParam ) :: []
-            geoParam = .geoParam levelParam
+            initState = (.h0 levelParam) :: []
+            -- geoParam = .geoParam levelParam
             edoSist = Edo.Controlled
                       { refFunc = refFunc
                       , outputFunc = outputX1
@@ -271,8 +310,8 @@ runEdoLevelControlled levelParam edoParam refFunc controller =
 runEdoLevelUncontrolled : LevelParam -> Edo.EdoParam -> DC.ChartData
 runEdoLevelUncontrolled levelParam edoParam =
         let
-            initState = ( .h0 <| .initState levelParam ) :: []
-            geoParam = .geoParam levelParam
+            initState = (.h0 levelParam) :: []
+            -- geoParam = .geoParam levelParam
             edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
         in
             DC.toChartDataTS1E1R1U1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
@@ -283,10 +322,10 @@ runEdoLevelUncontrolled levelParam edoParam =
 ------------------------------------------------
         
 levelSyst : LevelParam -> Edo.ControlEffort -> Edo.Tempo -> Edo.State -> Edo.DState
-levelSyst param us t state =
+levelSyst levelParam us t state =
     let
-       ag = .ag <| .geoParam <| param
-       ap = .ap <| .geoParam <| param
+       ag = .ag levelParam
+       ap = .ap levelParam
        g = 9.28
        uAux = Maybe.withDefault 0.0 (List.head us)
        u = if (uAux<0.0) then 0.0 else uAux
@@ -315,9 +354,9 @@ levelSim level input ref hmaxExpected levelParam =
         viewBox =
             Rectangle2d.from Point2d.origin (Point2d.pixels 800 450)
         
-        geoParam = .geoParam levelParam
-        ag = .ag geoParam
-        ap = .ap geoParam
+        -- geoParam = .geoParam levelParam
+        ag = .ag levelParam
+        ap = .ap levelParam
         lbase = 200.0
         l = lbase*sqrt(ag)
         hbase = 300.0

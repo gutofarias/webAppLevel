@@ -27,10 +27,6 @@ type alias Ref = List Float
 type alias Output = List Float
 type alias Error = List Float
   
--- type alias FuncSist = Tempo -> ControlEffort -> State -> DState
--- type alias Controller = Tempo -> State -> Ref -> ControlMemory -> (ControlEffort, ControlMemory)
--- type alias RefFunction = Tempo -> State -> Ref
-
 type EdoSist
     = Uncontrolled FuncSistUncontrolled
     | Controlled {outputFunc:OutputFunction, refFunc:RefFunction, controller:Controller, sistFunc:FuncSistControlled}
@@ -40,15 +36,6 @@ type alias FuncSistUncontrolled = Tempo -> State -> DState
 type alias Controller = ControlMemory -> Error -> Passo -> Tempo -> State -> (ControlEffort, ControlMemory)
 type alias RefFunction = Tempo -> Output -> Ref
 type alias OutputFunction = Tempo -> State -> Output
-    
--- testeSolver : RefFunction -> ControlMemory -> Controller -> FuncSistControlled -> Tempo -> State -> DState
--- testeSolver refFunc contMem contFunc fsist tempo state = 
---     let 
---         ref = refFunc tempo state
---         controlEffort = Tuple.first (contFunc contMem ref tempo state)
---     in
---         fsist controlEffort tempo state
-    
     
 type alias Solver = FuncSistUncontrolled -> Passo -> Tempo -> State -> State
 type alias Datum = (Tempo , State)
