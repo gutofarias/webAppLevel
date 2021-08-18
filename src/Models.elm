@@ -37,27 +37,13 @@ initModelParam modelType =
     case modelType of
         Level -> LevelP initLevelParam
       
--- updateModelParam : ModelParam -> ModelIStates -> ModelParam
--- updateModelParam modelParam modelIStates =
---     case modelParam of
---         LevelP levelParam ->
---             case modelIStates of
---                 LevelIS levelIStates ->
---                    LevelP <| updateLevelParam levelParam levelIStates
-
-initStateModelFromXs : Edo.State -> ModelParam -> ModelParam
-initStateModelFromXs xs modelParam =
+                 
+updateModelParamFromXs : Edo.State -> ModelParam -> ModelParam
+updateModelParamFromXs xs modelParam =
     case modelParam of
         LevelP levelParam ->
-            LevelP <| initStateLevelFromXs xs levelParam
+            LevelP <| updateLevelParamFromXs xs levelParam
                        
-------------------------------------------------
--- ModelIStates
-------------------------------------------------
-
--- type ModelIStates
---     = LevelIS LevelIStates
-      
 
 changeModelParam : ModelParam -> ModelInteract -> ModelParam
 changeModelParam modelParam modelInteract =
@@ -66,7 +52,6 @@ changeModelParam modelParam modelInteract =
             case modelParam of
                 LevelP levelParam ->
                     LevelP <| changeLevelParam levelParam levelInteract 
-                        
                         
                         
 ------------------------------------------------
@@ -95,6 +80,7 @@ parameterInteractiveDiv texto pholder valor strToMsg =
     , input [type_ "number", placeholder pholder, value valor, onInput <| strToMsg ] []
     ]
                 
+    
 ------------------------------------------------
 -- runEdoModel
 ------------------------------------------------
@@ -114,8 +100,6 @@ runAnimationModel modelParam edoParam maybeRefAndController =
                  
                  
                  
-                 
-                 
 ------------------------------------------------
 ------------------------------------------------
 -- Nível
@@ -125,8 +109,6 @@ runAnimationModel modelParam edoParam maybeRefAndController =
 ------------------------------------------------
 -- LevelParam
 ------------------------------------------------
-
--- type alias LevelParam = { initState:LevelInitState, geoParam:LevelGeoParam }
 
 type alias LevelParam =
     { h0 : Float , ag : Float , ap : Float
@@ -141,62 +123,34 @@ initLevelParam =
     , agStr = "1"
     , apStr = "0.1" }
     
--- type alias LevelInitState = { h0 : Float }
--- type alias LevelGeoParam = { ag : Float, ap : Float }
-    
--- updateLevelParam : LevelParam -> LevelIStates -> LevelParam
--- updateLevelParam levelParam levelIStates =
---     let 
---         h0Str = .h0 levelIStates
---         agStr = .ag levelIStates
---         apStr = .ap levelIStates
---         listStr = [h0Str,agStr,apStr]
---         listValues = List.filterMap String.toFloat listStr
---     in
---         case listValues of
---             (h0::ag::ap::[]) ->
---                 let
---                    initState = {h0=h0}
---                    geoParam = {ag=ag, ap=ap}
---                 in
---                    {levelParam | initState = initState, geoParam = geoParam}
---             _ -> 
---                 levelParam
                     
-initStateLevelFromXs : Edo.State -> LevelParam -> LevelParam
-initStateLevelFromXs xs levelParam = 
+updateLevelParamFromXs : Edo.State -> LevelParam -> LevelParam
+updateLevelParamFromXs xs levelParam = 
     let
         h0 = .h0 levelParam
         newH0 = Maybe.withDefault h0 <| List.head xs
-        -- newInitState = {h0 = newInitStateVal}
     in
         {levelParam | h0 = newH0}
-                    
-------------------------------------------------
--- LevelIStates
-------------------------------------------------
-
--- type alias LevelIStates = { h0:String, ag:String, ap:String }
     
-    
+            
 changeLevelParam : LevelParam -> LevelInteract -> LevelParam
 changeLevelParam levelParam levelInteract =
     case levelInteract of
-        H0 valueStr -> -- {levelIStates | h0 = valueStr}
+        H0 valueStr -> 
             let
                 h0 = .h0 levelParam
                 maybeVal = String.toFloat valueStr
                 val = Maybe.withDefault h0 maybeVal
             in
             { levelParam | h0Str = valueStr, h0 = val }
-        Ag valueStr -> -- {levelIStates | ag = valueStr}
+        Ag valueStr ->
             let
                 ag = .ag levelParam
                 maybeVal = String.toFloat valueStr
                 val = Maybe.withDefault ag maybeVal
             in
             { levelParam | agStr = valueStr, ag = val }
-        Ap valueStr -> -- {levelIStates | ap = valueStr}
+        Ap valueStr -> 
             let
                 ap = .ap levelParam
                 maybeVal = String.toFloat valueStr
@@ -263,13 +217,11 @@ runAnimationLevel levelParam edoParam maybeRefFuncAndController =
                 controller = .controller refFuncAndController
             in
                 runAnimationLevelControlled levelParam edoParam refFunc controller
-             -- runAnimationLevelUncontrolled levelParam edoParam
                 
 runAnimationLevelUncontrolled : LevelParam -> Edo.EdoParam -> (DC.ChartData, Edo.EdoParam)
 runAnimationLevelUncontrolled levelParam edoParam =
         let
             initState = (.h0 levelParam) :: []
-            -- geoParam = .geoParam levelParam
             edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
             (edoData, edoParamNew) = Edo.edoSolverReversed edoParam edoSist initState
         in
@@ -281,8 +233,6 @@ runAnimationLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> 
 runAnimationLevelControlled levelParam edoParam refFunc controller =
         let
             initState = (.h0 levelParam) :: []
-            -- geoParam = .geoParam levelParam
-            -- edoParam2 = Debug.log "edoParam" edoParam
             edoSist = Edo.Controlled
                       { refFunc = refFunc
                       , outputFunc = outputX1
@@ -297,7 +247,6 @@ runEdoLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> Edo.Co
 runEdoLevelControlled levelParam edoParam refFunc controller =
         let
             initState = (.h0 levelParam) :: []
-            -- geoParam = .geoParam levelParam
             edoSist = Edo.Controlled
                       { refFunc = refFunc
                       , outputFunc = outputX1
@@ -305,17 +254,15 @@ runEdoLevelControlled levelParam edoParam refFunc controller =
                       , sistFunc = (levelSyst levelParam)}
         in
             DC.toChartDataTS1E1R1U4 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
-            -- DC.toChartDataTS1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
 
 runEdoLevelUncontrolled : LevelParam -> Edo.EdoParam -> DC.ChartData
 runEdoLevelUncontrolled levelParam edoParam =
         let
             initState = (.h0 levelParam) :: []
-            -- geoParam = .geoParam levelParam
             edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
         in
-            DC.toChartDataTS1E1R1U1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
-            -- DC.toChartDataTS1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
+            -- DC.toChartDataTS1E1R1U1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
+            DC.toChartDataTS1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
                 
 ------------------------------------------------
 -- levelSyst
@@ -339,7 +286,6 @@ levelSyst levelParam us t state =
                    -(ap/ag)*sqrt(2.0*g)*sqrt(hn) + (u/ag) :: []
            _ -> 0.0 :: []
       
--- type alias FuncSist = Tempo -> State -> DState
 
 outputX1 : Edo.Tempo -> Edo.State -> Edo.Output
 outputX1 tempo xs =
@@ -354,7 +300,6 @@ levelSim level input ref hmaxExpected levelParam =
         viewBox =
             Rectangle2d.from Point2d.origin (Point2d.pixels 800 450)
         
-        -- geoParam = .geoParam levelParam
         ag = .ag levelParam
         ap = .ap levelParam
         lbase = 200.0

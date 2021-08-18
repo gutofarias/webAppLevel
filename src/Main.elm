@@ -63,8 +63,6 @@ type Interact
         
 type alias InteractStates =
     { edoIStates : Edo.EdoIStates
-    -- , modelIStates : M.ModelIStates
-    -- , chartIStates : MC.ChartIStates
     , refIStates : Ref.RefIStates
     }
 
@@ -255,7 +253,7 @@ update msg model =
                     xs = DC.xsFromDatum dataFirst
                     -- xs2 = Debug.log "teste" xs
                     -- xs = [1.0]
-                    modelParamNew = M.initStateModelFromXs xs modelParam
+                    modelParamNew = M.updateModelParamFromXs xs modelParam
                     newData = data ++ modelData
                 in
                 -- ({model | elapsedTime = newElapsedTime}, Cmd.none)
