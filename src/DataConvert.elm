@@ -2,7 +2,7 @@ module DataConvert exposing (..)
 
 import EdoSolver as Edo
 
-type alias AxisFunc data = data -> Float
+type alias AxisFuncMaybe data = data -> Maybe Float
     
 type alias DatumTS1 = {t : Float, x1 : Float }
 type alias DatumTS1E1R1U1 = {t : Float, x1 : Float, e1 : Float, r1 : Float, u1 : Float }
@@ -29,29 +29,29 @@ type alias ChartData = List ChartDatum
 --     | T5S DataT5S
     
                       
-toChartDatumTS1 : Edo.Datum -> ChartDatum
+toChartDatumTS1 : Edo.Datum -> Maybe ChartDatum
 toChartDatumTS1 edoDatum =
     case edoDatum of
         (tempo, sist) ->
             case sist of 
-                x::xs -> TS1 {t = tempo, x1 = x}
-                [] -> TS1 {t= tempo, x1 = 0.0}         
+                x::xs -> Just <| TS1 {t = tempo, x1 = x}
+                [] -> Nothing
 
-toChartDatumTS1E1R1U1 : Edo.Datum -> ChartDatum
+toChartDatumTS1E1R1U1 : Edo.Datum -> Maybe ChartDatum
 toChartDatumTS1E1R1U1 edoDatum =
     case edoDatum of
         (tempo, sist) ->
             case sist of 
-                (x::e::r::u::xs) -> TS1E1R1U1 {t = tempo, x1 = x, e1 = e, r1 = r, u1 = u}
-                _ -> TS1E1R1U1 {t = 0.0, x1 = 0.0, e1 = 0.0, r1 = 0.0, u1 = 0.0}
+                (x::e::r::u::xs) -> Just <| TS1E1R1U1 {t = tempo, x1 = x, e1 = e, r1 = r, u1 = u}
+                _ -> Nothing
                      
-toChartDatumTS1E1R1U4 : Edo.Datum -> ChartDatum
+toChartDatumTS1E1R1U4 : Edo.Datum -> Maybe ChartDatum
 toChartDatumTS1E1R1U4 edoDatum =
     case edoDatum of
         (tempo, sist) ->
             case sist of 
-                (x::e::r::u1::u2::u3::u4::xs) -> TS1E1R1U4 {t = tempo, x1 = x, e1 = e, r1 = r, u1 = u1, u2 = u2, u3 = u3, u4 = u4}
-                _ -> TS1E1R1U4 {t = 0.0, x1 = 0.0, e1 = 0.0, r1 = 0.0, u1 = 0.0, u2 = 0.0, u3 = 0.0, u4 = 0.0}
+                (x::e::r::u1::u2::u3::u4::xs) -> Just <| TS1E1R1U4 {t = tempo, x1 = x, e1 = e, r1 = r, u1 = u1, u2 = u2, u3 = u3, u4 = u4}
+                _ -> Nothing
                      
 -- toChartDatumT2S : Edo.Datum -> ChartDatum
 -- toChartDatumT2S edoDatum =
@@ -72,15 +72,15 @@ toChartDatumTS1E1R1U4 edoDatum =
                      
 toChartDataTS1 : Edo.Data -> ChartData
 toChartDataTS1 =
-    List.map toChartDatumTS1 
+    List.filterMap toChartDatumTS1 
         
 toChartDataTS1E1R1U1 : Edo.Data -> ChartData
 toChartDataTS1E1R1U1 =
-    List.map toChartDatumTS1E1R1U1 
+    List.filterMap toChartDatumTS1E1R1U1 
         
 toChartDataTS1E1R1U4 : Edo.Data -> ChartData
 toChartDataTS1E1R1U4 =
-    List.map toChartDatumTS1E1R1U4
+    List.filterMap toChartDatumTS1E1R1U4
         
 -- toChartDataT2S : Edo.Data -> ChartData
 -- toChartDataT2S =
@@ -91,74 +91,87 @@ toChartDataTS1E1R1U4 =
 --     List.map toChartDatumT3S 
         
                      
-stringToAxisFunc : String -> AxisFunc ChartDatum
+stringToAxisFunc : String -> Maybe (AxisFuncMaybe ChartDatum)
 stringToAxisFunc str =
     case str of
-        "t" -> ft
-        "x1" -> fx1
-        "e1" -> fe1
-        "r1" -> fr1
-        "u1" -> fu1
-        "u2" -> fu2
-        "u3" -> fu3
-        "u4" -> fu4
-        _ -> ft
+        "t" -> Just ft
+        "x1" -> Just fx1
+        "e1" -> Just fe1
+        "r1" -> Just fr1
+        "u1" -> Just fu1
+        "u2" -> Just fu2
+        "u3" -> Just fu3
+        "u4" -> Just fu4
+        _ -> Nothing
              
-fx1 : ChartDatum -> Float
+funcMaybeToMaybeFunc : ChartData -> (ChartDatum -> Maybe Float) -> Maybe (ChartDatum -> Float)
+funcMaybeToMaybeFunc data func =
+    case data of
+        (x::xs) ->
+            case func x of
+                Just a -> Just (\chartDatum -> Maybe.withDefault 0.0 (func chartDatum))
+                Nothing -> Nothing
+                
+        _ -> Nothing
+
+
+
+                       
+fx1 : ChartDatum -> Maybe Float
 fx1 chartDatum = 
     case chartDatum of
-        TS1 datum -> datum.x1
-        TS1E1R1U1 datum -> datum.x1
-        TS1E1R1U4 datum -> datum.x1
+        TS1 datum -> Just datum.x1
+        TS1E1R1U1 datum -> Just datum.x1
+        TS1E1R1U4 datum -> Just datum.x1
 
-ft : ChartDatum -> Float
+ft : ChartDatum -> Maybe Float
 ft chartDatum = 
     case chartDatum of
-        TS1 datum -> datum.t
-        TS1E1R1U1 datum -> datum.t
-        TS1E1R1U4 datum -> datum.t
+        TS1 datum -> Just datum.t
+        TS1E1R1U1 datum -> Just datum.t
+        TS1E1R1U4 datum -> Just datum.t
                                 
-fe1 : ChartDatum -> Float
+fe1 : ChartDatum -> Maybe Float
 fe1 chartDatum = 
     case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> datum.e1
-        TS1E1R1U4 datum -> datum.e1
+        TS1 datum -> Nothing
+        TS1E1R1U1 datum -> Just datum.e1
+        TS1E1R1U4 datum -> Just datum.e1
                      
-fr1 : ChartDatum -> Float
+fr1 : ChartDatum -> Maybe Float
 fr1 chartDatum = 
     case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> datum.r1
-        TS1E1R1U4 datum -> datum.r1
+        TS1 datum -> Nothing
+        TS1E1R1U1 datum -> Just datum.r1
+        TS1E1R1U4 datum -> Just datum.r1
                                 
-fu1 : ChartDatum -> Float
+fu1 : ChartDatum -> Maybe Float
 fu1 chartDatum = 
     case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> datum.u1
-        TS1E1R1U4 datum -> datum.u1
+        TS1 datum -> Nothing
+        TS1E1R1U1 datum -> Just datum.u1
+        TS1E1R1U4 datum -> Just datum.u1
                                 
-fu2 : ChartDatum -> Float
+fu2 : ChartDatum -> Maybe Float
 fu2 chartDatum = 
     case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> 0.0
-        TS1E1R1U4 datum -> datum.u2
+        TS1 datum -> Nothing
+        TS1E1R1U1 datum -> Nothing
+        TS1E1R1U4 datum -> Just datum.u2
                            
-fu3 : ChartDatum -> Float
+fu3 : ChartDatum -> Maybe Float
 fu3 chartDatum = 
     case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> 0.0
-        TS1E1R1U4 datum -> datum.u3
+        TS1 datum -> Nothing
+        TS1E1R1U1 datum -> Nothing
+        TS1E1R1U4 datum -> Just datum.u3
                            
-fu4 : ChartDatum -> Float
+fu4 : ChartDatum -> Maybe Float
 fu4 chartDatum = 
     case chartDatum of
-        TS1 datum -> 0.0
-        TS1E1R1U1 datum -> 0.0
-        TS1E1R1U4 datum -> datum.u4
+        TS1 datum -> Nothing
+        TS1E1R1U1 datum -> Nothing
+        TS1E1R1U4 datum -> Just datum.u4
 
 
 xsFromDatum : ChartDatum -> List Float
@@ -175,7 +188,7 @@ usFromDatum : ChartDatum -> List Float
 usFromDatum chartDatum = 
     case chartDatum of
         TS1 datum -> 
-            [0.0]
+            []
         TS1E1R1U1 datum -> 
             [(.u1 datum)]
         TS1E1R1U4 datum ->
