@@ -159,3 +159,24 @@ fu4 chartDatum =
         TS1 datum -> 0.0
         TS1E1R1U1 datum -> 0.0
         TS1E1R1U4 datum -> datum.u4
+
+
+xsFromDatum : ChartDatum -> List Float
+xsFromDatum chartDatum = 
+    case chartDatum of
+        TS1 datum -> 
+            [(.x1 datum)]
+        TS1E1R1U1 datum -> 
+            [(.x1 datum)]
+        TS1E1R1U4 datum ->
+            [(.x1 datum)]
+
+usFromDatum : ChartDatum -> List Float
+usFromDatum chartDatum = 
+    case chartDatum of
+        TS1 datum -> 
+            [0.0]
+        TS1E1R1U1 datum -> 
+            [(.u1 datum)]
+        TS1E1R1U4 datum ->
+            [(.u1 datum),(.u2 datum),(.u3 datum),(.u4 datum)]
