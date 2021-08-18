@@ -16,9 +16,18 @@ import Html.Events exposing (onInput)
 -- ControlParam
 ------------------------------------------------
 
+type ControlType
+    = Pid
 
 type ControlParam
     = PidP PidParam
+      
+      
+initControlParam : ControlType -> ControlParam
+initControlParam controlType =
+    case controlType of
+        Pid -> PidP initPidParam
+               
 
 controllerFromControlParam : ControlParam -> Edo.Controller
 controllerFromControlParam controlParam =
