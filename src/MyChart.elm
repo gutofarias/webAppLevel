@@ -281,7 +281,7 @@ chartCurvesView chartData chartIToMsg curves =
     case curves of
         [] ->  addCurveButtonView chartIToMsg :: []
         [c] -> 
-            (div [] [ chartCurveSelectionView chartData chartIToMsg c
+            (div [style "height" "30px"] [ chartCurveSelectionView chartData chartIToMsg c
                     , removeCurveButtonView chartIToMsg (.curveID c)
                     , addCurveButtonView chartIToMsg]) :: []
         (c::cs) ->
