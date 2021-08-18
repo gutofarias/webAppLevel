@@ -14,11 +14,7 @@ import Html.Events exposing (onClick, onInput)
 
 import Chart as C
 import Chart.Attributes as CA
-
 import MyChart as MC
-
-
-
 
 
 ------------------------------------------------
@@ -68,19 +64,12 @@ type Interact
 init : () -> (Model, Cmd Msg) 
 init () =
     let
-        tini = 0.0 
-        tfim = 10.0
-        passoInt = 0.001 
-        relSaida = 100
-        edoParam = Edo.EdoParam tini tfim passoInt relSaida [] Edo.rungeKutta
-        chartData = []
-        edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
-        interactStates = {edoIStates = edoIStates}
+        (edoParam, edoIStates) = Edo.initEdoParamAndIStates
     in
-           ({ chartData = chartData
+           ({ chartData = []
             , modelParam = M.initModelParam M.Level
             , edoParam = edoParam
-            , edoIStates = 
+            , edoIStates = edoIStates
             -- , str = "teste"
             , tfimAnimation = 0.0
             , animating = False
@@ -110,7 +99,7 @@ subscriptions model =
 type Msg
     = RunEdo
     | ChangeInteract Interact
-    | UpdateParameters 
+    | UpdateEdoParam 
     -- | ChangeStr String
     | Tick Float
     | RunAnimation
@@ -122,7 +111,7 @@ update msg model =
     RunEdo -> 
       let  
           animating = False
-          newModel = Tuple.first <| update UpdateParameters model
+          newModel = Tuple.first <| update UpdateEdoParam model
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
           controlParam = .controlParam newModel
@@ -141,62 +130,55 @@ update msg model =
           ({ newModel | chartData = data, animating = animating, edoParam = newEdoParam }, Cmd.none)
             
     ChangeInteract interact ->
+        case interact of
+            Edo edoInteract ->
+                let
+                    edoIStates = .edoIStates model
+                    edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract 
+                in
+                    ({model | edoIStates = edoIStatesNew}, Cmd.none)
+
+            Models modelInteract ->
+                let
+                    modelParam = .modelParam model
+                    modelParamNew = M.changeModelParam modelParam modelInteract
+                in 
+                    ({model | modelParam = modelParamNew}, Cmd.none)
+
+            Control controlInteract ->
+                let 
+                    controlParam = .controlParam model
+                    controlParamNew = Control.changeControlParam controlParam controlInteract
+                in
+                    ({model | controlParam = controlParamNew}, Cmd.none)
+
+            Ref refInteract ->
+                let
+                    refParam = .refParam model
+                    refParamNew = Ref.changeRefParam refParam refInteract 
+                in
+                    ({model | refParam = refParamNew}, Cmd.none)
+
+            MChart chartID chartInteract -> 
+                let
+                    chartsParam = .chartsParam model
+                    newChartsParam = MC.chartIndividualInteractAction chartID chartsParam chartInteract
+                in
+                    ({model | chartsParam = newChartsParam}, Cmd.none)
+
+            MCharts chartsInteract ->
+                let
+                    chartsParam = .chartsParam model
+                    newChartsParam = MC.chartsInteractAction chartsParam chartsInteract
+                in
+                    ({model | chartsParam = newChartsParam}, Cmd.none)
+
+
+    UpdateEdoParam ->
         let
-           interactStates = .interactStates model
-           edoIStates = .edoIStates interactStates
-        in
-            case interact of
-                Edo edoInteract ->
-                    let
-                        edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract 
-                        interactStatesNew = {interactStates | edoIStates = edoIStatesNew}
-                    in
-                        ({model | interactStates = interactStatesNew}, Cmd.none)
-                        
-                Models modelInteract ->
-                    let
-                        modelParam = .modelParam model
-                        modelParamNew = M.changeModelParam modelParam modelInteract
-                    in 
-                        ({model | modelParam = modelParamNew}, Cmd.none)
-                            
-                Control controlInteract ->
-                    let 
-                        controlParam = .controlParam model
-                        controlParamNew = Control.changeControlParam controlParam controlInteract
-                    in
-                        ({model | controlParam = controlParamNew}, Cmd.none)
-
-                Ref refInteract ->
-                    let
-                        refParam = .refParam model
-                        refParamNew = Ref.changeRefParam refParam refInteract 
-                    in
-                        ({model | refParam = refParamNew}, Cmd.none)
-
-                MChart chartID chartInteract -> 
-                    let
-                        chartsParam = .chartsParam model
-                        newChartsParam = MC.chartIndividualInteractAction chartID chartsParam chartInteract
-                    in
-                        ({model | chartsParam = newChartsParam}, Cmd.none)
-
-                MCharts chartsInteract ->
-                    let
-                        chartsParam = .chartsParam model
-                        newChartsParam = MC.chartsInteractAction chartsParam chartsInteract
-                    in
-                        ({model | chartsParam = newChartsParam}, Cmd.none)
-
-
-    UpdateParameters ->
-        let
-            interactStates = .interactStates model
-            edoIStates = .edoIStates interactStates
+            edoIStates = .edoIStates model
                          
             edoParam = .edoParam model
-            refParam = .refParam model
-                       
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
         in
             ({model | edoParam = edoParamNew}, Cmd.none)
@@ -252,7 +234,7 @@ update msg model =
     RunAnimation ->
         let
             animating = True
-            newModel = Tuple.first <| update UpdateParameters model
+            newModel = Tuple.first <| update UpdateEdoParam model
             edoParam = .edoParam newModel
             controlMem = []
 
