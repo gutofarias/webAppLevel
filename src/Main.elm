@@ -65,7 +65,6 @@ type alias InteractStates =
     { edoIStates : Edo.EdoIStates
     , modelIStates : M.ModelIStates
     -- , chartIStates : MC.ChartIStates
-    -- , controlIStates : Control.ControlIStates
     , refIStates : Ref.RefIStates
     }
 
@@ -99,7 +98,6 @@ init () =
         chartData = []
         levelIStates = {h0 = (String.fromFloat h0), ag =  (String.fromFloat ag), ap = (String.fromFloat ap)}
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
-        -- controlIStates = Control.PidIS Control.initPidIStates
         refIStates = Ref.Step1IS Ref.initStep1IStates
         interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, refIStates = refIStates}
     in
@@ -221,17 +219,14 @@ update msg model =
             interactStates = .interactStates model
             edoIStates = .edoIStates interactStates
             modelIStates = .modelIStates interactStates
-            -- controlIStates = .controlIStates interactStates
             refIStates = .refIStates interactStates
                          
             edoParam = .edoParam model
             modelParam = .modelParam model
-            controlParam = .controlParam model
             refParam = .refParam model
                        
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
             modelParamNew = M.updateModelParam modelParam modelIStates
-            -- controlParamNew = Control.updateControlParam controlParam controlIStates
             refParamNew = Ref.updateRefParam refParam refIStates
         in
             ({model | edoParam = edoParamNew, modelParam = modelParamNew, refParam = refParamNew}, Cmd.none)
@@ -314,7 +309,6 @@ view model =
     interactStates = .interactStates model
     edoIStates = .edoIStates interactStates
     modelIStates = .modelIStates interactStates
-    -- controlIStates = .controlIStates interactStates
     refIStates = .refIStates interactStates
     chartData = .chartData model
     chartsParam = .chartsParam model
