@@ -7,7 +7,8 @@ import Controller as Control
 import Reference as Ref
 
 import Browser
-import Html exposing (Html, button, div, text, pre, input, label, select, option, span)
+import Browser.Events
+import Html exposing (Html, button, div, text, pre, input, label, select, option, span, section)
 import Html.Attributes exposing (style, placeholder, value, for, name, selected)
 import Html.Events exposing (onClick, onInput)
 
@@ -25,7 +26,7 @@ import MyChart as MC
 ------------------------------------------------
 
 main =
-  Browser.sandbox { init = init, update = update, view = view }
+  Browser.element { init = init, update = update, view = view, subscriptions = subscriptions }
 
       
       
@@ -46,6 +47,8 @@ type alias Model =
     , chartsParam : List MC.ChartParam 
     , controlParam : Control.ControlParam
     , refParam : Ref.RefParam
+    , tfimAnimation : Float
+    , animating : Bool
     }
 
     
@@ -62,7 +65,7 @@ type alias InteractStates =
     { edoIStates : Edo.EdoIStates
     , modelIStates : M.ModelIStates
     -- , chartIStates : MC.ChartIStates
-    , controlIStates : Control.ControlIStates
+    -- , controlIStates : Control.ControlIStates
     , refIStates : Ref.RefIStates
     }
 
@@ -79,8 +82,8 @@ updateModelIStates modelIStates interactStates =
 -- init
 ------------------------------------------------
 
-init : Model 
-init =
+init : () -> (Model, Cmd Msg) 
+init () =
     let
         ag = 1.0
         ap = 0.1
@@ -96,22 +99,33 @@ init =
         chartData = []
         levelIStates = {h0 = (String.fromFloat h0), ag =  (String.fromFloat ag), ap = (String.fromFloat ap)}
         edoIStates = {tini = (String.fromFloat tini), tfim = (String.fromFloat tfim)}
-        controlIStates = Control.PidIS Control.initPidIStates
+        -- controlIStates = Control.PidIS Control.initPidIStates
         refIStates = Ref.Step1IS Ref.initStep1IStates
-        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, controlIStates = controlIStates, refIStates = refIStates}
+        interactStates = {edoIStates = edoIStates, modelIStates = M.LevelIS levelIStates, refIStates = refIStates}
     in
-            { chartData = chartData
+           ({ chartData = chartData
             , modelParam = M.LevelP levelParam
             , edoParam = edoParam
             , interactStates = interactStates
             -- , str = "teste"
+            , tfimAnimation = 0.0
+            , animating = False
             , chartsParam = [(MC.initChartParam Nothing)]
             , controlParam = Control.PidP Control.initPidParam
             , refParam = Ref.Step1P Ref.initStep1Param
-            }
+            }, Cmd.none)
 
         
-        
+------------------------------------------------
+-- Subscriptions
+------------------------------------------------
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model.animating of
+        False ->
+            Sub.none
+        True ->
+            Browser.Events.onAnimationFrameDelta (Tick)
         
         
 ------------------------------------------------
@@ -123,32 +137,39 @@ type Msg
     | ChangeInteract Interact
     | UpdateParameters 
     -- | ChangeStr String
+    | Tick Float
+    | RunAnimation
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
       
     RunEdo -> 
       let  
-          newModel = update UpdateParameters model
+          animating = False
+          newModel = Tuple.first <| update UpdateParameters model
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
           controlParam = .controlParam newModel
           refParam = .refParam newModel
+                     
           controller = Control.controllerFromControlParam controlParam
           refFunc = Ref.refFromRefParam refParam 
           refFuncAndController = {refFunc = refFunc,controller = controller}
           maybeRefFuncAndController = Just refFuncAndController
-          data = M.runEdoModel modelParam edoParam maybeRefFuncAndController
+                                      
+          controlMem = []
+          newEdoParam = {edoParam | controlMemory = controlMem}
+                                      
+          data = M.runEdoModel modelParam newEdoParam maybeRefFuncAndController
       in
-          { newModel | chartData = data }
+          ({ newModel | chartData = data, animating = animating, edoParam = newEdoParam }, Cmd.none)
             
     ChangeInteract interact ->
         let
            interactStates = .interactStates model
            edoIStates = .edoIStates interactStates
            modelIStates = .modelIStates interactStates
-           controlIStates = .controlIStates interactStates
         in
             case interact of
                 Edo edoInteract ->
@@ -156,22 +177,21 @@ update msg model =
                         edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract 
                         interactStatesNew = {interactStates | edoIStates = edoIStatesNew}
                     in
-                        {model | interactStates = interactStatesNew}
+                        ({model | interactStates = interactStatesNew}, Cmd.none)
                         
                 Models modelInteract ->
                     let
                         modelIStatesNew = M.changeModelIStates modelIStates modelInteract
                         interactStatesNew = {interactStates | modelIStates = modelIStatesNew}
                     in 
-                        {model | interactStates = interactStatesNew}
+                        ({model | interactStates = interactStatesNew}, Cmd.none)
                             
                 Control controlInteract ->
                     let 
-                        controlIStatesNew =
-                            Control.changeControlIStates controlIStates controlInteract 
-                        interactStatesNew = {interactStates | controlIStates = controlIStatesNew}
+                        controlParam = .controlParam model
+                        controlParamNew = Control.changeControlParam controlParam controlInteract
                     in
-                        {model | interactStates = interactStatesNew}
+                        ({model | controlParam = controlParamNew}, Cmd.none)
 
                 Ref refInteract ->
                     let
@@ -179,21 +199,21 @@ update msg model =
                         refIStatesNew = Ref.changeRefIStates refIStates refInteract 
                         interactStatesNew = {interactStates | refIStates = refIStatesNew}
                     in
-                        {model | interactStates = interactStatesNew}
+                        ({model | interactStates = interactStatesNew}, Cmd.none)
 
                 MChart chartID chartInteract -> 
                     let
                         chartsParam = .chartsParam model
                         newChartsParam = MC.chartIndividualInteractAction chartID chartsParam chartInteract
                     in
-                        {model | chartsParam = newChartsParam}
+                        ({model | chartsParam = newChartsParam}, Cmd.none)
 
                 MCharts chartsInteract ->
                     let
                         chartsParam = .chartsParam model
                         newChartsParam = MC.chartsInteractAction chartsParam chartsInteract
                     in
-                        {model | chartsParam = newChartsParam}
+                        ({model | chartsParam = newChartsParam}, Cmd.none)
 
 
     UpdateParameters ->
@@ -201,7 +221,7 @@ update msg model =
             interactStates = .interactStates model
             edoIStates = .edoIStates interactStates
             modelIStates = .modelIStates interactStates
-            controlIStates = .controlIStates interactStates
+            -- controlIStates = .controlIStates interactStates
             refIStates = .refIStates interactStates
                          
             edoParam = .edoParam model
@@ -211,10 +231,72 @@ update msg model =
                        
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
             modelParamNew = M.updateModelParam modelParam modelIStates
-            controlParamNew = Control.updateControlParam controlParam controlIStates
+            -- controlParamNew = Control.updateControlParam controlParam controlIStates
             refParamNew = Ref.updateRefParam refParam refIStates
         in
-            {model | edoParam = edoParamNew, modelParam = modelParamNew, controlParam = controlParamNew, refParam = refParamNew}
+            ({model | edoParam = edoParamNew, modelParam = modelParamNew, refParam = refParamNew}, Cmd.none)
+
+    Tick dTime ->
+        let
+            animating = .animating model
+        in
+        case animating of
+            False -> 
+                (model, Cmd.none)
+            True -> 
+                let
+                    dTimeSec = dTime/1000.0
+                    edoParam = .edoParam model
+                    tfimAnimation = .tfimAnimation model
+                    tempo = .tempo edoParam
+                    tfim = .tfim edoParam
+                    newTfim = if (tfim + dTimeSec) >= tfimAnimation then
+                                  tfimAnimation
+                              else
+                                  tfim + dTimeSec
+                    edoParam2 = {edoParam | tfim = newTfim}
+                in
+                if (tempo >= tfimAnimation) then
+                    let
+                        newAnimating = False
+                    in
+                    ({model | animating=newAnimating}, Cmd.none)
+                else
+                let
+                    modelData = .chartData model
+                    modelParam = .modelParam model
+                    controlParam = .controlParam model
+                    refParam = .refParam model
+                    controller = Control.controllerFromControlParam controlParam
+                    refFunc = Ref.refFromRefParam refParam 
+                    refFuncAndController = {refFunc = refFunc,controller = controller}
+                    maybeRefFuncAndController = Just refFuncAndController
+                    (data,newEdoParam) = M.runAnimationModel modelParam edoParam2 maybeRefFuncAndController
+                    dataFirst = Maybe.withDefault (DC.TS1 {t=5.0, x1=50.0}) <| List.head data 
+                    xs = DC.xsFromDatum dataFirst
+                    -- xs2 = Debug.log "teste" xs
+                    -- xs = [1.0]
+                    modelParamNew = M.initStateModelFromXs xs modelParam
+                    newData = data ++ modelData
+                in
+                -- ({model | elapsedTime = newElapsedTime}, Cmd.none)
+                ({ model | chartData = newData, edoParam = newEdoParam
+                 , modelParam = modelParamNew
+                 }, Cmd.none)
+
+    RunAnimation ->
+        let
+            animating = True
+            newModel = Tuple.first <| update UpdateParameters model
+            edoParam = .edoParam newModel
+            controlMem = []
+
+            tfim = .tfim edoParam
+            newEdoParam = {edoParam | tfim = 0.0, controlMemory = controlMem}
+            chartData = []
+            
+        in
+           ({newModel | animating = animating, tfimAnimation = tfim, edoParam = newEdoParam, chartData = chartData }, Cmd.none)
 
     -- ChangeStr str -> 
     --      {model | str = str}
@@ -228,28 +310,51 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let
+    controlParam = .controlParam model
     interactStates = .interactStates model
     edoIStates = .edoIStates interactStates
     modelIStates = .modelIStates interactStates
-    controlIStates = .controlIStates interactStates
+    -- controlIStates = .controlIStates interactStates
     refIStates = .refIStates interactStates
     chartData = .chartData model
     chartsParam = .chartsParam model
+    edoParam = .edoParam model
+    refParamI = .refParam model
+    refParam = case refParamI of
+                   Ref.Step1P stepParam -> stepParam
+    refmax = max (.iVal refParam) (.fVal refParam)
+    modelParam = .modelParam model
+    levelParam = case modelParam of
+                     M.LevelP levelParam1 -> levelParam1
+         
+    h0 = 10.0
+    hmaxExpected = max h0 refmax 
+    data = .chartData model
+    dataFirst = Maybe.withDefault (DC.TS1 {t=0.0, x1=10.0}) <| List.head data 
+    xs = DC.xsFromDatum dataFirst
+    us = DC.usFromDatum dataFirst
+    level = Maybe.withDefault 10.0 <| List.head xs
+    u = Maybe.withDefault 10.0 <| List.head us
+    -- levellog = Debug.log "level" (level,hmaxExpected)
   in
-    div []
-        [
-        div []
-            (
-            [ Edo.viewEdoIStates edoIStates (ChangeInteract << Edo)
-            , M.viewModelIStates modelIStates (ChangeInteract << Models)
-            , Control.viewControlIStates controlIStates (ChangeInteract << Control)
-            , div [] [Ref.viewRefIStates refIStates (ChangeInteract << Ref)]
-            , div [] []
-            , button [ onClick RunEdo ] [ text "Edo" ]
-            -- , label [] [ text model.str]
+    section []
+        [ div [style "height" "30px"]
+            [ Edo.viewEdoIStates edoIStates (ChangeInteract << Edo)]
+        , div [style "height" "30px"]
+            [ M.viewModelIStates modelIStates (ChangeInteract << Models)]
+        , div [style "height" "30px"]
+            [Control.viewController controlParam (ChangeInteract << Control)]
+        , div [style "height" "30px"]
+            [Ref.viewRefIStates refIStates (ChangeInteract << Ref)]
+        , div [style "height" "30px"]
+            [ button [ onClick RunEdo ] [ text "Edo" ]
+            , button [ onClick RunAnimation ] [ text "Animation" ]
+            -- , text (String.fromFloat <| .elapsedTime model)
+            , text (String.fromFloat <| .tempo edoParam)
             ]
-            ++ MC.chartsView chartData chartsParam (ChangeInteract << MCharts) (fcomposition23 ChangeInteract MChart)
-            )
+        , span []
+            (MC.chartsView chartData chartsParam (ChangeInteract << MCharts) (fcomposition23 ChangeInteract MChart))
+        , M.levelSim level u 0.0 hmaxExpected levelParam
         -- , MC.chartView chartData chartParam (fcomposition23 ChangeInteract MChart)
         ]
          
