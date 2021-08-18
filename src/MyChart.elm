@@ -12,10 +12,6 @@ import Html.Events exposing (onInput,onClick)
 -- Data Types Charts
 ------------------------------------------------
 
--- type alias AxisFunc data = data -> Float
-type alias AxesFunc data = 
-    (DC.AxisFunc data, DC.AxisFunc data)
-
 type alias AxesString = (String,String)
     
 type alias Curve =
@@ -63,17 +59,6 @@ initChartParam maybeLastChartParam =
                 chartID = lastChartID + 1
             in
                 {chartID = chartID, curves = [(initCurve Nothing)]}
-
-------------------------------------------------
-------------------------------------------------
--- ChartIStates
-------------------------------------------------
-------------------------------------------------
-
--- type alias CurveIStates = {curveID : CurveID, axesString : AxesString}
-    
--- nao estou precisando no momento
--- type alias ChartIStates = { chartID : ChartID, curvesString : List CurveIStates }
 
 
 ------------------------------------------------
