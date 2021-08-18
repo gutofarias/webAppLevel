@@ -236,7 +236,8 @@ chart5View chartData curves =
         ([ C.xLabels []
         , C.yLabels [ CA.withGrid ]
         ] ++
-                List.map (curveToChartSeriesView chartData) curves)
+                -- Usa o filteMap porque o resultado das curvas é um maybe. So plota a curva se o resultado for um Just. 
+                List.filterMap (curveToChartSeriesView chartData) curves)
  
             
 chartContainerView chart =
@@ -246,20 +247,46 @@ chartContainerView chart =
         chart
       ]
       
-curveToChartSeriesView : DC.ChartData -> Curve -> C.Element DC.ChartDatum msg
+curveToChartSeriesView : DC.ChartData -> Curve -> Maybe (C.Element DC.ChartDatum msg)
 curveToChartSeriesView chartData curve = 
     let 
         (xstr,ystr) = .axesString curve
-        xfunc = stringToAxisFunc xstr
-        yfunc = stringToAxisFunc ystr
+                      
+        -- stringToAxisFunc me retorna um Maybe (AxisFuncMaybe ChartDatum) 
+        -- type alias AxisFuncMaybe data = data -> Maybe Float
+        maybeXfuncMaybeFloat = stringToAxisFunc xstr
+        maybeYfuncMaybeFloat = stringToAxisFunc ystr
+                               
+        -- Maybe (ChartDatum -> Maybe Float)
+        -- Dois maybes, o de fora é pq eu nao sei se o string retorna uma funcao valida, o de dentro é porque eu não sei se o chartDatum permite que eu aplique a função. Posso ter um TS1 e pedir u1, por exemplo
     in
-    
-        C.series xfunc
-        [ C.interpolated yfunc [ -- CA.monotone
-                            ] [ ] --CA.circle ]
-        ]
+        case (maybeXfuncMaybeFloat, maybeYfuncMaybeFloat) of
 
-        chartData
+            -- (ChartDatum -> Maybe Float)
+            -- Analisa se existe a função para a dada string
+            (Just xfuncMaybeFloat, Just yfuncMaybeFloat) ->
+                let
+                    -- Maybe (ChartDatum -> Float)
+                    -- Analisa se o dado é suportado pela funcao usando o chartData 
+                    maybeXfunc = funcMaybeToMaybeFunc chartData xfuncMaybeFloat
+                    maybeYfunc = funcMaybeToMaybeFunc chartData yfuncMaybeFloat
+                in
+                    case (maybeXfunc, maybeYfunc) of
+                        -- Caso tudo esteja ok consegue pegar a funcao e retornar o Just
+                        (Just xfunc, Just yfunc) ->
+                            Just  
+                            (C.series xfunc
+                            [ C.interpolated yfunc [ -- CA.monotone
+                                                ] [ ] --CA.circle ]
+                            ]
+
+                            chartData)
+
+                        -- caso contrario retorna nothing
+                        _ -> Nothing
+            -- caso contrario retorna nothing
+            _ -> Nothing
+                         
             
 chartCurvesView : DC.ChartData -> (ChartInteract -> msg) -> List Curve -> List (Html msg)
 chartCurvesView chartData chartIToMsg curves =
