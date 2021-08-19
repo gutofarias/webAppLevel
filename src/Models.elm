@@ -38,6 +38,12 @@ initModelParam modelType =
         Level -> LevelP initLevelParam
       
                  
+xsFromModelParam : ModelParam -> Edo.State
+xsFromModelParam modelParam = 
+    case modelParam of
+        LevelP levelParam ->
+            xsFromLevelParam levelParam
+
 updateModelParamFromXs : Edo.State -> ModelParam -> ModelParam
 updateModelParamFromXs xs modelParam =
     case modelParam of
@@ -123,6 +129,9 @@ initLevelParam =
     , agStr = "1"
     , apStr = "0.1" }
     
+xsFromLevelParam : LevelParam -> Edo.State
+xsFromLevelParam levelParam =
+    [(.h0 levelParam)]
                     
 updateLevelParamFromXs : Edo.State -> LevelParam -> LevelParam
 updateLevelParamFromXs xs levelParam = 

@@ -26,25 +26,36 @@ main =
 
       
       
-      
-      
 ------------------------------------------------
 -- Model and Data Types
 ------------------------------------------------
 
 type alias DataILevel = {initState:Float, levelParam:M.LevelParam}
 
+type BigModel
+    = SolvingEdo Model
+    | Animation Model Edo.EdoParam Edo.State
+
+modelFromBigModel : BigModel -> Model
+modelFromBigModel bigModel = 
+    case bigModel of
+        SolvingEdo model -> model
+        Animation model _ _ -> model
+
+updatingBigModelFromModel : BigModel -> Model -> BigModel
+updatingBigModelFromModel bigModel newModel = 
+    case bigModel of
+        SolvingEdo _ -> SolvingEdo newModel
+        Animation _ animatingEdoParam xs -> Animation newModel animatingEdoParam xs
+
 type alias Model =
     { chartData : DC.ChartData
     , modelParam : M.ModelParam
     , edoParam : Edo.EdoParam
     , edoIStates : Edo.EdoIStates
-    -- , str : String
     , chartsParam : List MC.ChartParam 
     , controlParam : Control.ControlParam
     , refParam : Ref.RefParam
-    , tfimAnimation : Float
-    , animating : Bool
     }
 
     
@@ -61,18 +72,16 @@ type Interact
 -- init
 ------------------------------------------------
 
-init : () -> (Model, Cmd Msg) 
+init : () -> (BigModel, Cmd Msg) 
 init () =
     let
         (edoParam, edoIStates) = Edo.initEdoParamAndIStates
     in
-           ({ chartData = []
+            (SolvingEdo
+            { chartData = []
             , modelParam = M.initModelParam M.Level
             , edoParam = edoParam
             , edoIStates = edoIStates
-            -- , str = "teste"
-            , tfimAnimation = 0.0
-            , animating = False
             , chartsParam = [(MC.initChartParam Nothing)]
             , controlParam = Control.initControlParam Control.Pid
             , refParam = Ref.initRefParam Ref.Step1
@@ -83,12 +92,11 @@ init () =
 ------------------------------------------------
 -- Subscriptions
 ------------------------------------------------
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    case model.animating of
-        False ->
-            Sub.none
-        True ->
+subscriptions : BigModel -> Sub Msg
+subscriptions bigModel =
+    case bigModel of
+        SolvingEdo _ -> Sub.none
+        Animation _ _ _ -> 
             Browser.Events.onAnimationFrameDelta (Tick)
         
         
@@ -104,14 +112,12 @@ type Msg
     | Tick Float
     | RunAnimation
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
+update : Msg -> BigModel -> (BigModel, Cmd Msg)
+update msg bigModel =
   case msg of
-      
     RunEdo -> 
       let  
-          animating = False
-          newModel = Tuple.first <| update UpdateEdoParam model
+          newModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
           controlParam = .controlParam newModel
@@ -127,136 +133,144 @@ update msg model =
                                       
           data = M.runEdoModel modelParam newEdoParam maybeRefFuncAndController
       in
-          ({ newModel | chartData = data, animating = animating, edoParam = newEdoParam }, Cmd.none)
+          ( SolvingEdo { newModel | chartData = data, edoParam = newEdoParam }, Cmd.none)
             
     ChangeInteract interact ->
+        let
+            model = modelFromBigModel bigModel
+        in
         case interact of
             Edo edoInteract ->
                 let
                     edoIStates = .edoIStates model
                     edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract 
+                    newModel = {model | edoIStates = edoIStatesNew}
                 in
-                    ({model | edoIStates = edoIStatesNew}, Cmd.none)
+                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
             Models modelInteract ->
                 let
                     modelParam = .modelParam model
                     modelParamNew = M.changeModelParam modelParam modelInteract
+                    newModel = {model | modelParam = modelParamNew}
                 in 
-                    ({model | modelParam = modelParamNew}, Cmd.none)
+                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
             Control controlInteract ->
                 let 
                     controlParam = .controlParam model
                     controlParamNew = Control.changeControlParam controlParam controlInteract
+                    newModel = {model | controlParam = controlParamNew}
                 in
-                    ({model | controlParam = controlParamNew}, Cmd.none)
-
+                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
+                        
             Ref refInteract ->
                 let
                     refParam = .refParam model
                     refParamNew = Ref.changeRefParam refParam refInteract 
+                    newModel = {model | refParam = refParamNew}
                 in
-                    ({model | refParam = refParamNew}, Cmd.none)
+                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
             MChart chartID chartInteract -> 
                 let
                     chartsParam = .chartsParam model
                     newChartsParam = MC.chartIndividualInteractAction chartID chartsParam chartInteract
+                    newModel = {model | chartsParam = newChartsParam}
                 in
-                    ({model | chartsParam = newChartsParam}, Cmd.none)
+                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
             MCharts chartsInteract ->
                 let
                     chartsParam = .chartsParam model
                     newChartsParam = MC.chartsInteractAction chartsParam chartsInteract
+                    newModel = {model | chartsParam = newChartsParam}
                 in
-                    ({model | chartsParam = newChartsParam}, Cmd.none)
+                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
 
     UpdateEdoParam ->
         let
+            model = modelFromBigModel bigModel
             edoIStates = .edoIStates model
                          
             edoParam = .edoParam model
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
+            newModel = {model | edoParam = edoParamNew}
         in
-            ({model | edoParam = edoParamNew}, Cmd.none)
+            (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
     Tick dTime ->
-        let
-            animating = .animating model
-        in
-        case animating of
-            False -> 
-                (model, Cmd.none)
-            True -> 
+        case bigModel of
+            SolvingEdo _ ->
+                (bigModel, Cmd.none)
+            Animation model animatingEdoParam xs ->
                 let
-                    dTimeSec = dTime/1000.0
-                    edoParam = .edoParam model
-                    tfimAnimation = .tfimAnimation model
-                    tempo = .tempo edoParam
-                    tfim = .tfim edoParam
-                    newTfim = if (tfim + dTimeSec) >= tfimAnimation then
-                                  tfimAnimation
-                              else
-                                  tfim + dTimeSec
-                    edoParam2 = {edoParam | tfim = newTfim}
+                    modelEdoParam = .edoParam model
+                    tfimAnimation = .tfim modelEdoParam
+                                    
+                    tempo = .tempo animatingEdoParam
                 in
-                if (tempo >= tfimAnimation) then
-                    let
-                        newAnimating = False
-                    in
-                    ({model | animating=newAnimating}, Cmd.none)
+                if (Edo.checkEndTimeEps tempo tfimAnimation) then
+                    (SolvingEdo model, Cmd.none)
+                    
                 else
                 let
+                    dTimeSec = dTime/1000.0
+                               
+                    tfimStep = .tfim animatingEdoParam
+                    newTfimStep = min tfimAnimation (tfimStep + dTimeSec)
+                                  
+                    animatingEdoParam2 = {animatingEdoParam | tfim = newTfimStep}
+                                         
                     modelData = .chartData model
                     modelParam = .modelParam model
                     controlParam = .controlParam model
                     refParam = .refParam model
+                               
                     controller = Control.controllerFromControlParam controlParam
                     refFunc = Ref.refFunctionFromRefParam refParam 
                     refFuncAndController = {refFunc = refFunc,controller = controller}
                     maybeRefFuncAndController = Just refFuncAndController
-                    (data,newEdoParam) = M.runAnimationModel modelParam edoParam2 maybeRefFuncAndController
-                    dataFirst = Maybe.withDefault (DC.TS1 {t=5.0, x1=50.0}) <| List.head data 
-                    xs = DC.xsFromDatum dataFirst
-                    -- xs2 = Debug.log "teste" xs
-                    -- xs = [1.0]
-                    modelParamNew = M.updateModelParamFromXs xs modelParam
+
+                    stateUpdatedModelParam = M.updateModelParamFromXs xs modelParam
+                                             
+                    (data,newAnimationEdoParam) = M.runAnimationModel stateUpdatedModelParam animatingEdoParam2 maybeRefFuncAndController
+                                                  
+                    newXs = case data of
+                                (d::ds) -> DC.xsFromDatum d
+                                _ -> []
+                                     
                     newData = data ++ modelData
+                    newModel = { model | chartData = newData}
                 in
-                -- ({model | elapsedTime = newElapsedTime}, Cmd.none)
-                ({ model | chartData = newData, edoParam = newEdoParam
-                 , modelParam = modelParamNew
-                 }, Cmd.none)
+                (Animation newModel newAnimationEdoParam newXs, Cmd.none)
 
     RunAnimation ->
         let
-            animating = True
-            newModel = Tuple.first <| update UpdateEdoParam model
-            edoParam = .edoParam newModel
+            updatedModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
+                           
+            edoParam = .edoParam updatedModel
+            modelParam = .modelParam updatedModel
+                         
             controlMem = []
-
-            tfim = .tfim edoParam
-            newEdoParam = {edoParam | tfim = 0.0, controlMemory = controlMem}
+            animatingEdoParam = {edoParam | tfim = 0.0, controlMemory = controlMem}
             chartData = []
-            
+                        
+            newModel = {updatedModel | chartData = chartData}
+            xs = M.xsFromModelParam modelParam
         in
-           ({newModel | animating = animating, tfimAnimation = tfim, edoParam = newEdoParam, chartData = chartData }, Cmd.none)
+           (Animation newModel animatingEdoParam xs, Cmd.none)
 
-    -- ChangeStr str -> 
-    --      {model | str = str}
-
-        
         
 ------------------------------------------------
 -- View
 ------------------------------------------------
         
-view : Model -> Html Msg
-view model =
+view : BigModel -> Html Msg
+view bigModel =
   let
+    model = modelFromBigModel bigModel
     controlParam = .controlParam model
     edoIStates = .edoIStates model
     chartData = .chartData model
@@ -292,7 +306,6 @@ view model =
         , div [style "height" "30px"]
             [ button [ onClick RunEdo ] [ text "Edo" ]
             , button [ onClick RunAnimation ] [ text "Animation" ]
-            -- , text (String.fromFloat <| .elapsedTime model)
             , text (String.fromFloat <| .tempo edoParam)
             ]
         , span []

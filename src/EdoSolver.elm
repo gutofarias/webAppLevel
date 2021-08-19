@@ -11,6 +11,13 @@ import Html.Events exposing (onInput)
 eps : Float
 eps = 1e-8
 
+checkEndTimeEps : Tempo -> Tempo -> Bool
+checkEndTimeEps tempo tfim = 
+    if (abs(tempo - tfim) <= eps) then
+        True
+    else
+        False
+
 ------------------------------------------------
 -- Data Types Edo
 ------------------------------------------------
