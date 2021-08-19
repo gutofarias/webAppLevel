@@ -254,7 +254,9 @@ update msg bigModel =
             modelParam = .modelParam updatedModel
                          
             controlMem = []
-            animatingEdoParam = {edoParam | tfim = 0.0, controlMemory = controlMem}
+            tiniAnimation = .tempo edoParam
+            -- Coloca no tfim pra sincronizar o tempo inicial e o tfim vai ser incrementado aos poucos por Tick
+            animatingEdoParam = {edoParam | tfim = tiniAnimation, controlMemory = controlMem}
             chartData = []
                         
             newModel = {updatedModel | chartData = chartData}
