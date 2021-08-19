@@ -91,11 +91,11 @@ parameterInteractiveDiv texto pholder valor strToMsg =
 -- runEdoModel
 ------------------------------------------------
 
-runEdoModel : ModelParam -> Edo.EdoParam -> Maybe {refFunc: Edo.RefFunction, controller:Edo.Controller} -> (DC.ChartData, Edo.EdoParam)
-runEdoModel modelParam edoParam maybeRefAndController =
+runEdoModel : ModelParam -> Edo.EdoParam -> Edo.RefFunction -> Edo.Controller -> (DC.ChartData, Edo.EdoParam)
+runEdoModel modelParam edoParam refFunc controller =
      case modelParam of
          LevelP levelParam ->
-             runEdoLevel levelParam edoParam maybeRefAndController
+             runEdoLevel levelParam edoParam refFunc controller
                  
                  
 ------------------------------------------------
@@ -193,22 +193,8 @@ viewLevel levelParam levelInteractToMsg =
 -- runEdoLevel
 ------------------------------------------------
 
-runEdoLevel : LevelParam -> Edo.EdoParam -> Maybe {refFunc: Edo.RefFunction, controller:Edo.Controller} -> (DC.ChartData, Edo.EdoParam)
-runEdoLevel levelParam edoParam maybeRefFuncAndController =
-    case maybeRefFuncAndController of
-        Nothing ->
-            runEdoLevelUncontrolled levelParam edoParam
-
-        Just refFuncAndController ->
-            let
-                refFunc = .refFunc refFuncAndController
-                controller = .controller refFuncAndController
-            in
-                runEdoLevelControlled levelParam edoParam refFunc controller
-                
-                
-runEdoLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> Edo.Controller -> (DC.ChartData, Edo.EdoParam)
-runEdoLevelControlled levelParam edoParam refFunc controller =
+runEdoLevel : LevelParam -> Edo.EdoParam -> Edo.RefFunction -> Edo.Controller -> (DC.ChartData, Edo.EdoParam)
+runEdoLevel levelParam edoParam refFunc controller =
         let
             initState = (.h0 levelParam) :: []
             edoSist = Edo.Controlled
@@ -220,15 +206,7 @@ runEdoLevelControlled levelParam edoParam refFunc controller =
             (edoData, edoParamNew) = Edo.edoSolverReversed edoParam edoSist initState
         in
             (DC.toChartDataTS1E1R1U4 edoData, edoParamNew)
-
-runEdoLevelUncontrolled : LevelParam -> Edo.EdoParam -> (DC.ChartData, Edo.EdoParam)
-runEdoLevelUncontrolled levelParam edoParam =
-        let
-            initState = (.h0 levelParam) :: []
-            edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
-            (edoData, edoParamNew) = Edo.edoSolverReversed edoParam edoSist initState
-        in
-            (DC.toChartDataTS1 edoData, edoParamNew)
+                
                 
 ------------------------------------------------
 -- levelSyst

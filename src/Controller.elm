@@ -22,12 +22,10 @@ type ControlType
 type ControlParam
     = PidP PidParam
       
-      
 initControlParam : ControlType -> ControlParam
 initControlParam controlType =
     case controlType of
         Pid -> PidP initPidParam
-               
 
 controllerFromControlParam : ControlParam -> Edo.Controller
 controllerFromControlParam controlParam =

@@ -125,13 +125,11 @@ update msg bigModel =
                      
           controller = Control.controllerFromControlParam controlParam
           refFunc = Ref.refFunctionFromRefParam refParam 
-          refFuncAndController = {refFunc = refFunc,controller = controller}
-          maybeRefFuncAndController = Just refFuncAndController
                                       
           controlMem = []
           newEdoParam = {edoParam | controlMemory = controlMem}
                                       
-          data = Tuple.first <| M.runEdoModel modelParam newEdoParam maybeRefFuncAndController
+          data = Tuple.first <| M.runEdoModel modelParam newEdoParam refFunc controller
       in
           ( SolvingEdo { newModel | chartData = data, edoParam = newEdoParam }, Cmd.none)
             
@@ -225,17 +223,16 @@ update msg bigModel =
                                          
                     modelData = .chartData model
                     modelParam = .modelParam model
+                                 
                     controlParam = .controlParam model
                     refParam = .refParam model
                                
                     controller = Control.controllerFromControlParam controlParam
                     refFunc = Ref.refFunctionFromRefParam refParam 
-                    refFuncAndController = {refFunc = refFunc,controller = controller}
-                    maybeRefFuncAndController = Just refFuncAndController
-
+                              
                     stateUpdatedModelParam = M.updateModelParamFromXs xs modelParam
                                              
-                    (data,newAnimationEdoParam) = M.runEdoModel stateUpdatedModelParam animatingEdoParam2 maybeRefFuncAndController
+                    (data,newAnimationEdoParam) = M.runEdoModel stateUpdatedModelParam animatingEdoParam2 refFunc controller
                                                   
                     newXs = case data of
                                 (d::ds) -> DC.xsFromDatum d
