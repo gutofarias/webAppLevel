@@ -131,7 +131,7 @@ update msg bigModel =
           controlMem = []
           newEdoParam = {edoParam | controlMemory = controlMem}
                                       
-          data = M.runEdoModel modelParam newEdoParam maybeRefFuncAndController
+          data = Tuple.first <| M.runEdoModel modelParam newEdoParam maybeRefFuncAndController
       in
           ( SolvingEdo { newModel | chartData = data, edoParam = newEdoParam }, Cmd.none)
             
@@ -235,7 +235,7 @@ update msg bigModel =
 
                     stateUpdatedModelParam = M.updateModelParamFromXs xs modelParam
                                              
-                    (data,newAnimationEdoParam) = M.runAnimationModel stateUpdatedModelParam animatingEdoParam2 maybeRefFuncAndController
+                    (data,newAnimationEdoParam) = M.runEdoModel stateUpdatedModelParam animatingEdoParam2 maybeRefFuncAndController
                                                   
                     newXs = case data of
                                 (d::ds) -> DC.xsFromDatum d
