@@ -104,19 +104,19 @@ stringToAxisFunc str =
         "u4" -> Just fu4
         _ -> Nothing
              
-funcMaybeToMaybeFunc : ChartData -> (ChartDatum -> Maybe Float) -> Maybe (ChartDatum -> Float)
-funcMaybeToMaybeFunc data func =
+funcMaybeToMaybeFunc2 : ChartData -> (ChartDatum -> Maybe Float) -> Maybe (ChartDatum -> Float)
+funcMaybeToMaybeFunc2 data func =
     case data of
         (x::xs) ->
-            case func x of
-                Just a -> Just (\chartDatum -> Maybe.withDefault 0.0 (func chartDatum))
-                Nothing -> Nothing
-                
+            funcMaybeToMaybeFunc x func    
         _ -> Nothing
 
-
-
-                       
+funcMaybeToMaybeFunc : a -> (a -> Maybe b) -> Maybe (a -> b)
+funcMaybeToMaybeFunc datum func =
+    case func datum of
+        Just val -> Just (\s -> Maybe.withDefault val (func s))
+        Nothing -> Nothing
+                   
 fx1 : ChartDatum -> Maybe Float
 fx1 chartDatum = 
     case chartDatum of

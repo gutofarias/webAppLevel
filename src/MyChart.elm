@@ -268,8 +268,8 @@ curveToChartSeriesView chartData curve =
                 let
                     -- Maybe (ChartDatum -> Float)
                     -- Analisa se o dado é suportado pela funcao usando o chartData 
-                    maybeXfunc = funcMaybeToMaybeFunc chartData xfuncMaybeFloat
-                    maybeYfunc = funcMaybeToMaybeFunc chartData yfuncMaybeFloat
+                    maybeXfunc = funcMaybeToMaybeFunc2 chartData xfuncMaybeFloat
+                    maybeYfunc = funcMaybeToMaybeFunc2 chartData yfuncMaybeFloat
                 in
                     case (maybeXfunc, maybeYfunc) of
                         -- Caso tudo esteja ok consegue pegar a funcao e retornar o Just
