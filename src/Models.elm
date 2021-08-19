@@ -98,14 +98,6 @@ runEdoModel modelParam edoParam maybeRefAndController =
              runEdoLevel levelParam edoParam maybeRefAndController
                  
                  
--- runAnimationModel : ModelParam -> Edo.EdoParam -> Maybe {refFunc: Edo.RefFunction, controller:Edo.Controller} -> (DC.ChartData, Edo.EdoParam)
--- runAnimationModel modelParam edoParam maybeRefAndController =
---      case modelParam of
---          LevelP levelParam ->
---              runAnimationLevel levelParam edoParam maybeRefAndController
-                 
-                 
-                 
 ------------------------------------------------
 ------------------------------------------------
 -- Nível
@@ -214,43 +206,6 @@ runEdoLevel levelParam edoParam maybeRefFuncAndController =
             in
                 runEdoLevelControlled levelParam edoParam refFunc controller
                 
--- runAnimationLevel : LevelParam -> Edo.EdoParam -> Maybe {refFunc: Edo.RefFunction, controller:Edo.Controller} -> (DC.ChartData, Edo.EdoParam)
--- runAnimationLevel levelParam edoParam maybeRefFuncAndController =
---     case maybeRefFuncAndController of
---         Nothing ->
---              runAnimationLevelUncontrolled levelParam edoParam
-
---         Just refFuncAndController ->
---             let
---                 refFunc = .refFunc refFuncAndController
---                 controller = .controller refFuncAndController
---             in
---                 runAnimationLevelControlled levelParam edoParam refFunc controller
-                
--- runAnimationLevelUncontrolled : LevelParam -> Edo.EdoParam -> (DC.ChartData, Edo.EdoParam)
--- runAnimationLevelUncontrolled levelParam edoParam =
---         let
---             initState = (.h0 levelParam) :: []
---             edoSist = Edo.Uncontrolled (levelSyst levelParam [0.0])
---             (edoData, edoParamNew) = Edo.edoSolverReversed edoParam edoSist initState
---         in
---             -- DC.toChartDataTS1E1R1U1 <| Tuple.first <| Edo.edoSolver edoParam edoSist initState
---             (DC.toChartDataTS1 edoData, edoParamNew)
-                    
-                
--- runAnimationLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> Edo.Controller -> (DC.ChartData, Edo.EdoParam)
--- runAnimationLevelControlled levelParam edoParam refFunc controller =
---         let
---             initState = (.h0 levelParam) :: []
---             edoSist = Edo.Controlled
---                       { refFunc = refFunc
---                       , outputFunc = outputX1
---                       , controller = controller
---                       , sistFunc = (levelSyst levelParam)}
-                
---             (edoData, edoParamNew) = Edo.edoSolverReversed edoParam edoSist initState
---         in
---             (DC.toChartDataTS1E1R1U4 edoData, edoParamNew)
                 
 runEdoLevelControlled : LevelParam -> Edo.EdoParam -> Edo.RefFunction  -> Edo.Controller -> (DC.ChartData, Edo.EdoParam)
 runEdoLevelControlled levelParam edoParam refFunc controller =
