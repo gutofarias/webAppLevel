@@ -16,6 +16,7 @@
             "ianmackenzie/elm-1d-parameter": "1.0.1",
             "ianmackenzie/elm-geometry": "3.9.1",
             "ianmackenzie/elm-units": "2.9.0",
+            "mdgriffith/elm-ui": "1.1.8",
             "robinheghan/murmur3": "1.0.0",
             "terezka/elm-charts": "2.0.0"
         },

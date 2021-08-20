@@ -8,14 +8,19 @@ import Reference as Ref
 
 import Browser
 import Browser.Events
-import Html exposing (Html, button, div, text, pre, input, label, select, option, span, section)
-import Html.Attributes exposing (style, placeholder, value, for, name, selected)
-import Html.Events exposing (onClick, onInput)
+import Html -- exposing (Html, button, div, text, pre, input, label, select, option, span, section)
+import Html.Attributes as HA -- exposing (style, placeholder, value, for, name, selected)
+import Html.Events -- exposing (onClick, onInput)
 
 import Chart as C
 import Chart.Attributes as CA
 import MyChart as MC
 
+import Element as E
+import Element.Input as EI
+import Element.Border as EB
+
+import UI exposing (..)
 
 ------------------------------------------------
 -- main
@@ -266,7 +271,7 @@ update msg bigModel =
 -- View
 ------------------------------------------------
         
-view : BigModel -> Html Msg
+view : BigModel -> Html.Html Msg
 view bigModel =
   let
     model = modelFromBigModel bigModel
@@ -305,25 +310,74 @@ view bigModel =
                             (xsAnimation,rlist,ulist)
                 
   in
-    section []
-        [ div [style "height" "30px"]
-            [ Edo.viewEdo edoIStates (ChangeInteract << Edo)]
-        , div [style "height" "30px"]
-            [ M.viewModel modelParam (ChangeInteract << Models)]
-        , div [style "height" "30px"]
-            [Control.viewController controlParam (ChangeInteract << Control)]
-        , div [style "height" "30px"]
-            [Ref.viewRef refParam (ChangeInteract << Ref)]
-        , div [style "height" "30px"]
-            [ button [ onClick RunEdo ] [ text "Edo" ]
-            , button [ onClick RunAnimation ] [ text "Animation" ]
-            , text (String.fromFloat <| .tempo edoParam)
-            ]
-        , span []
-            (MC.chartsView chartData chartsParam (ChangeInteract << MCharts) (fcomposition23 ChangeInteract MChart))
-        , M.modelSim xs rs us modelParam
-        -- , MC.chartView chartData chartParam (fcomposition23 ChangeInteract MChart)
-        ]
+      E.layout [] <|
+          E.column []
+              [ E.row [E.spacing 50, E.alignTop]
+                    [ coluna1
+                    , E.el [ E.width E.fill ] <| E.html <|
+                        M.modelSim xs rs us modelParam
+                    ] 
+              ] 
+      
+coluna1 = 
+          E.column [E.spacing 10, E.alignTop] [
+               E.row [E.spacing 50, E.padding 20, E.centerX]
+                   [ E.column [E.spacing 10, E.alignTop]
+                        [ E.el [E.centerX,E.alignTop] <| E.text "Edo"
+                        , textField "0" "tini " (ChangeInteract << Edo << Edo.Tini)
+                        , textField "0" "tfim" (ChangeInteract << Edo << Edo.Tfim)
+                        ]
+                   , E.column [E.spacing 10, E.alignTop]
+                        [ E.el [E.centerX,E.alignTop] <| E.text "Level" 
+                        , E.row [E.spacing 30]
+                             [ E.column [E.alignTop]
+                                   [ textField "10" "h0" (ChangeInteract << Edo << Edo.Tini)
+                                   ]
+                             , E.column [E.alignTop]
+                                 [ textField "1" "A " (ChangeInteract << Edo << Edo.Tini)
+                                 , textField "0.1" "a " (ChangeInteract << Edo << Edo.Tini)
+                                 ]
+                             ]
+                        ]
+                   ]
+              , E.column [E.spacing 10, E.padding 20, E.centerX]
+                   [ E.el [E.centerX,E.alignTop] <| E.text "Controller"
+                   , E.row [E.spacing 35]
+                         [ textField "0" "kp" (ChangeInteract << Edo << Edo.Tini)
+                         , textField "0" "ki" (ChangeInteract << Edo << Edo.Tini)
+                         , textField "0" "kd" (ChangeInteract << Edo << Edo.Tini)
+                         ]
+                   ]
+              , E.column [E.spacing 10, E.padding 20, E.centerX]
+                   [ E.el [E.centerX,E.alignTop] <| E.text "Step Reference"
+                   , E.row [E.spacing 25]
+                         [ textField "0" "iVal" (ChangeInteract << Edo << Edo.Tini)
+                         , textField "0" "tStep" (ChangeInteract << Edo << Edo.Tini)
+                         , textField "0" "fVal" (ChangeInteract << Edo << Edo.Tini)
+                         ]
+                   ]
+              ]
+
+      
+    -- section []
+    --     [ div [style "height" "30px"]
+    --         [ Edo.viewEdo edoIStates (ChangeInteract << Edo)]
+    --     , div [style "height" "30px"]
+    --         [ M.viewModel modelParam (ChangeInteract << Models)]
+    --     , div [style "height" "30px"]
+    --         [Control.viewController controlParam (ChangeInteract << Control)]
+    --     , div [style "height" "30px"]
+    --         [Ref.viewRef refParam (ChangeInteract << Ref)]
+    --     , div [style "height" "30px"]
+    --         [ button [ onClick RunEdo ] [ text "Edo" ]
+    --         , button [ onClick RunAnimation ] [ text "Animation" ]
+    --         , text (String.fromFloat <| .tempo edoParam)
+    --         ]
+    --     , span []
+    --         (MC.chartsView chartData chartsParam (ChangeInteract << MCharts) (fcomposition23 ChangeInteract MChart))
+    --     , M.modelSim xs rs us modelParam
+    --     -- , MC.chartView chartData chartParam (fcomposition23 ChangeInteract MChart)
+    --     ]
          
 fcomposition23 : (a -> b) -> (c -> d -> a) -> c -> d -> b 
 fcomposition23 f2 f3 c = 
