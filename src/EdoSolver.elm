@@ -388,6 +388,19 @@ printData data =
         (t,xs) :: [] -> (String.fromFloat t) ++ "\t" ++ printState xs
         (t,xs) :: dt -> (String.fromFloat t) ++ "\t" ++ printState xs ++ "\n" ++ printData dt
 
+getRsUs : State -> EdoParam -> OutputFunction -> RefFunction -> Controller -> (Ref, ControlEffort)
+getRsUs xs edoParam outFunc refFunc controller =
+    let
+        tempo = .tempo edoParam
+        passo = .passo edoParam
+        controlMemory = .controlMemory edoParam
+
+        ys = outFunc tempo xs
+        rs = refFunc tempo ys
+        es = zipWith (-) rs ys
+        (us,controlMemory2) = controller controlMemory es passo tempo xs
+    in
+        (rs,us)
 
 ------------------------------------------------
 -- Variables (teste)
@@ -399,3 +412,5 @@ tfim_ = 4.0
 passo_ = 0.01
 relSaida_ = 10
 param_ = EdoParam tini_ tfim_ passo_ relSaida_ [] eulerSolver
+
+

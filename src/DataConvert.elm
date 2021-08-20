@@ -174,7 +174,7 @@ fu4 chartDatum =
         TS1E1R1U4 datum -> Just datum.u4
 
 
-xsFromDatum : ChartDatum -> List Float
+xsFromDatum : ChartDatum -> Edo.State
 xsFromDatum chartDatum = 
     case chartDatum of
         TS1 datum -> 
@@ -184,7 +184,7 @@ xsFromDatum chartDatum =
         TS1E1R1U4 datum ->
             [(.x1 datum)]
 
-usFromDatum : ChartDatum -> List Float
+usFromDatum : ChartDatum -> Edo.ControlEffort
 usFromDatum chartDatum = 
     case chartDatum of
         TS1 datum -> 
@@ -193,3 +193,13 @@ usFromDatum chartDatum =
             [(.u1 datum)]
         TS1E1R1U4 datum ->
             [(.u1 datum),(.u2 datum),(.u3 datum),(.u4 datum)]
+
+rsFromDatum : ChartDatum -> Edo.Ref
+rsFromDatum chartDatum =
+    case chartDatum of
+        TS1 datum -> 
+            []
+        TS1E1R1U1 datum -> 
+            [(.r1 datum)]
+        TS1E1R1U4 datum ->
+            [(.r1 datum)]

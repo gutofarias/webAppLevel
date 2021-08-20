@@ -270,28 +270,40 @@ view : BigModel -> Html Msg
 view bigModel =
   let
     model = modelFromBigModel bigModel
-    controlParam = .controlParam model
+            
     edoIStates = .edoIStates model
+    edoParam = .edoParam model
+                 
     chartData = .chartData model
     chartsParam = .chartsParam model
-    edoParam = .edoParam model
-    refParamI = .refParam model
-    refParam = case refParamI of
-                   Ref.Step1P stepParam -> stepParam
-    refmax = max (.iVal refParam) (.fVal refParam)
     modelParam = .modelParam model
-    levelParam = case modelParam of
-                     M.LevelP levelParam1 -> levelParam1
-         
-    h0 = 10.0
-    hmaxExpected = max h0 refmax 
-    data = .chartData model
-    dataFirst = Maybe.withDefault (DC.TS1 {t=0.0, x1=10.0}) <| List.head data 
-    xs = DC.xsFromDatum dataFirst
-    us = DC.usFromDatum dataFirst
-    level = Maybe.withDefault 10.0 <| List.head xs
-    u = Maybe.withDefault 10.0 <| List.head us
-    -- levellog = Debug.log "level" (level,hmaxExpected)
+                 
+    refParam = .refParam model
+    controlParam = .controlParam model
+                   
+    refFunc = Ref.refFunctionFromRefParam refParam
+    controller = Control.controllerFromControlParam controlParam
+           
+    -- Ficou bom porque a animação mantém o final a partir dos dados
+    (xs,rs,us) = case chartData of
+             -- Caso tenha os dados pelo chartData
+             (cd::cdlist) -> 
+                 (DC.xsFromDatum cd, DC.rsFromDatum cd, DC.usFromDatum cd)
+             _ ->
+                -- Se não pega os dados pelo modelo
+                case bigModel of
+                    SolvingEdo _ ->
+                        let 
+                            xlist = M.xsFromModelParam modelParam 
+                            (rlist,ulist) = Edo.getRsUs xlist edoParam M.outputX1 refFunc controller
+                        in
+                            (xlist,rlist,ulist)
+                    Animation _ animationEdoParam xsAnimation ->
+                        let
+                            (rlist,ulist) = Edo.getRsUs xsAnimation animationEdoParam M.outputX1 refFunc controller
+                        in 
+                            (xsAnimation,rlist,ulist)
+                
   in
     section []
         [ div [style "height" "30px"]
@@ -301,7 +313,7 @@ view bigModel =
         , div [style "height" "30px"]
             [Control.viewController controlParam (ChangeInteract << Control)]
         , div [style "height" "30px"]
-            [Ref.viewRef refParamI (ChangeInteract << Ref)]
+            [Ref.viewRef refParam (ChangeInteract << Ref)]
         , div [style "height" "30px"]
             [ button [ onClick RunEdo ] [ text "Edo" ]
             , button [ onClick RunAnimation ] [ text "Animation" ]
@@ -309,7 +321,7 @@ view bigModel =
             ]
         , span []
             (MC.chartsView chartData chartsParam (ChangeInteract << MCharts) (fcomposition23 ChangeInteract MChart))
-        , M.levelSim level u 0.0 hmaxExpected levelParam
+        , M.modelSim xs rs us modelParam
         -- , MC.chartView chartData chartParam (fcomposition23 ChangeInteract MChart)
         ]
          

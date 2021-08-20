@@ -88,6 +88,16 @@ parameterInteractiveDiv texto pholder valor strToMsg =
                 
     
 ------------------------------------------------
+-- modelSim
+------------------------------------------------
+
+modelSim : Edo.State -> Edo.Ref -> Edo.ControlEffort -> ModelParam -> Html msg
+modelSim xs rs us modelParam = 
+    case modelParam of
+        LevelP levelParam ->
+            levelSim xs rs us levelParam
+
+------------------------------------------------
 -- runEdoModel
 ------------------------------------------------
 
@@ -238,12 +248,15 @@ outputX1 tempo xs =
         _ -> xs
 
 
-levelSim : Float -> Float -> Float -> Float -> LevelParam -> Html msg
-levelSim level input ref hmaxExpected levelParam = 
+levelSim : Edo.State -> Edo.Ref -> Edo.ControlEffort -> LevelParam -> Html msg
+levelSim xs rs us levelParam = 
     let
         viewBox =
             Rectangle2d.from Point2d.origin (Point2d.pixels 800 450)
         
+        level = Maybe.withDefault 0.0 <| List.head xs
+        input = Maybe.withDefault 0.0 <| List.head us
+        ref = Maybe.withDefault 0.0 <| List.head rs
         ag = .ag levelParam
         ap = .ap levelParam
         lbase = 200.0
@@ -282,8 +295,9 @@ levelSim level input ref hmaxExpected levelParam =
         poly1 = Polygon2d.singleLoop [pa,p1,p2,p3,p4,p5,p6,p7]
         poly2 = Polygon2d.singleLoop [pc,p8,p9,p10,p11,p12,p13,p14,pd]
                 
-        levelmax = 1.5*hmaxExpected
-        levelPixel = (level/levelmax)*h
+        levelmax = 20.0
+        levelPixelAux = (level/levelmax)*h
+        levelPixel = min levelPixelAux h
         prect1 = pa
         prect2 = extendP2d prect1 l levelPixel
         rect = Rectangle2d.from prect1 prect2
