@@ -8,6 +8,12 @@ import Html exposing (Html,div,text,input,option,span,label,select,button)
 import Html.Attributes exposing (style, placeholder, value, selected)
 import Html.Events exposing (onInput,onClick)
 
+import Element as E
+import Element.Border as EB
+import Element.Font as EF
+import Element.Input as EI
+import UI
+
 ------------------------------------------------
 -- Data Types Charts
 ------------------------------------------------
@@ -45,21 +51,34 @@ type alias ChartID = Int
 type alias ChartParam =
     { chartID : ChartID
     , curves : List Curve 
+    , editingCurves : Bool 
     }
     
 initChartParam : Maybe ChartParam -> ChartParam 
 initChartParam maybeLastChartParam =
     case maybeLastChartParam of
         Nothing ->
-            {chartID = 1, curves = [(initCurve Nothing)]}
+            { chartID = 1
+            , curves = [(initCurve Nothing)]
+            , editingCurves = False
+            }
 
         Just lastChartParam ->
             let 
                 lastChartID = .chartID lastChartParam
                 chartID = lastChartID + 1
             in
-                {chartID = chartID, curves = [(initCurve Nothing)]}
+                { chartID = chartID
+                , curves = [(initCurve Nothing)]
+                , editingCurves = False
+                }
 
+addChartParam : ChartID -> ChartParam
+addChartParam chartID =
+    { chartID = chartID
+    , curves = [(initCurve Nothing)]
+    , editingCurves = False
+    }
 
 ------------------------------------------------
 ------------------------------------------------
@@ -75,9 +94,10 @@ type ChartInteract
     = ChangeAxis CurveID AxisType String
     | AddCurve 
     | RemoveCurve CurveID
+    | ToggleEditCurve 
 
 type ChartsInteract
-    = AddChart
+    = AddChart ChartID
     | RemoveChart ChartID
       
       
@@ -88,12 +108,13 @@ type ChartsInteract
 chartsInteractAction : List ChartParam -> ChartsInteract -> List ChartParam 
 chartsInteractAction chartsParam  chartsInteract =
     case chartsInteract of
-        AddChart ->
+        AddChart chartID ->
             let 
-                maybeLastChartParam = lastElem chartsParam
-                newChartParam = initChartParam maybeLastChartParam
+                newChartParam = addChartParam chartID
+                newChartsParam =  newChartParam::chartsParam 
             in
-                chartsParam ++ [newChartParam]
+                List.sortBy (\cp -> cp.chartID) newChartsParam
+                
 
         RemoveChart chartID ->
             List.filter (\chartParam ->
@@ -149,6 +170,12 @@ chartInteractAction chartParam chartInteract =
                                     False else True) curves
             in
                 {chartParam | curves = newCurves}
+
+        ToggleEditCurve ->
+            let
+                editingCurves = .editingCurves chartParam
+            in 
+                {chartParam | editingCurves = (not editingCurves)}
      
 
 changeChartParam : ChartID -> ChartParam -> ChartParam -> ChartParam 
@@ -183,52 +210,62 @@ changeCurveAxis curveID axisType axisString curve =
 -- ChartsView
 ------------------------------------------------
 
-chartsView : DC.ChartData -> List ChartParam -> (ChartsInteract -> msg) -> (ChartID -> ChartInteract -> msg) -> List (Html msg)
-chartsView chartData chartsParam chartsIToMsg chartIDTochartIToMsg =
-    case chartsParam of
-        [] -> addChartButtonView chartsIToMsg :: []
-        [chartParam] ->
-            (div []
-                [ removeChartButtonView chartsIToMsg (.chartID chartParam)
-                , addChartButtonView chartsIToMsg
-                , chartView chartData chartParam chartIDTochartIToMsg    
-                ]) :: []
-        (chartParam :: ls) ->
-            (div []
-                [ removeChartButtonView chartsIToMsg (.chartID chartParam)
-                , chartView chartData chartParam chartIDTochartIToMsg    
-                ])
-            :: chartsView chartData ls chartsIToMsg chartIDTochartIToMsg
-
-
     
-addChartButtonView : (ChartsInteract -> msg) -> Html msg
-addChartButtonView chartsIToMsg =
-    button [ onClick <| chartsIToMsg AddChart ] [ text "AddChart" ]
-        
-removeChartButtonView : (ChartsInteract -> msg) -> ChartID -> Html msg
-removeChartButtonView chartsIToMsg chartID =
-    button [ onClick <| chartsIToMsg (RemoveChart chartID) ] [ text "RemoveChart" ]
-
-        
 ------------------------------------------------
 -- ChartView
 ------------------------------------------------
+
+buttonToggleChart : Bool -> (ChartInteract -> msg) -> E.Element msg
+buttonToggleChart editingCurves chartInteractToMsg =
+    let
+        text = case editingCurves of
+            True -> "Show Charts"
+            False -> "Edit Curves"
+    in
+        EI.button [E.alignRight]
+            { onPress = Just (chartInteractToMsg ToggleEditCurve)
+            , label = E.el [] <| E.text text
+            } 
+
+removeChartButton : ChartID -> (ChartsInteract -> msg) -> E.Element msg
+removeChartButton chartID chartsInteractToMsg = 
+    EI.button [E.alignLeft]
+        { onPress = Just (chartsInteractToMsg <| RemoveChart chartID)
+        , label = E.el [] <| E.text "Remove Chart"
+        } 
+
         
-chartView : DC.ChartData -> ChartParam -> (ChartID -> ChartInteract -> msg) -> Html msg
-chartView chartData chartParam chartIDTochartIToMsg =
+chartViewElement : DC.ChartData -> ChartParam -> (ChartID -> ChartInteract -> msg) -> (ChartsInteract -> msg) -> E.Element msg
+chartViewElement chartData chartParam chartIDTochartIToMsg chartsInteractToMsg =
     let
         curves = .curves chartParam
         chartID = .chartID chartParam
+        editingCurves = .editingCurves chartParam
     in
-    div []
-        ([ chartContainerView <| chart5View chartData curves ]
-        ++ chartCurvesView chartData (chartIDTochartIToMsg chartID) curves)
+        UI.element [] <|
+        case editingCurves of
+            True ->
+                E.column [E.centerX, E.spacing  20, E.width E.fill]
+                    ([ E.row [E.width E.fill]
+                           [ removeChartButton chartID chartsInteractToMsg
+                           , buttonToggleChart editingCurves (chartIDTochartIToMsg chartID)
+                           ]
+                    ]
+                    ++ chartCurvesViewElement chartData (chartIDTochartIToMsg chartID) curves)
+
+            False -> 
+                E.column [E.centerX, E.width E.fill, E.height E.fill]
+                    [ E.row [E.width E.fill]
+                           [ removeChartButton chartID chartsInteractToMsg
+                           , buttonToggleChart editingCurves (chartIDTochartIToMsg chartID)
+                           ]
+                    , E.el[E.centerX, E.width <| E.px 400] <| E.html <| chart5View chartData curves
+                    ]
 
 chart5View : DC.ChartData -> List Curve -> Html msg
 chart5View chartData curves =     
     C.chart
-        [ CA.height 300
+        [ CA.height 270
         , CA.width 300
         , CA.margin { top = 10, bottom = 20, left = 25, right = 20 }
         , CA.padding { top = 10, bottom = 5, left = 10, right = 10 }
@@ -287,20 +324,43 @@ curveToChartSeriesView chartData curve =
             -- caso contrario retorna nothing
             _ -> Nothing
                          
-            
-chartCurvesView : DC.ChartData -> (ChartInteract -> msg) -> List Curve -> List (Html msg)
-chartCurvesView chartData chartIToMsg curves =
-    case curves of
-        [] ->  addCurveButtonView chartIToMsg :: []
-        [c] -> 
-            (div [style "height" "30px"] [ chartCurveSelectionView chartData chartIToMsg c
-                    , removeCurveButtonView chartIToMsg (.curveID c)
-                    , addCurveButtonView chartIToMsg]) :: []
-        (c::cs) ->
-            (div [] [ chartCurveSelectionView chartData chartIToMsg c
-                    , removeCurveButtonView chartIToMsg (.curveID c)]) 
-                :: chartCurvesView chartData chartIToMsg cs
 
+chartCurvesViewElement : DC.ChartData -> (ChartInteract -> msg) -> List Curve -> List (E.Element msg)
+chartCurvesViewElement chartData chartIToMsg curves =
+    let
+        width = 0
+        spacing = E.spacing 10 
+        -- align = E.alignRight
+        align = E.centerX
+    in
+    case curves of
+        [] ->
+            (E.row [ align
+                   , spacing
+                   ]
+                   [ UI.addCurveButton (chartIToMsg AddCurve)
+                   -- , UI.addCurveButtonSpace
+                   -- , UI.elementWidth width
+                   ]) :: []
+        [c] -> 
+            (E.row [ align
+                   , spacing
+                   ]
+                 [ chartCurveSelectionViewElement chartData chartIToMsg c
+                 , UI.removeCurveButton (chartIToMsg (RemoveCurve (.curveID c)))
+                 , UI.addCurveButton (chartIToMsg AddCurve)
+                 , UI.elementNoneWidth width
+                 ]) :: []
+        (c::cs) ->
+            (E.row [ align
+                   , spacing
+                   ]
+                 [ (chartCurveSelectionViewElement chartData chartIToMsg c)
+                 , UI.removeCurveButton (chartIToMsg (RemoveCurve (.curveID c)))
+                 , UI.addCurveButtonSpace
+                 , UI.elementNoneWidth width
+                      ]) 
+                :: chartCurvesViewElement chartData chartIToMsg cs
 
 addCurveButtonView : (ChartInteract -> msg) -> Html msg
 addCurveButtonView chartIToMsg =
@@ -310,6 +370,16 @@ removeCurveButtonView : (ChartInteract -> msg) -> CurveID -> Html msg
 removeCurveButtonView chartIToMsg curveID =
     button [ onClick <| chartIToMsg (RemoveCurve curveID ) ] [ text "-" ]
     
+addCurveButtonViewElement : (ChartInteract -> msg) -> E.Element msg
+addCurveButtonViewElement chartIToMsg =
+    E.html <|
+    button [ onClick <| chartIToMsg AddCurve ] [ text "+" ]
+        
+removeCurveButtonViewElement : (ChartInteract -> msg) -> CurveID -> E.Element msg
+removeCurveButtonViewElement chartIToMsg curveID =
+    E.html <|
+    button [ onClick <| chartIToMsg (RemoveCurve curveID ) ] [ text "-" ]
+        
 chartCurveSelectionView :  DC.ChartData -> (ChartInteract -> msg) -> Curve -> Html msg
 chartCurveSelectionView chartData chartIToMsg curve =
     let
@@ -322,6 +392,19 @@ chartCurveSelectionView chartData chartIToMsg curve =
             , select [onInput <| chartIToMsg << (ChangeAxis curveID YAxis)] (chartAxesOptionsView chartData ystr)
             ]
     
+chartCurveSelectionViewElement :  DC.ChartData -> (ChartInteract -> msg) -> Curve -> E.Element msg
+chartCurveSelectionViewElement chartData chartIToMsg curve =
+    let
+       (xstr,ystr) = .axesString curve 
+       curveID = .curveID curve
+    in 
+        E.column [E.centerX] 
+            [ E.row [E.height <| E.px 50 ]
+                 [ E.el [] (E.text <| "Curve " ++  ((String.fromInt curveID) ++ "   " ))
+                 , UI.select (chartIToMsg << ChangeAxis curveID XAxis) (chartAxesOptionsView chartData xstr) 
+                 , UI.select (chartIToMsg << ChangeAxis curveID YAxis) (chartAxesOptionsView chartData ystr) 
+                 ]
+            ]
  
 chartAxesOptionsView : DC.ChartData -> String -> List (Html msg)
 chartAxesOptionsView chartData selStr =
@@ -356,7 +439,7 @@ chartAxisOptionView val txt selStr =
         else
             option [value val] [text txt]
 
-            
+                
 ------------------------------------------------
 -- Auxiliary Functions
 ------------------------------------------------
@@ -379,3 +462,78 @@ chartFromChartID chartID chartsParam =
     in
         List.head filteredList
 
+
+-- testelist : List ChartParam -> List (Maybe ChartParam)
+-- testelist chartsParam = 
+--     let
+--         maxChartID = maxChartIDFromListCharts chartsParam
+--     in 
+--         fillWithMaybe chartsParam 0
+
+-- genNewList : List (Maybe ChartParam) -> ChartID -> List (Maybe ChartParam)
+-- genNewList listMaybe maxChartID = 
+--     if (modBy maxChartID 2 == 0) then
+--         listMaybe ++ [Nothing,Nothing]
+--     else 
+--         listMaybe ++ [Nothing]
+
+
+testelist2 : List (Maybe ChartParam) -> ChartData -> (ChartID -> ChartInteract -> msg) -> (ChartsInteract -> msg) -> List (E.Element msg)
+testelist2 listMaybe chartData chartIDTochartIToMsg chartsInteractToMsg =
+    let
+        indexedFunc index maybeChart = 
+            case maybeChart of
+                Just chartParam ->
+                    chartViewElement chartData chartParam chartIDTochartIToMsg chartsInteractToMsg
+                Nothing ->
+                    UI.addNewElementSpace (chartsInteractToMsg (AddChart (index+1)))
+    in 
+    List.indexedMap indexedFunc listMaybe
+   
+listToTuple : List (E.Element msg) -> List (E.Element msg,E.Element msg)
+listToTuple listElement =
+    case listElement of
+        (a::b::xs) -> (a,b)::listToTuple xs
+        _ -> []
+
+chartsTuple : List ChartParam -> ChartData -> (ChartID -> ChartInteract -> msg) -> (ChartsInteract -> msg) -> List (E.Element msg, E.Element msg)
+chartsTuple chartsParam chartData chartIDTochartIToMsg chartsInteractToMsg =
+    let
+        maxChartID = maxChartIDFromListCharts chartsParam
+        listMaybe = fillWithMaybe chartsParam 1
+        newListMaybe = 
+            if (modBy 2 maxChartID == 0) then
+                listMaybe ++ [Nothing,Nothing]
+            else 
+                listMaybe ++ [Nothing]
+
+        listElement = testelist2 newListMaybe chartData chartIDTochartIToMsg chartsInteractToMsg 
+    in 
+        listToTuple listElement
+        -- [(E.none, E.none)]
+
+
+-- foldingFunction : (ChartParam -> List Maybe 
+                       
+maxChartIDFromListCharts : List ChartParam -> Int
+maxChartIDFromListCharts chartsParam =
+    List.foldr (\cp acc -> max cp.chartID acc) 0 chartsParam 
+
+
+-- foldl : (a -> b -> b) -> b -> List a -> b
+
+fillWithMaybe : List ChartParam -> Int -> List (Maybe ChartParam)
+fillWithMaybe chartsParam index = 
+    case chartsParam of
+        [] -> []
+        (x::xs) -> 
+            let
+                chartID = .chartID x
+                newIndex = index + 1
+            in
+                if (index == chartID) then
+                    (Just x)::(fillWithMaybe xs newIndex)
+                else if (index > chartID) then
+                    []
+                else
+                    Nothing ::(fillWithMaybe chartsParam newIndex)

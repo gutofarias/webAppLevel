@@ -5,6 +5,8 @@ import EdoSolver as Edo
 import Html exposing (Html,div,text,input,span)
 import Html.Attributes exposing (style, placeholder, value, type_)
 import Html.Events exposing (onInput)
+import Element as E
+import UI 
 
 
 ------------------------------------------------
@@ -61,7 +63,12 @@ viewRef refParam refInteractToMsg =
         Step1P stepParam ->
             step1View stepParam (refInteractToMsg << Step1I)
       
-      
+viewRefElement : RefParam -> (RefInteract -> msg) -> E.Element msg
+viewRefElement refParam refInteractToMsg =
+    case refParam of
+        Step1P stepParam ->
+            step1ViewElement stepParam (refInteractToMsg << Step1I)
+                
 ------------------------------------------------
 ------------------------------------------------
 -- Step1
@@ -145,6 +152,21 @@ step1View step1Param step1InteractToMsg =
             , parameterInteractiveDiv "fVal" "" fValStr (step1InteractToMsg << Step1FVal)
             ]
 
+step1ViewElement : Step1Param -> (Step1Interact -> msg) -> E.Element msg
+step1ViewElement step1Param step1InteractToMsg =
+    let 
+        iValStr = .iValStr step1Param
+        tStepStr = .tStepStr step1Param
+        fValStr = .fValStr step1Param
+    in
+    E.column [E.spacing 10, E.padding 20, E.centerX]
+        [ UI.heading "Step Reference"
+        , E.row [E.spacing 25]
+                [ UI.textField iValStr "iVal" (step1InteractToMsg << Step1IVal)
+                , UI.textField tStepStr "Tstep" (step1InteractToMsg << Step1TStep)
+                , UI.textField fValStr "fVal" (step1InteractToMsg << Step1FVal)
+                ]
+        ]
         
 ------------------------------------------------
 -- Step1 RefFunction

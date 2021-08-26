@@ -308,77 +308,53 @@ view bigModel =
                             (rlist,ulist) = Edo.getRsUs xsAnimation animationEdoParam M.outputX1 refFunc controller
                         in 
                             (xsAnimation,rlist,ulist)
+
+    chartsTuple = MC.chartsTuple chartsParam chartData (fcomposition23 ChangeInteract MChart) (ChangeInteract << MCharts)
                 
   in
-      E.layout [] <|
-          E.column []
+      -- E.layout [] <|
+      --     E.column []
+      UI.view <|
               [ E.row [E.spacing 50, E.alignTop]
-                    [ coluna1
-                    , E.el [ E.width E.fill ] <| E.html <|
-                        M.modelSim xs rs us modelParam
+                    
+                    [ E.column [E.spacing 5, E.alignTop, E.padding 0]
+                          
+                        [ E.row [E.spacing 50, E.padding 10, E.centerX]
+                              
+                            [ Edo.viewEdoElement edoIStates
+                                  (ChangeInteract << Edo) 
+                            , M.viewModelElement modelParam
+                                (ChangeInteract << Models)  
+                            ]
+                              
+                        , Control.viewControllerElement controlParam
+                            (ChangeInteract << Control)
+                                
+                        , Ref.viewRefElement refParam
+                            (ChangeInteract << Ref)
+                                
+                        , E.row [E.centerX, E.spacing 50]
+                            [ UI.button "RunEdo" (Just RunEdo)
+                            , UI.button "Animation" (Just RunAnimation)
+                            ]
+                        ]
+                          
+                    , E.el [E.width E.fill, E.centerX, E.centerY, E.padding 40]  
+                        (E.html <| M.modelSim xs rs us modelParam)
                     ] 
-              ] 
-      
-coluna1 = 
-          E.column [E.spacing 10, E.alignTop] [
-               E.row [E.spacing 50, E.padding 20, E.centerX]
-                   [ E.column [E.spacing 10, E.alignTop]
-                        [ E.el [E.centerX,E.alignTop] <| E.text "Edo"
-                        , textField "0" "tini " (ChangeInteract << Edo << Edo.Tini)
-                        , textField "0" "tfim" (ChangeInteract << Edo << Edo.Tfim)
-                        ]
-                   , E.column [E.spacing 10, E.alignTop]
-                        [ E.el [E.centerX,E.alignTop] <| E.text "Level" 
-                        , E.row [E.spacing 30]
-                             [ E.column [E.alignTop]
-                                   [ textField "10" "h0" (ChangeInteract << Edo << Edo.Tini)
-                                   ]
-                             , E.column [E.alignTop]
-                                 [ textField "1" "A " (ChangeInteract << Edo << Edo.Tini)
-                                 , textField "0.1" "a " (ChangeInteract << Edo << Edo.Tini)
-                                 ]
-                             ]
-                        ]
-                   ]
-              , E.column [E.spacing 10, E.padding 20, E.centerX]
-                   [ E.el [E.centerX,E.alignTop] <| E.text "Controller"
-                   , E.row [E.spacing 35]
-                         [ textField "0" "kp" (ChangeInteract << Edo << Edo.Tini)
-                         , textField "0" "ki" (ChangeInteract << Edo << Edo.Tini)
-                         , textField "0" "kd" (ChangeInteract << Edo << Edo.Tini)
-                         ]
-                   ]
-              , E.column [E.spacing 10, E.padding 20, E.centerX]
-                   [ E.el [E.centerX,E.alignTop] <| E.text "Step Reference"
-                   , E.row [E.spacing 25]
-                         [ textField "0" "iVal" (ChangeInteract << Edo << Edo.Tini)
-                         , textField "0" "tStep" (ChangeInteract << Edo << Edo.Tini)
-                         , textField "0" "fVal" (ChangeInteract << Edo << Edo.Tini)
-                         ]
-                   ]
+              -- , E.row [E.spacing 100]
+              --     [ -- MC.chartViewElement chartData chartParam (fcomposition23 ChangeInteract MChart) (ChangeInteract << MCharts)
+              --     -- ,
+              --         UI.addNewElementSpace (ChangeInteract <| MCharts (MC.AddChart 2))
+              --     ]
               ]
-
+                ++
+                    (List.map
+                         (\(a,b) -> 
+                              E.row [E.spacing 100]
+                              [a,b])
+                         chartsTuple)
       
-    -- section []
-    --     [ div [style "height" "30px"]
-    --         [ Edo.viewEdo edoIStates (ChangeInteract << Edo)]
-    --     , div [style "height" "30px"]
-    --         [ M.viewModel modelParam (ChangeInteract << Models)]
-    --     , div [style "height" "30px"]
-    --         [Control.viewController controlParam (ChangeInteract << Control)]
-    --     , div [style "height" "30px"]
-    --         [Ref.viewRef refParam (ChangeInteract << Ref)]
-    --     , div [style "height" "30px"]
-    --         [ button [ onClick RunEdo ] [ text "Edo" ]
-    --         , button [ onClick RunAnimation ] [ text "Animation" ]
-    --         , text (String.fromFloat <| .tempo edoParam)
-    --         ]
-    --     , span []
-    --         (MC.chartsView chartData chartsParam (ChangeInteract << MCharts) (fcomposition23 ChangeInteract MChart))
-    --     , M.modelSim xs rs us modelParam
-    --     -- , MC.chartView chartData chartParam (fcomposition23 ChangeInteract MChart)
-    --     ]
-         
 fcomposition23 : (a -> b) -> (c -> d -> a) -> c -> d -> b 
 fcomposition23 f2 f3 c = 
     f2 << (f3 c)

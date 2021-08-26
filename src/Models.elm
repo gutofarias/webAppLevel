@@ -11,10 +11,14 @@ import Pixels exposing (pixels)
 import Point2d
 import Rectangle2d
 import Polygon2d
+import Circle2d
 import Color
 import Angle
 import Arc2d
 import Polyline2d
+
+import Element as E
+import UI
 
 ------------------------------------------------
 ------------------------------------------------
@@ -78,6 +82,11 @@ viewModel modelParam modelInteractToMsg =
         LevelP levelParam ->
             viewLevel levelParam (modelInteractToMsg << LevelI)
                 
+viewModelElement : ModelParam -> (ModelInteract -> msg) -> E.Element msg
+viewModelElement modelParam modelInteractToMsg = 
+    case modelParam of
+        LevelP levelParam ->
+            viewLevelElement levelParam (modelInteractToMsg << LevelI)
                 
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
 parameterInteractiveDiv texto pholder valor strToMsg =
@@ -198,6 +207,27 @@ viewLevel levelParam levelInteractToMsg =
             , parameterInteractiveDiv "a   " "" apStr (levelInteractToMsg << Ap)
             ]
     
+
+viewLevelElement : LevelParam -> (LevelInteract -> msg) -> E.Element msg
+viewLevelElement levelParam levelInteractToMsg = 
+    let 
+        h0Str = .h0Str levelParam
+        agStr = .agStr levelParam
+        apStr = .apStr levelParam
+    in 
+        
+    E.column [E.spacing 10, E.alignTop]
+        [ UI.heading "Level" 
+        , E.row [E.spacing 30]
+                [ E.column [E.alignTop, E.spacing 10]
+                    [ UI.textField h0Str "Hini" (levelInteractToMsg << H0)
+                    ]
+                , E.column [E.alignTop, E.spacing 10]
+                    [ UI.textField agStr "A " (levelInteractToMsg << Ag)
+                    , UI.textField apStr "a " (levelInteractToMsg << Ap)
+                    ]
+                ]
+        ]
 
 ------------------------------------------------
 -- runEdoLevel
@@ -347,10 +377,14 @@ levelSim xs rs us levelParam =
         arcAsPolylineSegsB = Arc2d.segments nSegs arcb
         polyb = Polygon2d.singleLoop ((Arc2d.centerPoint arcb)::(Polyline2d.vertices arcAsPolylineSegsB))
                 
+        rectBB = Rectangle2d.from prc2 p9 
+        boundingBox = Rectangle2d.boundingBox rectBB
+        rectBB2 = Rectangle2d.fromBoundingBox boundingBox
+
         points = [pa,pb,pc,pd,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,parca1,parca2,prc1,prc2,parcb1,parcb2]
     in 
     Drawing2d.draw
-        { viewBox = viewBox
+        { viewBox = rectBB2
         , entities = [
               Drawing2d.group [Drawing2d.fillColor Color.lightBlue, Drawing2d.strokeWidth <| Pixels.float 0.0]
                 [ Drawing2d.rectangle [] rect
@@ -368,7 +402,7 @@ levelSim xs rs us levelParam =
                 , Drawing2d.polygon [] poly2
                 ]
             ] 
-            -- ++ List.map Common.dot points
+            -- ++ List.map dot points
         }
 
         
@@ -379,3 +413,12 @@ extendP2d p dx dy =
        py = Pixels.toFloat (Point2d.yCoordinate p)
    in
        Point2d.pixels (px + dx) (py + dy)
+           
+dot : Point2d.Point2d Pixels.Pixels coordinates -> Drawing2d.Entity Pixels.Pixels coordinates msg
+dot point =
+    Drawing2d.circle
+        [ Drawing2d.blackStroke
+        , Drawing2d.whiteFill
+        , Drawing2d.strokeWidth (pixels 1)
+        ]
+        (Circle2d.withRadius (pixels 4) point)

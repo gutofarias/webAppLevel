@@ -4,7 +4,8 @@ import EdoSolver as Edo
 import Html exposing (Html, div, input, span, text)
 import Html.Attributes exposing (placeholder, type_, value)
 import Html.Events exposing (onInput)
-
+import Element as E
+import UI 
 
 
 ------------------------------------------------
@@ -66,6 +67,11 @@ viewController controlParam controlInteractToMsg =
             pidView pidParam (controlInteractToMsg << PidI)
 
 
+viewControllerElement : ControlParam -> (ControlInteract -> msg) -> E.Element msg
+viewControllerElement controlParam controlInteractToMsg =
+    case controlParam of
+        PidP pidParam ->
+            pidViewElement pidParam (controlInteractToMsg << PidI)
 
 ------------------------------------------------
 ------------------------------------------------
@@ -172,6 +178,26 @@ pidView pidParam pidInteractToMsg =
         , parameterInteractiveDiv "kd" "" kdStr (pidInteractToMsg << PidKd)
         ]
 
+pidViewElement : PidParam -> (PidInteract -> msg) -> E.Element msg
+pidViewElement pidParam pidInteractToMsg =
+    let
+        kpStr =
+            .kpStr pidParam
+
+        kiStr =
+            .kiStr pidParam
+
+        kdStr =
+            .kdStr pidParam
+    in
+    E.column [E.spacing 10, E.padding 20, E.centerX]
+        [ UI.heading "Controller"
+        , E.row [E.spacing 35]
+                [ UI.textField kpStr "Kp" (pidInteractToMsg << PidKp)
+                , UI.textField kiStr "Ki" (pidInteractToMsg << PidKi)
+                , UI.textField kdStr "Kd" (pidInteractToMsg << PidKd)
+                ]
+        ]
 
 
 ------------------------------------------------

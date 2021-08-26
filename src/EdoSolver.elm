@@ -4,6 +4,8 @@ import List
 import Html exposing (Html,div,text,input,span)
 import Html.Attributes exposing (style, placeholder, value, type_)
 import Html.Events exposing (onInput)
+import Element as E
+import UI
 
 ------------------------------------------------
 -- Variables
@@ -124,6 +126,17 @@ viewEdo edoIStates edoInteractToMsg =
         [ parameterInteractiveDiv "tini  " "" tiniStr (edoInteractToMsg << Tini)
         , parameterInteractiveDiv "tfim  " "" tfimStr (edoInteractToMsg << Tfim)
         ]
+
+viewEdoElement : EdoIStates -> (EdoInteract -> msg) -> E.Element msg
+viewEdoElement edoIStates edoInteractToMsg =
+  let
+    tiniStr = .tiniStr edoIStates
+    tfimStr = .tfimStr edoIStates
+  in
+    E.column [E.spacing 10, E.alignTop]
+        [ UI.heading "Edo"
+        , UI.textField tiniStr "Tini " <| edoInteractToMsg << Tini
+        , UI.textField tfimStr "Tfim" <| edoInteractToMsg << Tfim ]
     
         
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
