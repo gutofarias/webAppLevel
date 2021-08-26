@@ -76,12 +76,6 @@ type ModelInteract
 -- viewModel
 ------------------------------------------------
                         
-viewModel : ModelParam -> (ModelInteract -> msg) -> Html msg
-viewModel modelParam modelInteractToMsg = 
-    case modelParam of
-        LevelP levelParam ->
-            viewLevel levelParam (modelInteractToMsg << LevelI)
-                
 viewModelElement : ModelParam -> (ModelInteract -> msg) -> E.Element msg
 viewModelElement modelParam modelInteractToMsg = 
     case modelParam of
@@ -194,20 +188,6 @@ type LevelInteract
 -- viewLevel
 ------------------------------------------------
     
-viewLevel : LevelParam -> (LevelInteract -> msg) -> Html msg
-viewLevel levelParam levelInteractToMsg = 
-    let 
-        h0Str = .h0Str levelParam
-        agStr = .agStr levelParam
-        apStr = .apStr levelParam
-    in 
-        div []
-            [ parameterInteractiveDiv "h0  " "" h0Str (levelInteractToMsg << H0)
-            , parameterInteractiveDiv "A   " "" agStr (levelInteractToMsg << Ag)
-            , parameterInteractiveDiv "a   " "" apStr (levelInteractToMsg << Ap)
-            ]
-    
-
 viewLevelElement : LevelParam -> (LevelInteract -> msg) -> E.Element msg
 viewLevelElement levelParam levelInteractToMsg = 
     let 

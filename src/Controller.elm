@@ -59,14 +59,6 @@ type ControlInteract
 -- ControlView
 ------------------------------------------------
 
-
-viewController : ControlParam -> (ControlInteract -> msg) -> Html msg
-viewController controlParam controlInteractToMsg =
-    case controlParam of
-        PidP pidParam ->
-            pidView pidParam (controlInteractToMsg << PidI)
-
-
 viewControllerElement : ControlParam -> (ControlInteract -> msg) -> E.Element msg
 viewControllerElement controlParam controlInteractToMsg =
     case controlParam of
@@ -158,25 +150,6 @@ type PidInteract
 ------------------------------------------------
 -- PID View
 ------------------------------------------------
-
-
-pidView : PidParam -> (PidInteract -> msg) -> Html msg
-pidView pidParam pidInteractToMsg =
-    let
-        kpStr =
-            .kpStr pidParam
-
-        kiStr =
-            .kiStr pidParam
-
-        kdStr =
-            .kdStr pidParam
-    in
-    span []
-        [ parameterInteractiveDiv "kp" "" kpStr (pidInteractToMsg << PidKp)
-        , parameterInteractiveDiv "ki" "" kiStr (pidInteractToMsg << PidKi)
-        , parameterInteractiveDiv "kd" "" kdStr (pidInteractToMsg << PidKd)
-        ]
 
 pidViewElement : PidParam -> (PidInteract -> msg) -> E.Element msg
 pidViewElement pidParam pidInteractToMsg =

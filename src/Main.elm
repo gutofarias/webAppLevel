@@ -312,8 +312,6 @@ view bigModel =
     chartsTuple = MC.chartsTuple chartsParam chartData (fcomposition23 ChangeInteract MChart) (ChangeInteract << MCharts)
                 
   in
-      -- E.layout [] <|
-      --     E.column []
       UI.view <|
               [ E.row [E.spacing 50, E.alignTop]
                     
@@ -342,11 +340,6 @@ view bigModel =
                     , E.el [E.width E.fill, E.centerX, E.centerY, E.padding 40]  
                         (E.html <| M.modelSim xs rs us modelParam)
                     ] 
-              -- , E.row [E.spacing 100]
-              --     [ -- MC.chartViewElement chartData chartParam (fcomposition23 ChangeInteract MChart) (ChangeInteract << MCharts)
-              --     -- ,
-              --         UI.addNewElementSpace (ChangeInteract <| MCharts (MC.AddChart 2))
-              --     ]
               ]
                 ++
                     (List.map

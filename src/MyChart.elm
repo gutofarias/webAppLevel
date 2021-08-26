@@ -277,13 +277,6 @@ chart5View chartData curves =
                 List.filterMap (curveToChartSeriesView chartData) curves)
  
             
-chartContainerView chart =
-  div [  style "height" "300px"
-      , style "width" "300px"]
-      [
-        chart
-      ]
-      
 curveToChartSeriesView : DC.ChartData -> Curve -> Maybe (C.Element DC.ChartDatum msg)
 curveToChartSeriesView chartData curve = 
     let 
@@ -362,14 +355,6 @@ chartCurvesViewElement chartData chartIToMsg curves =
                       ]) 
                 :: chartCurvesViewElement chartData chartIToMsg cs
 
-addCurveButtonView : (ChartInteract -> msg) -> Html msg
-addCurveButtonView chartIToMsg =
-    button [ onClick <| chartIToMsg AddCurve ] [ text "+" ]
-        
-removeCurveButtonView : (ChartInteract -> msg) -> CurveID -> Html msg
-removeCurveButtonView chartIToMsg curveID =
-    button [ onClick <| chartIToMsg (RemoveCurve curveID ) ] [ text "-" ]
-    
 addCurveButtonViewElement : (ChartInteract -> msg) -> E.Element msg
 addCurveButtonViewElement chartIToMsg =
     E.html <|
@@ -380,18 +365,7 @@ removeCurveButtonViewElement chartIToMsg curveID =
     E.html <|
     button [ onClick <| chartIToMsg (RemoveCurve curveID ) ] [ text "-" ]
         
-chartCurveSelectionView :  DC.ChartData -> (ChartInteract -> msg) -> Curve -> Html msg
-chartCurveSelectionView chartData chartIToMsg curve =
-    let
-       (xstr,ystr) = .axesString curve 
-       curveID = .curveID curve
-    in 
-        span []
-            [ label [] [text <| "Curve " ++ (String.fromInt curveID)]
-            , select [onInput <| chartIToMsg << (ChangeAxis curveID XAxis)] (chartAxesOptionsView chartData xstr)
-            , select [onInput <| chartIToMsg << (ChangeAxis curveID YAxis)] (chartAxesOptionsView chartData ystr)
-            ]
-    
+        
 chartCurveSelectionViewElement :  DC.ChartData -> (ChartInteract -> msg) -> Curve -> E.Element msg
 chartCurveSelectionViewElement chartData chartIToMsg curve =
     let
@@ -462,24 +436,8 @@ chartFromChartID chartID chartsParam =
     in
         List.head filteredList
 
-
--- testelist : List ChartParam -> List (Maybe ChartParam)
--- testelist chartsParam = 
---     let
---         maxChartID = maxChartIDFromListCharts chartsParam
---     in 
---         fillWithMaybe chartsParam 0
-
--- genNewList : List (Maybe ChartParam) -> ChartID -> List (Maybe ChartParam)
--- genNewList listMaybe maxChartID = 
---     if (modBy maxChartID 2 == 0) then
---         listMaybe ++ [Nothing,Nothing]
---     else 
---         listMaybe ++ [Nothing]
-
-
-testelist2 : List (Maybe ChartParam) -> ChartData -> (ChartID -> ChartInteract -> msg) -> (ChartsInteract -> msg) -> List (E.Element msg)
-testelist2 listMaybe chartData chartIDTochartIToMsg chartsInteractToMsg =
+listMaybeChartToListElement : List (Maybe ChartParam) -> ChartData -> (ChartID -> ChartInteract -> msg) -> (ChartsInteract -> msg) -> List (E.Element msg)
+listMaybeChartToListElement listMaybe chartData chartIDTochartIToMsg chartsInteractToMsg =
     let
         indexedFunc index maybeChart = 
             case maybeChart of
@@ -507,20 +465,15 @@ chartsTuple chartsParam chartData chartIDTochartIToMsg chartsInteractToMsg =
             else 
                 listMaybe ++ [Nothing]
 
-        listElement = testelist2 newListMaybe chartData chartIDTochartIToMsg chartsInteractToMsg 
+        listElement = listMaybeChartToListElement newListMaybe chartData chartIDTochartIToMsg chartsInteractToMsg 
     in 
         listToTuple listElement
-        -- [(E.none, E.none)]
 
-
--- foldingFunction : (ChartParam -> List Maybe 
                        
 maxChartIDFromListCharts : List ChartParam -> Int
 maxChartIDFromListCharts chartsParam =
     List.foldr (\cp acc -> max cp.chartID acc) 0 chartsParam 
 
-
--- foldl : (a -> b -> b) -> b -> List a -> b
 
 fillWithMaybe : List ChartParam -> Int -> List (Maybe ChartParam)
 fillWithMaybe chartsParam index = 
