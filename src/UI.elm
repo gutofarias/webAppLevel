@@ -19,7 +19,8 @@ heading str =
 textField : String -> String -> (String -> msg) -> E.Element msg
 textField str label strToMsg =
     EI.text [ E.htmlAttribute <| HA.type_ "number"
-            -- , E.htmlAttribute <| HA.pattern "[0-9]\\."
+            -- funciona pra botar o teclado numerico no iphone, mas ficou com problema entre . e , no cel de jota que eh meio americanizado 
+            -- , E.htmlAttribute <| HA.attribute "inputmode" "decimal"
             , EB.widthEach {bottom = 1,left = 0,right = 0, top = 0}
             , EB.rounded 0
             , E.width <| E.px 70
@@ -97,6 +98,7 @@ view children =
         , E.centerX
         , EF.size 16
         , EF.color (E.rgb255 80 80 80)
+        -- , E.explain Debug.todo
         ]
         (children)
 

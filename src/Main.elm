@@ -313,7 +313,9 @@ view bigModel =
                 
   in
       UI.view <|
-              [ E.row [E.spacing 50, E.alignTop]
+              [ E.row [E.spacing 50, E.alignTop
+                      -- , E.explain Debug.todo
+                      ]
                     
                     [ E.column [E.spacing 5, E.alignTop, E.padding 0]
                           
@@ -344,8 +346,13 @@ view bigModel =
                 ++
                     (List.map
                          (\(a,b) -> 
-                              E.row [E.spacing 100]
-                              [a,b])
+                              E.row [
+                                      E.width 
+                                          (E.fill
+                                          |> E.minimum 880
+                                          |> E.maximum 1000)
+                                    ]
+                              [E.el [E.alignLeft] a, E.el [E.alignRight] b])
                          chartsTuple)
       
 fcomposition23 : (a -> b) -> (c -> d -> a) -> c -> d -> b 
