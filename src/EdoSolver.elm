@@ -134,9 +134,9 @@ viewEdoElement edoIStates edoInteractToMsg =
     tfimStr = .tfimStr edoIStates
   in
     E.column [E.spacing 10, E.alignTop]
-        [ UI.heading "Edo"
+        [ UI.heading "ODE"
         , UI.textField tiniStr "Tini " <| edoInteractToMsg << Tini
-        , UI.textField tfimStr "Tfim" <| edoInteractToMsg << Tfim ]
+        , UI.textField tfimStr "Tfin" <| edoInteractToMsg << Tfim ]
     
         
 parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg

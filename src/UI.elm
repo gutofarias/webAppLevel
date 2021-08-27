@@ -94,11 +94,12 @@ view children =
       ] <|
       E.column
         [ E.width (E.maximum 1060 E.fill)
-        , E.paddingEach { top = 30, bottom = 20, left = 30, right = 30 }
+        , E.paddingEach { top = 30, bottom = 20, left = 50, right = 50 }
         , E.centerX
         , EF.size 16
         , EF.color (E.rgb255 80 80 80)
         -- , E.explain Debug.todo
+        , E.spacing 50
         ]
         (children)
 

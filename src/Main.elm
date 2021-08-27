@@ -313,13 +313,24 @@ view bigModel =
                 
   in
       UI.view <|
-              [ E.row [E.spacing 50, E.alignTop
+              [ E.row [ E.alignTop
+                      -- , E.spacing 50
                       -- , E.explain Debug.todo
+                      , E.alignLeft
+                      , E.width 
+                            (E.fill
+                            |> E.minimum 880
+                            |> E.maximum 1000)
                       ]
                     
-                    [ E.column [E.spacing 5, E.alignTop, E.padding 0]
+                    [ 
+                      E.column [E.spacing 5, E.alignTop, E.padding 0, E.alignLeft] 
                           
-                        [ E.row [E.spacing 50, E.padding 10, E.centerX]
+                        [ E.row [ E.spacing 50
+                                , E.padding 10
+                                , E.centerX
+                                -- , E.explain Debug.todo
+                                ]
                               
                             [ Edo.viewEdoElement edoIStates
                                   (ChangeInteract << Edo) 
@@ -333,13 +344,18 @@ view bigModel =
                         , Ref.viewRefElement refParam
                             (ChangeInteract << Ref)
                                 
-                        , E.row [E.centerX, E.spacing 50]
-                            [ UI.button "RunEdo" (Just RunEdo)
+                        , E.row [E.centerX, E.spacing 50, E.moveDown 10]
+                            [ UI.button "RunODE" (Just RunEdo)
                             , UI.button "Animation" (Just RunAnimation)
                             ]
                         ]
                           
-                    , E.el [E.width E.fill, E.centerX, E.centerY, E.padding 40]  
+                    , E.el [ E.alignRight
+                           -- , E.width E.fill
+                           , E.centerY
+                           , E.padding 40
+                           -- , E.explain Debug.todo
+                           ]  
                         (E.html <| M.modelSim xs rs us modelParam)
                     ] 
               ]
