@@ -96,9 +96,9 @@ updateEdoParam edoParam edoIStates =
 type alias EdoIStates = { tiniStr:String, tfimStr:String }
 
     
-changeEdoIStates : EdoIStates -> EdoInteract -> EdoIStates
-changeEdoIStates edoIStates edoInteract =
-    case edoInteract of
+updateEdoIStates : Msg -> EdoIStates -> EdoIStates
+updateEdoIStates msg edoIStates =
+    case msg of
         Tini valueStr -> {edoIStates | tiniStr = valueStr}
         Tfim valueStr -> {edoIStates | tfimStr = valueStr}
 
@@ -107,7 +107,7 @@ changeEdoIStates edoIStates edoInteract =
 -- EdoInteract
 ------------------------------------------------
 
-type EdoInteract
+type Msg
     = Tini String
     | Tfim String
     
@@ -116,37 +116,17 @@ type EdoInteract
 -- viewEdo
 ------------------------------------------------
 
-viewEdo : EdoIStates -> (EdoInteract -> msg) -> Html msg
-viewEdo edoIStates edoInteractToMsg = 
-  let
-    tiniStr = .tiniStr edoIStates
-    tfimStr = .tfimStr edoIStates
-  in
-    div []
-        [ parameterInteractiveDiv "tini  " "" tiniStr (edoInteractToMsg << Tini)
-        , parameterInteractiveDiv "tfim  " "" tfimStr (edoInteractToMsg << Tfim)
-        ]
-
-viewEdoElement : EdoIStates -> (EdoInteract -> msg) -> E.Element msg
-viewEdoElement edoIStates edoInteractToMsg =
+view : EdoIStates -> (Msg -> msg) -> E.Element msg
+view edoIStates msgToMainMsg =
   let
     tiniStr = .tiniStr edoIStates
     tfimStr = .tfimStr edoIStates
   in
     E.column [E.spacing 10, E.alignTop]
         [ UI.heading "ODE"
-        , UI.textField tiniStr "Tini " <| edoInteractToMsg << Tini
-        , UI.textField tfimStr "Tfin" <| edoInteractToMsg << Tfim ]
-    
+        , UI.textField tiniStr "Tini " <| msgToMainMsg << Tini
+        , UI.textField tfimStr "Tfin" <| msgToMainMsg << Tfim ]
         
-parameterInteractiveDiv : String -> String -> String -> (String -> msg) -> Html msg
-parameterInteractiveDiv texto pholder valor strToMsg =
-    span []
-    [ text texto
-    , input [type_ "number",placeholder pholder, value valor, onInput <| strToMsg ] []
-    ]
-    
-    
     
 ------------------------------------------------
 -- EdoSolver Functions

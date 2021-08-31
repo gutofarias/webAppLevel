@@ -59,18 +59,18 @@ type alias Model =
     , edoParam : Edo.EdoParam
     , edoIStates : Edo.EdoIStates
     , chartsParam : List MC.ChartParam 
-    , controlParam : Control.ControlParam
-    , refParam : Ref.RefParam
+    , controlModel : Control.Model
+    , refModel : Ref.Model
     }
 
     
 type Interact
-    = Edo Edo.EdoInteract
+    = Edo Edo.Msg
     | Models M.ModelInteract
     | MChart MC.ChartID MC.ChartInteract
     | MCharts MC.ChartsInteract
-    | Control Control.ControlInteract  
-    | Ref Ref.RefInteract
+    | Control Control.Msg  
+    | Ref Ref.Msg
         
         
 ------------------------------------------------
@@ -88,8 +88,8 @@ init () =
             , edoParam = edoParam
             , edoIStates = edoIStates
             , chartsParam = [(MC.initChartParam Nothing)]
-            , controlParam = Control.initControlParam Control.Pid
-            , refParam = Ref.initRefParam Ref.Step1
+            , controlModel = Control.init Control.PID
+            , refModel = Ref.init Ref.Step1
             }, Cmd.none)
               
 
@@ -125,11 +125,11 @@ update msg bigModel =
           newModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
           edoParam = .edoParam newModel 
           modelParam = .modelParam newModel
-          controlParam = .controlParam newModel
-          refParam = .refParam newModel
+          controlModel = .controlModel newModel
+          refModel = .refModel newModel
                      
-          controller = Control.controllerFromControlParam controlParam
-          refFunc = Ref.refFunctionFromRefParam refParam 
+          controller = Control.controllerFromModel controlModel
+          refFunc = Ref.refFunctionFromModel refModel 
                                       
           controlMem = []
           newEdoParam = {edoParam | controlMemory = controlMem}
@@ -143,10 +143,10 @@ update msg bigModel =
             model = modelFromBigModel bigModel
         in
         case interact of
-            Edo edoInteract ->
+            Edo edoMsg ->
                 let
                     edoIStates = .edoIStates model
-                    edoIStatesNew = Edo.changeEdoIStates edoIStates edoInteract 
+                    edoIStatesNew = Edo.updateEdoIStates edoMsg edoIStates 
                     newModel = {model | edoIStates = edoIStatesNew}
                 in
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
@@ -159,19 +159,19 @@ update msg bigModel =
                 in 
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
-            Control controlInteract ->
+            Control controlMsg ->
                 let 
-                    controlParam = .controlParam model
-                    controlParamNew = Control.changeControlParam controlParam controlInteract
-                    newModel = {model | controlParam = controlParamNew}
+                    controlModel = .controlModel model
+                    controlModelNew = Control.update controlMsg controlModel
+                    newModel = {model | controlModel = controlModelNew}
                 in
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
                         
-            Ref refInteract ->
+            Ref refMsg ->
                 let
-                    refParam = .refParam model
-                    refParamNew = Ref.changeRefParam refParam refInteract 
-                    newModel = {model | refParam = refParamNew}
+                    refModel = .refModel model
+                    refModelNew = Ref.update refMsg refModel 
+                    newModel = {model | refModel = refModelNew}
                 in
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
@@ -229,11 +229,11 @@ update msg bigModel =
                     modelData = .chartData model
                     modelParam = .modelParam model
                                  
-                    controlParam = .controlParam model
-                    refParam = .refParam model
+                    controlModel = .controlModel model
+                    refModel = .refModel model
                                
-                    controller = Control.controllerFromControlParam controlParam
-                    refFunc = Ref.refFunctionFromRefParam refParam 
+                    controller = Control.controllerFromModel controlModel
+                    refFunc = Ref.refFunctionFromModel refModel 
                               
                     stateUpdatedModelParam = M.updateModelParamFromXs xs modelParam
                                              
@@ -283,11 +283,11 @@ view bigModel =
     chartsParam = .chartsParam model
     modelParam = .modelParam model
                  
-    refParam = .refParam model
-    controlParam = .controlParam model
+    refModel = .refModel model
+    controlModel = .controlModel model
                    
-    refFunc = Ref.refFunctionFromRefParam refParam
-    controller = Control.controllerFromControlParam controlParam
+    refFunc = Ref.refFunctionFromModel refModel
+    controller = Control.controllerFromModel controlModel
            
     -- Ficou bom porque a animação mantém o final a partir dos dados
     (xs,rs,us) = case chartData of
@@ -332,16 +332,16 @@ view bigModel =
                                 -- , E.explain Debug.todo
                                 ]
                               
-                            [ Edo.viewEdoElement edoIStates
+                            [ Edo.view edoIStates
                                   (ChangeInteract << Edo) 
                             , M.viewModelElement modelParam
                                 (ChangeInteract << Models)  
                             ]
                               
-                        , Control.viewControllerElement controlParam
+                        , Control.view controlModel
                             (ChangeInteract << Control)
                                 
-                        , Ref.viewRefElement refParam
+                        , Ref.view refModel
                             (ChangeInteract << Ref)
                                 
                         , E.row [E.centerX, E.spacing 50, E.moveDown 10]
