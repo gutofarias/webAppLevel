@@ -1,4 +1,4 @@
-module Model exposing (..)
+module ModelSystem exposing (..)
 
 import DataConvert as DC
 import EdoSolver as Edo
@@ -7,7 +7,7 @@ import Html
 
 import Element as E
 
-import Model.Level as Level
+import ModelSystem.Level as Level
 
 
 ------------------------------------------------
