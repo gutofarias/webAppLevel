@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import DataConvert as DC
 import EdoSolver as Edo
-import Models as M
+import Model as M
 import Controller as Control 
 import Reference as Ref
 
@@ -23,6 +23,8 @@ import Element.Border as EB
 
 import UI exposing (..)
 
+import Model.Level as Level
+
 ------------------------------------------------
 -- main
 ------------------------------------------------
@@ -35,8 +37,6 @@ main =
 ------------------------------------------------
 -- Model and Data Types
 ------------------------------------------------
-
-type alias DataILevel = {initState:Float, levelParam:M.LevelParam}
 
 type BigModel
     = SolvingEdo Model
@@ -56,7 +56,8 @@ updatingBigModelFromModel bigModel newModel =
 
 type alias Model =
     { chartData : DC.ChartData
-    , modelParam : M.ModelParam
+    , modelType : M.Type
+    , modelModel : M.Model
     , edoParam : Edo.EdoParam
     , edoIStates : Edo.EdoIStates
     , chartsModel : MC.Model
@@ -67,7 +68,7 @@ type alias Model =
     
 type Interact
     = Edo Edo.Msg
-    | Models M.ModelInteract
+    | Models M.Msg
     | MCharts MC.Msg
     | Control Control.Msg  
     | Ref Ref.Msg
@@ -81,10 +82,12 @@ init : () -> (BigModel, Cmd Msg)
 init () =
     let
         (edoParam, edoIStates) = Edo.initEdoParamAndIStates
+        modelType = M.Level
     in
             (SolvingEdo
             { chartData = []
-            , modelParam = M.initModelParam M.Level
+            , modelType = modelType
+            , modelModel = M.init modelType
             , edoParam = edoParam
             , edoIStates = edoIStates
             , chartsModel = MC.init
@@ -124,7 +127,7 @@ update msg bigModel =
       let  
           newModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
           edoParam = .edoParam newModel 
-          modelParam = .modelParam newModel
+          modelModel = .modelModel newModel
           controlModel = .controlModel newModel
           refModel = .refModel newModel
                      
@@ -134,7 +137,7 @@ update msg bigModel =
           controlMem = []
           newEdoParam = {edoParam | controlMemory = controlMem}
                                       
-          data = Tuple.first <| M.runEdoModel modelParam newEdoParam refFunc controller
+          data = Tuple.first <| M.runEdo modelModel newEdoParam refFunc controller
       in
           ( SolvingEdo { newModel | chartData = data, edoParam = newEdoParam }, Cmd.none)
             
@@ -151,11 +154,11 @@ update msg bigModel =
                 in
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
-            Models modelInteract ->
+            Models modelMsg ->
                 let
-                    modelParam = .modelParam model
-                    modelParamNew = M.changeModelParam modelParam modelInteract
-                    newModel = {model | modelParam = modelParamNew}
+                    modelModel = .modelModel model
+                    modelModelNew = M.update modelMsg modelModel
+                    newModel = {model | modelModel = modelModelNew}
                 in 
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
@@ -219,7 +222,7 @@ update msg bigModel =
                     animatingEdoParam2 = {animatingEdoParam | tfim = newTfimStep}
                                          
                     modelData = .chartData model
-                    modelParam = .modelParam model
+                    modelModel = .modelModel model
                                  
                     controlModel = .controlModel model
                     refModel = .refModel model
@@ -227,9 +230,9 @@ update msg bigModel =
                     controller = Control.controllerFromModel controlModel
                     refFunc = Ref.refFunctionFromModel refModel 
                               
-                    stateUpdatedModelParam = M.updateModelParamFromXs xs modelParam
+                    stateUpdatedModel = M.updateModelFromXs xs modelModel
                                              
-                    (data,newAnimationEdoParam) = M.runEdoModel stateUpdatedModelParam animatingEdoParam2 refFunc controller
+                    (data,newAnimationEdoParam) = M.runEdo stateUpdatedModel animatingEdoParam2 refFunc controller
                                                   
                     newXs = case data of
                                 (d::ds) -> DC.xsFromDatum d
@@ -245,7 +248,7 @@ update msg bigModel =
             updatedModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
                            
             edoParam = .edoParam updatedModel
-            modelParam = .modelParam updatedModel
+            modelModel = .modelModel updatedModel
                          
             controlMem = []
             tiniAnimation = .tempo edoParam
@@ -254,7 +257,7 @@ update msg bigModel =
             chartData = []
                         
             newModel = {updatedModel | chartData = chartData}
-            xs = M.xsFromModelParam modelParam
+            xs = M.xsFromModel modelModel
         in
            (Animation newModel animatingEdoParam xs, Cmd.none)
 
@@ -273,7 +276,7 @@ view bigModel =
                  
     chartData = .chartData model
     chartsModel = .chartsModel model
-    modelParam = .modelParam model
+    modelModel = .modelModel model
                  
     refModel = .refModel model
     controlModel = .controlModel model
@@ -291,13 +294,13 @@ view bigModel =
                 case bigModel of
                     SolvingEdo _ ->
                         let 
-                            xlist = M.xsFromModelParam modelParam 
-                            (rlist,ulist) = Edo.getRsUs xlist edoParam M.outputX1 refFunc controller
+                            xlist = M.xsFromModel modelModel 
+                            (rlist,ulist) = Edo.getRsUs xlist edoParam (M.output model.modelType)refFunc controller
                         in
                             (xlist,rlist,ulist)
                     Animation _ animationEdoParam xsAnimation ->
                         let
-                            (rlist,ulist) = Edo.getRsUs xsAnimation animationEdoParam M.outputX1 refFunc controller
+                            (rlist,ulist) = Edo.getRsUs xsAnimation animationEdoParam (M.output model.modelType) refFunc controller
                         in 
                             (xsAnimation,rlist,ulist)
 
@@ -326,7 +329,7 @@ view bigModel =
                               
                             [ Edo.view edoIStates
                                   (ChangeInteract << Edo) 
-                            , M.viewModelElement modelParam
+                            , M.view modelModel
                                 (ChangeInteract << Models)  
                             ]
                               
@@ -348,7 +351,7 @@ view bigModel =
                            , E.padding 40
                            -- , E.explain Debug.todo
                            ]  
-                        (E.html <| M.modelSim xs rs us modelParam)
+                        (E.html <| M.simulation xs rs us modelModel)
                     ] 
               ]
                 ++
