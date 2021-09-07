@@ -5,6 +5,9 @@ import EdoSolver as Edo
 import Html 
 -- import Controller
 
+import Reference as Ref
+import Controller as Control 
+
 import Element as E
 
 import ModelSystem.Level as Level
@@ -85,6 +88,33 @@ updateModelFromXs xs model =
             LevelModel <| Level.updateModelFromXs xs levelModel
                        
                 
+------------------------------------------------
+-- edoParam
+------------------------------------------------
+
+initEdoParam : Type -> Edo.EdoParam
+initEdoParam modelType = 
+    case modelType of
+        Level -> Level.initEdoParam
+
+------------------------------------------------
+-- control
+------------------------------------------------
+
+control : Type -> Control.Model
+control modelType = 
+    case modelType of
+        Level -> Level.control
+
+------------------------------------------------
+-- ref
+------------------------------------------------
+
+ref : Type -> Ref.Model
+ref modelType = 
+    case modelType of
+        Level -> Level.ref
+
 ------------------------------------------------
 -- output
 ------------------------------------------------

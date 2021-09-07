@@ -7,6 +7,9 @@ import UI
 import DataConvert as DC
 import EdoSolver as Edo
 
+import Reference as Ref
+import Controller as Control
+
 import Drawing2d
 import Pixels exposing (pixels)
 import Point2d
@@ -136,6 +139,37 @@ updateModelFromXs xs model =
     
             
 ------------------------------------------------
+-- edoParam
+------------------------------------------------
+
+initEdoParam : Edo.EdoParam
+initEdoParam = 
+    { tempo = 0.0
+        , tfim = 10.0
+        , passo = 0.001
+        , relPassoSaida = 100
+        , controlMemory = []
+        , solver = Edo.rungeKutta }
+    
+        
+------------------------------------------------
+-- control
+------------------------------------------------
+
+control : Control.Model
+control = 
+    Control.init Control.PID
+
+                 
+------------------------------------------------
+-- ref
+------------------------------------------------
+
+ref : Ref.Model
+ref = 
+    Ref.init Ref.Step1
+
+------------------------------------------------
 -- output
 ------------------------------------------------
 
@@ -200,7 +234,7 @@ simulation xs rs us model =
         
         level = Maybe.withDefault 0.0 <| List.head xs
         input = Maybe.withDefault 0.0 <| List.head us
-        ref = Maybe.withDefault 0.0 <| List.head rs
+        reference = Maybe.withDefault 0.0 <| List.head rs
         ag = .ag model
         ap = .ap model
         lbase = 200.0

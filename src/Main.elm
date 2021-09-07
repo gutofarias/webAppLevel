@@ -21,9 +21,8 @@ import Element as E
 import Element.Input as EI
 import Element.Border as EB
 
-import UI exposing (..)
+import UI 
 
--- import Model.Level as Level
 
 ------------------------------------------------
 -- main
@@ -35,7 +34,7 @@ main =
       
       
 ------------------------------------------------
--- Model and Data Types
+-- BigModel
 ------------------------------------------------
 
 type BigModel
@@ -54,6 +53,11 @@ updatingBigModelFromModel bigModel newModel =
         SolvingEdo _ -> SolvingEdo newModel
         Animation _ animatingEdoParam xs -> Animation newModel animatingEdoParam xs
 
+                                            
+------------------------------------------------
+-- Model
+------------------------------------------------
+
 type alias Model =
     { chartData : DC.ChartData
     , modelSystemType : MS.Type
@@ -66,14 +70,6 @@ type alias Model =
     }
 
     
-type Interact
-    = Edo Edo.Msg
-    | ModelSystem MS.Msg
-    | MCharts MC.Msg
-    | Control Control.Msg  
-    | Ref Ref.Msg
-        
-        
 ------------------------------------------------
 -- init
 ------------------------------------------------
@@ -81,8 +77,9 @@ type Interact
 init : () -> (BigModel, Cmd Msg) 
 init () =
     let
-        (edoParam, edoIStates) = Edo.initEdoParamAndIStates
         modelSystemType = MS.Level
+        edoParam = MS.initEdoParam modelSystemType
+        edoIStates = Edo.edoIStatesFromEdoParam edoParam
     in
             (SolvingEdo
             { chartData = []
@@ -91,15 +88,17 @@ init () =
             , edoParam = edoParam
             , edoIStates = edoIStates
             , chartsModel = MC.init
-            , controlModel = Control.init Control.PID
-            , refModel = Ref.init Ref.Step1
+            -- , controlModel = Control.init Control.PID
+            , controlModel = MS.control modelSystemType
+            -- , refModel = Ref.init Ref.Step1
+            , refModel = MS.ref modelSystemType
             }, Cmd.none)
               
 
-        
 ------------------------------------------------
 -- Subscriptions
 ------------------------------------------------
+
 subscriptions : BigModel -> Sub Msg
 subscriptions bigModel =
     case bigModel of
@@ -109,159 +108,188 @@ subscriptions bigModel =
         
         
 ------------------------------------------------
--- update and Msg
+-- Msg
 ------------------------------------------------
             
 type Msg
-    = RunEdo
-    | ChangeInteract Interact
+    = EdoMsg Edo.Msg
     | UpdateEdoParam 
-    -- | ChangeStr String
-    | Tick Float
+    | ModelSystemMsg MS.Msg
+    | MyChartsMsg MC.Msg
+    | ControlMsg Control.Msg
+    | RefMsg Ref.Msg
+    | RunEdo
     | RunAnimation
+    | Tick Float
+
+      
+------------------------------------------------
+-- Msg
+------------------------------------------------
 
 update : Msg -> BigModel -> (BigModel, Cmd Msg)
 update msg bigModel =
+    
+  let
+      model = modelFromBigModel bigModel
+  in
   case msg of
-    RunEdo -> 
-      let  
-          newModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
-          edoParam = .edoParam newModel 
-          modelSystemModel = .modelSystemModel newModel
-          controlModel = .controlModel newModel
-          refModel = .refModel newModel
-                     
-          controller = Control.controllerFromModel controlModel
-          refFunc = Ref.refFunctionFromModel refModel 
-                                      
-          controlMem = []
-          newEdoParam = {edoParam | controlMemory = controlMem}
-                                      
-          data = Tuple.first <| MS.runEdo modelSystemModel newEdoParam refFunc controller
-      in
-          ( SolvingEdo { newModel | chartData = data, edoParam = newEdoParam }, Cmd.none)
-            
-    ChangeInteract interact ->
+      
+-- EdoMsg --------------------------------------
+
+    EdoMsg edoMsg ->
         let
-            model = modelFromBigModel bigModel
+            edoIStates = .edoIStates model
+            edoIStatesNew = Edo.updateEdoIStates edoMsg edoIStates 
+            newModel = {model | edoIStates = edoIStatesNew}
         in
-        case interact of
-            Edo edoMsg ->
-                let
-                    edoIStates = .edoIStates model
-                    edoIStatesNew = Edo.updateEdoIStates edoMsg edoIStates 
-                    newModel = {model | edoIStates = edoIStatesNew}
-                in
-                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
+            (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
-            ModelSystem modelMsg ->
-                let
-                    modelSystemModel = .modelSystemModel model
-                    modelSystemModelNew = MS.update modelMsg modelSystemModel
-                    newModel = {model | modelSystemModel = modelSystemModelNew}
-                in 
-                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
-
-            Control controlMsg ->
-                let 
-                    controlModel = .controlModel model
-                    controlModelNew = Control.update controlMsg controlModel
-                    newModel = {model | controlModel = controlModelNew}
-                in
-                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
-                        
-            Ref refMsg ->
-                let
-                    refModel = .refModel model
-                    refModelNew = Ref.update refMsg refModel 
-                    newModel = {model | refModel = refModelNew}
-                in
-                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
-
-            MCharts chartsMsg ->
-                let
-                    chartsModel = .chartsModel model
-                    newChartsModel = MC.update chartsMsg chartsModel
-                    newModel = {model | chartsModel = newChartsModel}
-                in
-                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
-
+                
+-- UpdateEdoParam ----------------------------------------
 
     UpdateEdoParam ->
         let
-            model = modelFromBigModel bigModel
             edoIStates = .edoIStates model
-                         
+
             edoParam = .edoParam model
             edoParamNew = Edo.updateEdoParam edoParam edoIStates
             newModel = {model | edoParam = edoParamNew}
         in
             (updatingBigModelFromModel bigModel newModel, Cmd.none)
-
-    Tick dTime ->
-        case bigModel of
-            SolvingEdo _ ->
-                (bigModel, Cmd.none)
-            Animation model animatingEdoParam xs ->
-                let
-                    modelEdoParam = .edoParam model
-                    tfimAnimation = .tfim modelEdoParam
-                                    
-                    tempo = .tempo animatingEdoParam
-                in
-                if (Edo.checkEndTimeEps tempo tfimAnimation) then
-                    (SolvingEdo model, Cmd.none)
+                
                     
-                else
-                let
-                    dTimeSec = dTime/1000.0
-                               
-                    tfimStep = .tfim animatingEdoParam
-                    newTfimStep = min tfimAnimation (tfimStep + dTimeSec)
-                                  
-                    animatingEdoParam2 = {animatingEdoParam | tfim = newTfimStep}
-                                         
-                    modelData = .chartData model
-                    modelSystemModel = .modelSystemModel model
-                                 
-                    controlModel = .controlModel model
-                    refModel = .refModel model
-                               
-                    controller = Control.controllerFromModel controlModel
-                    refFunc = Ref.refFunctionFromModel refModel 
-                              
-                    stateUpdatedModel = MS.updateModelFromXs xs modelSystemModel
-                                             
-                    (data,newAnimationEdoParam) = MS.runEdo stateUpdatedModel animatingEdoParam2 refFunc controller
-                                                  
-                    newXs = case data of
-                                (d::ds) -> DC.xsFromDatum d
-                                _ -> []
-                                     
-                    newData = data ++ modelData
-                    newModel = { model | chartData = newData}
-                in
-                (Animation newModel newAnimationEdoParam newXs, Cmd.none)
+-- ModelSystemMsg -----------------------------------
+
+    ModelSystemMsg modelSystemMsg ->
+        let
+            modelSystemModel = .modelSystemModel model
+            modelSystemModelNew = MS.update modelSystemMsg modelSystemModel
+            newModel = {model | modelSystemModel = modelSystemModelNew}
+        in 
+            (updatingBigModelFromModel bigModel newModel, Cmd.none)
+
+    ControlMsg controlMsg ->
+        let 
+            controlModel = .controlModel model
+            controlModelNew = Control.update controlMsg controlModel
+            newModel = {model | controlModel = controlModelNew}
+        in
+            (updatingBigModelFromModel bigModel newModel, Cmd.none)
+
+                
+-- RefMsg ----------------------------------------
+
+    RefMsg refMsg ->
+        let
+            refModel = .refModel model
+            refModelNew = Ref.update refMsg refModel 
+            newModel = {model | refModel = refModelNew}
+        in
+            (updatingBigModelFromModel bigModel newModel, Cmd.none)
+
+                
+-- MyChartsMsg ----------------------------------------
+
+    MyChartsMsg chartsMsg ->
+        let
+            chartsModel = .chartsModel model
+            newChartsModel = MC.update chartsMsg chartsModel
+            newModel = {model | chartsModel = newChartsModel}
+        in
+            (updatingBigModelFromModel bigModel newModel, Cmd.none)
+
+
+-- RunEdo --------------------------------------
+
+    RunEdo -> 
+        let  
+            newModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
+            edoParam = .edoParam newModel 
+            modelSystemModel = .modelSystemModel newModel
+            controlModel = .controlModel newModel
+            refModel = .refModel newModel
+
+            controller = Control.controllerFromModel controlModel
+            refFunc = Ref.refFunctionFromModel refModel 
+
+            controlMem = []
+            newEdoParam = {edoParam | controlMemory = controlMem}
+
+            data = Tuple.first <| MS.runEdo modelSystemModel newEdoParam refFunc controller
+        in
+            ( SolvingEdo { newModel | chartData = data, edoParam = newEdoParam }, Cmd.none)
+
+                
+-- RunAnimation ----------------------------------------
 
     RunAnimation ->
         let
             updatedModel = modelFromBigModel <| Tuple.first <| update UpdateEdoParam bigModel
-                           
+
             edoParam = .edoParam updatedModel
             modelSystemModel = .modelSystemModel updatedModel
-                         
+
             controlMem = []
             tiniAnimation = .tempo edoParam
             -- Coloca no tfim pra sincronizar o tempo inicial e o tfim vai ser incrementado aos poucos por Tick
             animatingEdoParam = {edoParam | tfim = tiniAnimation, controlMemory = controlMem}
             chartData = []
-                        
+
             newModel = {updatedModel | chartData = chartData}
             xs = MS.xsFromModel modelSystemModel
         in
-           (Animation newModel animatingEdoParam xs, Cmd.none)
+        (Animation newModel animatingEdoParam xs, Cmd.none)
 
         
+-- Tick ----------------------------------------
+
+    Tick dTime ->
+        case bigModel of
+            SolvingEdo _ ->
+                (bigModel, Cmd.none)
+            Animation modelAnimation animatingEdoParam xs ->
+                let
+                    modelEdoParam = .edoParam modelAnimation
+                    tfimAnimation = .tfim modelEdoParam
+
+                    tempo = .tempo animatingEdoParam
+                in
+                if (Edo.checkEndTimeEps tempo tfimAnimation) then
+                    (SolvingEdo modelAnimation, Cmd.none)
+
+                else
+                let
+                    dTimeSec = dTime/1000.0
+
+                    tfimStep = .tfim animatingEdoParam
+                    newTfimStep = min tfimAnimation (tfimStep + dTimeSec)
+
+                    animatingEdoParam2 = {animatingEdoParam | tfim = newTfimStep}
+
+                    modelData = .chartData modelAnimation
+                    modelSystemModel = .modelSystemModel modelAnimation
+
+                    controlModel = .controlModel modelAnimation
+                    refModel = .refModel modelAnimation
+
+                    controller = Control.controllerFromModel controlModel
+                    refFunc = Ref.refFunctionFromModel refModel 
+
+                    stateUpdatedModel = MS.updateModelFromXs xs modelSystemModel
+
+                    (data,newAnimationEdoParam) = MS.runEdo stateUpdatedModel animatingEdoParam2 refFunc controller
+
+                    newXs = case data of
+                                (d::ds) -> DC.xsFromDatum d
+                                _ -> []
+
+                    newData = data ++ modelData
+                    newModel = { modelAnimation | chartData = newData}
+                in
+                (Animation newModel newAnimationEdoParam newXs, Cmd.none)
+                    
+                    
 ------------------------------------------------
 -- View
 ------------------------------------------------
@@ -304,7 +332,7 @@ view bigModel =
                         in 
                             (xsAnimation,rlist,ulist)
 
-    chartsTuple = MC.chartsTuple chartsModel chartData (ChangeInteract << MCharts)
+    chartsTuple = MC.chartsTuple chartsModel chartData (MyChartsMsg)
                 
   in
       UI.view <|
@@ -328,16 +356,16 @@ view bigModel =
                                 ]
                               
                             [ Edo.view edoIStates
-                                  (ChangeInteract << Edo) 
+                                  (EdoMsg) 
                             , MS.view modelSystemModel
-                                (ChangeInteract << ModelSystem)  
+                                (ModelSystemMsg)  
                             ]
                               
                         , Control.view controlModel
-                            (ChangeInteract << Control)
+                            (ControlMsg)
                                 
                         , Ref.view refModel
-                            (ChangeInteract << Ref)
+                            (RefMsg)
                                 
                         , E.row [E.centerX, E.spacing 50, E.moveDown 10]
                             [ UI.button "RunODE" (Just RunEdo)

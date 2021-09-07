@@ -88,6 +88,14 @@ updateEdoParam edoParam edoIStates =
             _ -> 
                 edoParam
     
+edoIStatesFromEdoParam : EdoParam -> EdoIStates
+edoIStatesFromEdoParam edoParam = 
+    let
+        tiniStr = String.fromFloat (.tempo edoParam)
+        tfimStr = String.fromFloat (.tfim edoParam)
+    in
+        {tiniStr = tiniStr, tfimStr = tfimStr}
+        
 
 ------------------------------------------------
 -- EdoIStates
