@@ -14,7 +14,8 @@ import Html.Events -- exposing (onClick, onInput)
 
 import Chart as C
 import Chart.Attributes as CA
-import MyChart as MC
+import MyCharts as MC
+import MyCharts.Chart as MCC
 
 import Element as E
 import Element.Input as EI
@@ -58,7 +59,7 @@ type alias Model =
     , modelParam : M.ModelParam
     , edoParam : Edo.EdoParam
     , edoIStates : Edo.EdoIStates
-    , chartsParam : List MC.ChartParam 
+    , chartsModel : MC.Model
     , controlModel : Control.Model
     , refModel : Ref.Model
     }
@@ -67,8 +68,7 @@ type alias Model =
 type Interact
     = Edo Edo.Msg
     | Models M.ModelInteract
-    | MChart MC.ChartID MC.ChartInteract
-    | MCharts MC.ChartsInteract
+    | MCharts MC.Msg
     | Control Control.Msg  
     | Ref Ref.Msg
         
@@ -87,7 +87,7 @@ init () =
             , modelParam = M.initModelParam M.Level
             , edoParam = edoParam
             , edoIStates = edoIStates
-            , chartsParam = [(MC.initChartParam Nothing)]
+            , chartsModel = MC.init
             , controlModel = Control.init Control.PID
             , refModel = Ref.init Ref.Step1
             }, Cmd.none)
@@ -175,19 +175,11 @@ update msg bigModel =
                 in
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
-            MChart chartID chartInteract -> 
+            MCharts chartsMsg ->
                 let
-                    chartsParam = .chartsParam model
-                    newChartsParam = MC.chartIndividualInteractAction chartID chartsParam chartInteract
-                    newModel = {model | chartsParam = newChartsParam}
-                in
-                    (updatingBigModelFromModel bigModel newModel, Cmd.none)
-
-            MCharts chartsInteract ->
-                let
-                    chartsParam = .chartsParam model
-                    newChartsParam = MC.chartsInteractAction chartsParam chartsInteract
-                    newModel = {model | chartsParam = newChartsParam}
+                    chartsModel = .chartsModel model
+                    newChartsModel = MC.update chartsMsg chartsModel
+                    newModel = {model | chartsModel = newChartsModel}
                 in
                     (updatingBigModelFromModel bigModel newModel, Cmd.none)
 
@@ -280,7 +272,7 @@ view bigModel =
     edoParam = .edoParam model
                  
     chartData = .chartData model
-    chartsParam = .chartsParam model
+    chartsModel = .chartsModel model
     modelParam = .modelParam model
                  
     refModel = .refModel model
@@ -309,7 +301,7 @@ view bigModel =
                         in 
                             (xsAnimation,rlist,ulist)
 
-    chartsTuple = MC.chartsTuple chartsParam chartData (fcomposition23 ChangeInteract MChart) (ChangeInteract << MCharts)
+    chartsTuple = MC.chartsTuple chartsModel chartData (ChangeInteract << MCharts)
                 
   in
       UI.view <|
