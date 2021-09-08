@@ -3,7 +3,6 @@ module ModelSystem exposing (..)
 import DataConvert as DC
 import EdoSolver as Edo
 import Html 
--- import Controller
 
 import Reference as Ref
 import Controller as Control 

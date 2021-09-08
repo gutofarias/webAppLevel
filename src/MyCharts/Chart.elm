@@ -128,16 +128,35 @@ update msg model =
 view : DC.ChartData -> List Curve.Model -> Html msg
 view chartData curves =     
     C.chart
-        [ CA.height 270
-        , CA.width 300
-        , CA.margin { top = 10, bottom = 20, left = 25, right = 20 }
-        , CA.padding { top = 10, bottom = 5, left = 10, right = 10 }
+        [ CA.height 380
+        , CA.width 400
+        , CA.padding { top = 10, bottom = 0, left = 0, right = 20 }
+        , CA.margin { top = 40, bottom = 20, left = 20, right = 0 }
         ]
-        ([ C.xLabels []
-        , C.yLabels [ CA.withGrid ]
+        ([ C.xLabels [ CA.pinned .min, CA.withGrid ]
+         , C.yLabels [ CA.pinned .min, CA.withGrid ]
+         , C.xAxis [ CA.pinned .min -- (\c -> (c.min + 11*(c.max - c.min)/380)) 
+                   ]
+         , C.yAxis []
+         , C.xTicks [ CA.pinned .min 
+                    ]
+         , C.yTicks []
+         , C.legendsAt .min .max  -- (\c -> (c.min + c.max)/2)
+             [ CA.row
+             , CA.alignLeft
+             -- , CA.column
+             , CA.moveRight 20
+             -- , CA.moveLeft 80
+             , CA.moveUp 28
+             , CA.spacing 15
+             ] [ CA.width 20
+               ]
         ] ++
                 -- Usa o filteMap porque o resultado das curvas é um maybe. So plota a curva se o resultado for um Just. 
-                List.filterMap (Curve.curveToChartSeries chartData) curves)
+             case chartData of
+                 [] -> []
+                 chartDatum::cds -> 
+                    List.filterMap (Curve.curveToChartSeries chartDatum chartData) curves)
  
             
 ------------------------------------------------

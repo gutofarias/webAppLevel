@@ -1,7 +1,7 @@
 module MyCharts.Chart.Curve exposing (..)
 
 import Chart as C
--- import Chart.Attributes as CA
+import Chart.Attributes as CA
 import DataConvert as DC 
 import Html as H
 import Html.Attributes as HA
@@ -75,26 +75,56 @@ view chartData selStr =
         chartDatum :: ls ->
             case chartDatum of
                 DC.TS1 datum -> 
-                    [ chartAxisOptionView "t" "t" selStr
-                    , chartAxisOptionView "x1" "x" selStr]
+                    [ chartAxisOptionView2 chartDatum "t" selStr 
+                    , chartAxisOptionView2 chartDatum "x1" selStr
+                    ]
                 DC.TS1E1R1U1 datum ->
-                    [ chartAxisOptionView "t" "t" selStr
-                    , chartAxisOptionView "x1" "x" selStr
-                    , chartAxisOptionView "e1" "e" selStr
-                    , chartAxisOptionView "r1" "r" selStr
-                    , chartAxisOptionView "u1" "u" selStr]
+                    [ chartAxisOptionView2 chartDatum "t"  selStr 
+                    , chartAxisOptionView2 chartDatum "x1" selStr
+                    , chartAxisOptionView2 chartDatum "e1" selStr
+                    , chartAxisOptionView2 chartDatum "r1" selStr
+                    , chartAxisOptionView2 chartDatum "u1" selStr
+                    ] 
                 DC.TS1E1R1U4 datum ->
-                    [ chartAxisOptionView "t" "t" selStr
-                    , chartAxisOptionView "x1" "x" selStr
-                    , chartAxisOptionView "e1" "e" selStr
-                    , chartAxisOptionView "r1" "r" selStr
-                    , chartAxisOptionView "u1" "u" selStr
-                    , chartAxisOptionView "u2" "up" selStr
-                    , chartAxisOptionView "u3" "ui" selStr
-                    , chartAxisOptionView "u4" "ud" selStr]
+                    [ chartAxisOptionView2 chartDatum "t"  selStr 
+                    , chartAxisOptionView2 chartDatum "x1" selStr
+                    , chartAxisOptionView2 chartDatum "e1" selStr
+                    , chartAxisOptionView2 chartDatum "r1" selStr
+                    , chartAxisOptionView2 chartDatum "u1" selStr
+                    , chartAxisOptionView2 chartDatum "u2" selStr
+                    , chartAxisOptionView2 chartDatum "u3" selStr
+                    , chartAxisOptionView2 chartDatum "u4" selStr
+                    ]
 
-
-                    
+optionToNameCurve : DC.ChartDatum -> String -> String
+optionToNameCurve chartDatum optStr =
+    case chartDatum of
+        DC.TS1 datum -> 
+            case optStr of
+                "t" -> "t"
+                "x1" -> "x"
+                _ -> "erro"
+        DC.TS1E1R1U1 datum -> 
+            case optStr of
+                "t" -> "t"
+                "x1" -> "x"
+                "e1" -> "e" 
+                "r1" -> "r"
+                "u1"-> "u"
+                _ -> "erro"
+                     
+        DC.TS1E1R1U4 datum -> 
+            case optStr of
+                "t" -> "t"
+                "x1" -> "x"
+                "e1" -> "e" 
+                "r1" -> "r"
+                "u1"-> "u"
+                "u2"-> "up"
+                "u3"-> "ui"
+                "u4"-> "ud"
+                _ -> "erro"
+                     
 chartAxisOptionView : String -> String -> String -> H.Html msg
 chartAxisOptionView val txt selStr =
         if (selStr == val) then
@@ -103,16 +133,19 @@ chartAxisOptionView val txt selStr =
         else
             H.option [HA.value val] [H.text txt]
 
-
+chartAxisOptionView2 : DC.ChartDatum -> String -> String -> H.Html msg
+chartAxisOptionView2 chartDatum optStr selStr =
+    chartAxisOptionView optStr (optionToNameCurve chartDatum optStr) selStr
 
 ------------------------------------------------
 -- ChartSeries
 ------------------------------------------------
                 
-curveToChartSeries : DC.ChartData -> Model -> Maybe (C.Element DC.ChartDatum msg)
-curveToChartSeries chartData model = 
+curveToChartSeries : DC.ChartDatum -> DC.ChartData -> Model -> Maybe (C.Element DC.ChartDatum msg)
+curveToChartSeries chartDatum chartData model = 
     let 
         (xstr,ystr) = .axesString model
+        name = (optionToNameCurve chartDatum xstr) ++ " – " ++ (optionToNameCurve chartDatum ystr)
                       
         -- stringToAxisFunc me retorna um Maybe (AxisFuncMaybe ChartDatum) 
         -- type alias AxisFuncMaybe data = data -> Maybe Float
@@ -129,17 +162,20 @@ curveToChartSeries chartData model =
             (Just xfuncMaybeFloat, Just yfuncMaybeFloat) ->
                 let
                     -- Maybe (ChartDatum -> Float)
-                    -- Analisa se o dado é suportado pela funcao usando o chartData 
-                    maybeXfunc = DC.funcMaybeToMaybeFunc2 chartData xfuncMaybeFloat
-                    maybeYfunc = DC.funcMaybeToMaybeFunc2 chartData yfuncMaybeFloat
+                    -- Analisa se o dado é suportado pela funcao usando o chartDatum 
+                    maybeXfunc = DC.funcMaybeToMaybeFunc chartDatum xfuncMaybeFloat
+                    maybeYfunc = DC.funcMaybeToMaybeFunc chartDatum yfuncMaybeFloat
                 in
                     case (maybeXfunc, maybeYfunc) of
                         -- Caso tudo esteja ok consegue pegar a funcao e retornar o Just
                         (Just xfunc, Just yfunc) ->
                             Just  
                             (C.series xfunc
-                            [ C.interpolated yfunc [ -- CA.monotone
-                                                ] [ ] --CA.circle ]
+                            [ C.named name <|
+                                C.interpolated yfunc
+                                  [ CA.width 2
+                                  ]
+                                  [] 
                             ]
 
                             chartData)
