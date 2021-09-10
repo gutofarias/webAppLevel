@@ -98,7 +98,7 @@ view chartData chartModel msgToMainMsg =
                            [ removeChartButton chartID msgToMainMsg
                            , buttonToggleChart editingCurves (msgToMainMsg << (ChartMsg chartID))
                            ]
-                    , E.el[E.centerX, E.width <| E.px 400] <| E.html <| MChart.view chartData curves
+                    , E.el[E.centerX, E.width <| E.px 400] <| E.html <| MChart.view chartModel (msgToMainMsg << (ChartMsg chartID)) chartData curves
                     ]
                 
                     

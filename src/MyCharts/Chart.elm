@@ -3,6 +3,7 @@ module MyCharts.Chart exposing (..)
 
 import Chart as C
 import Chart.Attributes as CA
+
 import DataConvert as DC exposing (..)
 import Html exposing (Html,div,text,input,option,span,label,select,button)
 import Html.Attributes exposing (style, placeholder, value, selected)
@@ -15,7 +16,7 @@ import Element.Input as EI
 import UI
 
 import MyCharts.Chart.Curve as Curve
-
+import MyCharts.Chart.Zoom as Zoom
 
 ------------------------------------------------
 -- Model
@@ -27,6 +28,7 @@ type alias Model =
     { chartID : ChartID
     , curves : List Curve.Model 
     , editingCurves : Bool 
+    , zoomModel : Zoom.Model
     }
     
     
@@ -41,6 +43,7 @@ init maybeLastChart =
             { chartID = 1
             , curves = [(Curve.init Nothing)]
             , editingCurves = False
+            , zoomModel = Zoom.init
             }
 
         Just lastChart ->
@@ -51,6 +54,7 @@ init maybeLastChart =
                 { chartID = chartID
                 , curves = [(Curve.init Nothing)]
                 , editingCurves = False
+                , zoomModel = Zoom.init
                 }
 
                 
@@ -59,6 +63,7 @@ addModel chartID =
     { chartID = chartID
     , curves = [(Curve.init Nothing)]
     , editingCurves = False
+    , zoomModel = Zoom.init
     }
 
     
@@ -71,6 +76,7 @@ type Msg
     | RemoveCurve Curve.CurveID
     | CurveMsg Curve.CurveID Curve.Msg
     | ToggleEditCurve 
+    | ZoomMsg Zoom.Msg
       
       
 ------------------------------------------------
@@ -120,19 +126,29 @@ update msg model =
             in 
                 {model | editingCurves = (not editingCurves)}
      
+        ZoomMsg zoomMsg ->
+            let
+                zoomModel = .zoomModel model
+                newZoomModel = Zoom.update zoomMsg zoomModel
+            in
+                {model | zoomModel = newZoomModel}
+            
 
 ------------------------------------------------
 -- view
 ------------------------------------------------
 
-view : DC.ChartData -> List Curve.Model -> Html msg
-view chartData curves =     
+view : Model -> (Msg -> msg) -> DC.ChartData -> List Curve.Model -> Html msg
+view model msgToMainMsg chartData curves =     
+    let
+        zoomModel = .zoomModel model
+    in 
     C.chart
-        [ CA.height 380
+        ([ CA.height 380
         , CA.width 400
         , CA.padding { top = 10, bottom = 0, left = 0, right = 20 }
         , CA.margin { top = 40, bottom = 20, left = 20, right = 0 }
-        ]
+        ] ++ Zoom.chartAttrs zoomModel (msgToMainMsg << ZoomMsg))
         ([ C.xLabels [ CA.pinned .min, CA.withGrid ]
          , C.yLabels [ CA.pinned .min, CA.withGrid ]
          , C.xAxis [ CA.pinned .min -- (\c -> (c.min + 11*(c.max - c.min)/380)) 
@@ -153,10 +169,12 @@ view chartData curves =
                ]
         ] ++
                 -- Usa o filteMap porque o resultado das curvas é um maybe. So plota a curva se o resultado for um Just. 
-             case chartData of
+             (case chartData of
                  [] -> []
                  chartDatum::cds -> 
                     List.filterMap (Curve.curveToChartSeries chartDatum chartData) curves)
+          ++ Zoom.chartElements zoomModel (msgToMainMsg << ZoomMsg)
+        )
  
             
 ------------------------------------------------
