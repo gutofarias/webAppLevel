@@ -166,7 +166,7 @@ zoomAttrs zoom =
         x = record.translate.x -- / (20.0*scale)
         y = record.translate.y -- / (20.0*scale)
         -- width = UI.elementWidth
-        width = 360
+        width = 330
         -- height = UI.elementHeight
         height = 330
         
