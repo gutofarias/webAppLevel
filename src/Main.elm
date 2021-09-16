@@ -102,7 +102,9 @@ init () =
 subscriptions : BigModel -> Sub Msg
 subscriptions bigModel =
     case bigModel of
-        SolvingEdo _ -> Sub.none
+        SolvingEdo model -> 
+            -- Sub.none
+            MC.subscriptions model.chartsModel MyChartsMsg
         Animation _ _ _ -> 
             Browser.Events.onAnimationFrameDelta (Tick)
         

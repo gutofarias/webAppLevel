@@ -42,6 +42,17 @@ type Msg
     | ChartMsg MChart.ChartID MChart.Msg
       
       
+subscriptions : Model -> (Msg -> msg) -> Sub msg
+subscriptions model msgToMainMsg = 
+    case model of
+        [] -> Sub.none
+        chs -> 
+            Sub.batch <|
+                List.map
+                    (\ch -> 
+                         MChart.subscriptions ch (msgToMainMsg << (ChartMsg ch.chartID))) chs
+                         
+      
 ------------------------------------------------
 -- update
 ------------------------------------------------
@@ -182,3 +193,5 @@ fillWithMaybe model index =
                     []
                 else
                     Nothing ::(fillWithMaybe model newIndex)
+
+                        

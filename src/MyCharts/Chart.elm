@@ -18,6 +18,10 @@ import UI
 import MyCharts.Chart.Curve as Curve
 import MyCharts.Chart.Zoom as Zoom
 
+import Zoom as EVZoom
+
+import Svg.Attributes as SA
+
 ------------------------------------------------
 -- Model
 ------------------------------------------------
@@ -29,6 +33,7 @@ type alias Model =
     , curves : List Curve.Model 
     , editingCurves : Bool 
     , zoomModel : Zoom.Model
+    , zoom : EVZoom.Zoom
     }
     
     
@@ -44,6 +49,7 @@ init maybeLastChart =
             , curves = [(Curve.init Nothing)]
             , editingCurves = False
             , zoomModel = Zoom.init
+            , zoom = myInitZoom
             }
 
         Just lastChart ->
@@ -55,6 +61,7 @@ init maybeLastChart =
                 , curves = [(Curve.init Nothing)]
                 , editingCurves = False
                 , zoomModel = Zoom.init
+                , zoom = myInitZoom
                 }
 
                 
@@ -64,9 +71,15 @@ addModel chartID =
     , curves = [(Curve.init Nothing)]
     , editingCurves = False
     , zoomModel = Zoom.init
+    , zoom = myInitZoom
     }
 
-    
+myInitZoom : EVZoom.Zoom
+myInitZoom =
+    EVZoom.init {width = UI.elementWidth, height = UI.elementHeight}
+        |> EVZoom.scaleExtent 0.5 1000.0
+        -- |> EVZoom.translateExtent ((-0.1*UI.elementWidth, -0.1*UI.elementHeight),(1.1*UI.elementWidth,1.1*UI.elementHeight))
+
 ------------------------------------------------
 -- Msg
 ------------------------------------------------
@@ -77,6 +90,7 @@ type Msg
     | CurveMsg Curve.CurveID Curve.Msg
     | ToggleEditCurve 
     | ZoomMsg Zoom.Msg
+    | EVZoomMsg EVZoom.OnZoom
       
       
 ------------------------------------------------
@@ -133,22 +147,85 @@ update msg model =
             in
                 {model | zoomModel = newZoomModel}
             
+        EVZoomMsg evZoomMsg ->
+            -- Debug.log "teste" {model | zoom = EVZoom.update evZoomMsg model.zoom}
+            {model | zoom = EVZoom.update evZoomMsg model.zoom}
+
+subscriptions : Model -> (Msg -> msg) -> Sub msg
+subscriptions model msgToMainMsg =
+    EVZoom.subscriptions model.zoom (msgToMainMsg << EVZoomMsg)
 
 ------------------------------------------------
 -- view
 ------------------------------------------------
 
+-- zoomAttrs EVZoom.Zoom -> 
+zoomAttrs zoom = 
+    let
+        record = EVZoom.asRecord zoom
+        scale = record.scale
+        x = record.translate.x -- / (20.0*scale)
+        y = record.translate.y -- / (20.0*scale)
+        -- width = UI.elementWidth
+        width = 360
+        -- height = UI.elementHeight
+        height = 330
+        
+        axisFunc widthHeight translation iAxis = 
+            let 
+                range = (iAxis.dataMax - iAxis.dataMin)
+                newRange = range/scale 
+                -- trans = translation*range/400.0
+                trans = translation*range/(scale*widthHeight) -- - (scale - 1.0)*range/width
+                center = (iAxis.dataMin + iAxis.dataMax)/2.0 + trans/2
+                -- center = (iAxis.min + iAxis.max)/2.0 + trans
+                newMin = center - newRange/2
+                -- newMin = iAxis.min/scale + trans
+                newMax = center + newRange/2
+                -- newMax = iAxis.max/scale + trans
+                debug2 = Debug.log "2" iAxis
+                debug = Debug.log "." [trans, range, newRange, translation/scale] 
+            in 
+                {iAxis | min = newMin, max = newMax}
+                    
+    in
+        -- SA.viewBox "0 0 500 500"
+        -- [ rangeX, rangeY ]
+        [ CA.range [axisFunc width -x]
+        , CA.domain [axisFunc height y]
+        ]
+
 view : Model -> (Msg -> msg) -> DC.ChartData -> List Curve.Model -> Html msg
 view model msgToMainMsg chartData curves =     
     let
         zoomModel = .zoomModel model
+        evZoom = .zoom model
+        record = Debug.log "rec"<| EVZoom.asRecord evZoom
+        x = record.translate.x
+        y = record.translate.y
+        scale = record.scale
     in 
     C.chart
         ([ CA.height 380
         , CA.width 400
         , CA.padding { top = 10, bottom = 0, left = 0, right = 20 }
-        , CA.margin { top = 40, bottom = 20, left = 20, right = 0 }
-        ] ++ Zoom.chartAttrs zoomModel (msgToMainMsg << ZoomMsg))
+        , CA.margin { top = 40, bottom = 20, left = 50, right = 0 }
+        , CA.attrs [EVZoom.transform evZoom]
+        , CA.attrs <| EVZoom.events evZoom (msgToMainMsg << EVZoomMsg)
+         -- , CA.range [(\axis -> {axis | min = 5})] 
+         -- , CA.range [ CA.lowest -2 CA.more ]
+         -- , CA.attrs [zoomAttrs evZoom]
+         -- , CA.range [ CA.lowest 1 CA.exactly
+         --            , CA.highest 9 CA.exactly ]
+         --     |> CA.moveRight 5
+         -- , CA.domain [ CA.lowest 3 CA.exactly
+         --            , CA.highest 6 CA.exactly ]
+                       
+        ] --
+             ++ (zoomAttrs evZoom)
+             -- ++ Zoom.chartAttrs zoomModel (msgToMainMsg << ZoomMsg))
+             
+             )
         ([ C.xLabels [ CA.pinned .min, CA.withGrid ]
          , C.yLabels [ CA.pinned .min, CA.withGrid ]
          , C.xAxis [ CA.pinned .min -- (\c -> (c.min + 11*(c.max - c.min)/380)) 
@@ -173,7 +250,7 @@ view model msgToMainMsg chartData curves =
                  [] -> []
                  chartDatum::cds -> 
                     List.filterMap (Curve.curveToChartSeries chartDatum chartData) curves)
-          ++ Zoom.chartElements zoomModel (msgToMainMsg << ZoomMsg)
+          -- ++ Zoom.chartElements zoomModel (msgToMainMsg << ZoomMsg)
         )
  
             
