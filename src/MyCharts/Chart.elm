@@ -148,7 +148,6 @@ update msg model =
                 {model | zoomModel = newZoomModel}
             
         EVZoomMsg evZoomMsg ->
-            -- Debug.log "teste" {model | zoom = EVZoom.update evZoomMsg model.zoom}
             {model | zoom = EVZoom.update evZoomMsg model.zoom}
 
 subscriptions : Model -> (Msg -> msg) -> Sub msg
@@ -183,8 +182,6 @@ zoomAttrs zoom =
                 -- newMin = iAxis.min/scale + trans
                 newMax = center + newRange/2
                 -- newMax = iAxis.max/scale + trans
-                debug2 = Debug.log "2" iAxis
-                debug = Debug.log "." [trans, range, newRange, translation/scale] 
             in 
                 {iAxis | min = newMin, max = newMax}
                     
@@ -200,7 +197,7 @@ view model msgToMainMsg chartData curves =
     let
         zoomModel = .zoomModel model
         evZoom = .zoom model
-        record = Debug.log "rec"<| EVZoom.asRecord evZoom
+        record = EVZoom.asRecord evZoom
         x = record.translate.x
         y = record.translate.y
         scale = record.scale
