@@ -121,14 +121,17 @@ pid kp ki kd mem errors passo tempo xs =
     let
         error =
             Maybe.withDefault 0.0 (List.head errors)
+                
+        filterParam = 0.05
+        fP = 1.0/filterParam
 
-        ( error_ant, integral_mem ) =
+        ( error_state, integral_mem ) =
             case mem of
                 [ err_mem, int_mem ] ->
                     ( err_mem, int_mem )
 
                 _ ->
-                    ( error, 0.0 )
+                    ( -fP*error, 0.0 ) -- Condicao inicial para o filtro da derivada do erro
 
         prop =
             kp * error
@@ -139,10 +142,18 @@ pid kp ki kd mem errors passo tempo xs =
         integral =
             ki * integral_error
 
-        dif_error =
-            (error - error_ant) / passo
+        errorfsist : Edo.FuncSistUncontrolled
+        errorfsist t xs2 = case xs2 of 
+                              (x :: []) -> -fP*x - fP*fP*error :: []
+                              _ -> -fP * error :: [] -- para derror ficar zero
 
+        derror_aux = Maybe.withDefault (-fP * error)
+                     <| List.head
+                     <| Edo.eulerSolver errorfsist passo tempo [error_state]
+                         
+        derror = derror_aux + fP * error
+                     
         dif =
-            kd * dif_error
+            kd * derror
     in
-    ( [ prop + integral + dif, prop, integral, dif ], [ error, integral_error ] )
+    ( [ prop + integral + dif, prop, integral, dif ], [ derror_aux, integral_error ] )

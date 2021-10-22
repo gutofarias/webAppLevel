@@ -146,7 +146,6 @@ edoStep param fsist xs =
         solver = .solver param
         passo =  .passo param
         tempo =  .tempo param
-        -- xslog = Debug.log "xsStep" xs
     in
         solver fsist passo tempo xs
                     
@@ -197,14 +196,12 @@ edoSolverAcc param edoSist xs (data,param2) =
     let
         tempo = .tempo param
         tfim = .tfim param
-        -- xslog = Debug.log "xs" xs
     in
         if (tempo >= tfim) then
             (data, param2)
         else
             let
                 ((tempo1, xs1), param1) = integrator param edoSist 1 xs
-                -- xs1log = Debug.log "xs1" xs1
                 param1b = { param1 | tempo = tempo1} 
                 xsAndMaybeUR = calcXsAndMaybeUR param1b edoSist xs1
             in
@@ -258,6 +255,7 @@ calcFsist param edoSist xs =
                 error = zipWith (-) ref output
                       
                 controller = .controller functions
+                             
                 (controlEffort,newControlMem) = 
                     controller controlMem error passo tempo xs
 
@@ -276,13 +274,11 @@ integrator param edoSist saidaCount xs =
         passo = .passo param 
         relPassoSaida = .relPassoSaida param
         controlMem = .controlMemory param
-        -- xslog = Debug.log "xsint" (xs,tempo,tfim)
     in
         if (tfim - tempo <= passo) then
             
             if (abs (tfim-tempo) <= eps) then    
                 let
-                    -- xslog2 = Debug.log "xsintfinal" (xs,tempo,tfim)
                     paramFinal = {param | tempo = tfim}
                 in
                     ((tfim,xs), paramFinal)
@@ -291,7 +287,6 @@ integrator param edoSist saidaCount xs =
                     newParam = { param | passo = tfim - tempo }
                     (fsist,param2) = calcFsist newParam edoSist xs
                     xsfinal = edoStep param2 fsist xs
-                    -- xsfinallog = Debug.log "xsfinal" xsfinal
                     -- Mudei pra o programa não finalizar com o passo errado
                     paramfinal = {param2 | passo = passo}
                 in
@@ -302,7 +297,6 @@ integrator param edoSist saidaCount xs =
                 xs1 = edoStep newParam fsist xs
                 tempo1 = tempo + passo
                 param1 = { newParam | tempo = tempo1 } 
-                -- xs1log = Debug.log "xs1int" xs1
             in
                 if (saidaCount == relPassoSaida) then
                     ((tempo1, xs1),param1)
@@ -313,29 +307,23 @@ integrator param edoSist saidaCount xs =
 rungeKutta : Solver
 rungeKutta fsist passo tempo xs = 
     let
-        -- xslog = Debug.log "xsRK4" (xs,passo,tempo)
         xps1 = fsist tempo xs
-        -- xps1log = Debug.log "xps1" xps1
         k1 = List.map ((*) passo) xps1
-        -- k1log = Debug.log "k1" k1
              
         tempo2 = tempo + 0.5*passo
         xs2 = zipWith (\a b -> a + 0.5*b) xs k1 
         xps2 = fsist tempo2 xs2
         k2 = List.map ((*) passo) xps2
-        -- k2log = Debug.log "k2" k2
              
         tempo3 = tempo2
         xs3 = zipWith (\a b -> a + 0.5*b) xs k2
         xps3 = fsist tempo3 xs3
         k3 = List.map ((*) passo) xps3
-        -- k3log = Debug.log "k3" k3
 
         tempo4 = tempo + passo
         xs4 = zipWith (+) k3 xs 
         xps4 = fsist tempo4 xs4
         k4 = List.map ((*) passo) xps4
-        -- k4log = Debug.log "k4" k4
     in
         zipWith (\a b -> 2.0*a + b) k3 k4 
         |> zipWith (\a b -> 2.0*a + b) k2
