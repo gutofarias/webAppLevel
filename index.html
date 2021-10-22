@@ -6411,6 +6411,15 @@ var $author$project$EdoSolver$checkEndTimeEps = F2(
 			$elm$core$Basics$abs(tempo - tfim),
 			$author$project$EdoSolver$eps) < 1) ? true : false;
 	});
+var $author$project$EdoSolver$eulerSolver = F4(
+	function (fsist, passo, tempo, xs) {
+		var xps = A2(fsist, tempo, xs);
+		var xps2 = A2(
+			$elm$core$List$map,
+			$elm$core$Basics$mul(passo),
+			xps);
+		return A3($author$project$EdoSolver$zipWith, $elm$core$Basics$add, xs, xps2);
+	});
 var $elm$core$List$head = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -6422,10 +6431,21 @@ var $elm$core$List$head = function (list) {
 };
 var $author$project$Controller$PID$pid = F8(
 	function (kp, ki, kd, mem, errors, passo, tempo, xs) {
+		var filterParam = 0.05;
+		var fP = 1.0 / filterParam;
 		var error = A2(
 			$elm$core$Maybe$withDefault,
 			0.0,
 			$elm$core$List$head(errors));
+		var errorfsist = F2(
+			function (t, xs2) {
+				if (xs2.b && (!xs2.b.b)) {
+					var x = xs2.a;
+					return A2($elm$core$List$cons, ((-fP) * x) - ((fP * fP) * error), _List_Nil);
+				} else {
+					return A2($elm$core$List$cons, (-fP) * error, _List_Nil);
+				}
+			});
 		var prop = kp * error;
 		var _v0 = function () {
 			if ((mem.b && mem.b.b) && (!mem.b.b.b)) {
@@ -6434,20 +6454,31 @@ var $author$project$Controller$PID$pid = F8(
 				var int_mem = _v2.a;
 				return _Utils_Tuple2(err_mem, int_mem);
 			} else {
-				return _Utils_Tuple2(error, 0.0);
+				return _Utils_Tuple2((-fP) * error, 0.0);
 			}
 		}();
-		var error_ant = _v0.a;
+		var error_state = _v0.a;
 		var integral_mem = _v0.b;
-		var dif_error = (error - error_ant) / passo;
-		var dif = kd * dif_error;
+		var derror_aux = A2(
+			$elm$core$Maybe$withDefault,
+			(-fP) * error,
+			$elm$core$List$head(
+				A4(
+					$author$project$EdoSolver$eulerSolver,
+					errorfsist,
+					passo,
+					tempo,
+					_List_fromArray(
+						[error_state]))));
+		var derror = derror_aux + (fP * error);
+		var dif = kd * derror;
 		var integral_error = integral_mem + (error * passo);
 		var integral = ki * integral_error;
 		return _Utils_Tuple2(
 			_List_fromArray(
 				[(prop + integral) + dif, prop, integral, dif]),
 			_List_fromArray(
-				[error, integral_error]));
+				[derror_aux, integral_error]));
 	});
 var $author$project$Controller$PID$controllerFromModel = function (model) {
 	var kp = function ($) {
