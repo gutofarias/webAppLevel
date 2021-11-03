@@ -4358,6 +4358,52 @@ function _Browser_load(url)
 
 
 
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
+
+
+
 var _Bitwise_and = F2(function(a, b)
 {
 	return a & b;
@@ -5181,13 +5227,44 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $author$project$Models$Level = {$: 'Level'};
-var $author$project$Controller$Pid = {$: 'Pid'};
+var $author$project$ModelSystem$Level = {$: 'Level'};
 var $author$project$Main$SolvingEdo = function (a) {
 	return {$: 'SolvingEdo', a: a};
 };
-var $author$project$Reference$Step1 = {$: 'Step1'};
-var $author$project$MyChart$initCurve = function (maybeLastCurve) {
+var $author$project$Controller$PID = {$: 'PID'};
+var $author$project$Controller$PidModel = function (a) {
+	return {$: 'PidModel', a: a};
+};
+var $author$project$Controller$PID$init = {kd: 0.0, kdStr: '0', ki: 0.0, kiStr: '0', kp: 0.0, kpStr: '0'};
+var $author$project$Controller$init = function (controlType) {
+	return $author$project$Controller$PidModel($author$project$Controller$PID$init);
+};
+var $author$project$ModelSystem$Level$control = $author$project$Controller$init($author$project$Controller$PID);
+var $author$project$ModelSystem$control = function (modelType) {
+	return $author$project$ModelSystem$Level$control;
+};
+var $elm$core$String$fromFloat = _String_fromNumber;
+var $author$project$EdoSolver$edoIStatesFromEdoParam = function (edoParam) {
+	var tiniStr = $elm$core$String$fromFloat(
+		function ($) {
+			return $.tempo;
+		}(edoParam));
+	var tfimStr = $elm$core$String$fromFloat(
+		function ($) {
+			return $.tfim;
+		}(edoParam));
+	return {tfimStr: tfimStr, tiniStr: tiniStr};
+};
+var $author$project$ModelSystem$LevelModel = function (a) {
+	return {$: 'LevelModel', a: a};
+};
+var $author$project$ModelSystem$Level$init = {ag: 1.0, agStr: '1', ap: 0.1, apStr: '0.1', h0: 10.0, h0Str: '10'};
+var $author$project$ModelSystem$init = function (modelType) {
+	return $author$project$ModelSystem$LevelModel($author$project$ModelSystem$Level$init);
+};
+var $author$project$UI$elementHeight = 400;
+var $author$project$UI$elementWidth = 400;
+var $author$project$MyCharts$Chart$Curve$init = function (maybeLastCurve) {
 	if (maybeLastCurve.$ === 'Nothing') {
 		return {
 			axesString: _Utils_Tuple2('t', 'x1'),
@@ -5205,39 +5282,77 @@ var $author$project$MyChart$initCurve = function (maybeLastCurve) {
 		};
 	}
 };
-var $author$project$MyChart$initChartParam = function (maybeLastChartParam) {
-	if (maybeLastChartParam.$ === 'Nothing') {
+var $author$project$MyCharts$Chart$Zoom$NoZoom = {$: 'NoZoom'};
+var $author$project$MyCharts$Chart$Zoom$init = $author$project$MyCharts$Chart$Zoom$NoZoom;
+var $gampleman$elm_visualization$Zoom$NoTouches = {$: 'NoTouches'};
+var $gampleman$elm_visualization$Zoom$Zoom = function (a) {
+	return {$: 'Zoom', a: a};
+};
+var $gampleman$elm_visualization$Zoom$Transform$Transform = F3(
+	function (k, x, y) {
+		return {k: k, x: x, y: y};
+	});
+var $gampleman$elm_visualization$Zoom$Transform$identity = A3($gampleman$elm_visualization$Zoom$Transform$Transform, 1.0, 0.0, 0.0);
+var $gampleman$elm_visualization$Zoom$infinity = 1 / 0;
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $gampleman$elm_visualization$Zoom$init = function (_v0) {
+	var width = _v0.width;
+	var height = _v0.height;
+	return $gampleman$elm_visualization$Zoom$Zoom(
+		{
+			drag: $elm$core$Maybe$Nothing,
+			extent: _Utils_Tuple2(
+				_Utils_Tuple2(0, 0),
+				_Utils_Tuple2(width, height)),
+			gestureLastScale: 0,
+			scaleExtent: _Utils_Tuple2(0, $gampleman$elm_visualization$Zoom$infinity),
+			touchStarted: false,
+			touches: $gampleman$elm_visualization$Zoom$NoTouches,
+			transform: $gampleman$elm_visualization$Zoom$Transform$identity,
+			transition: $elm$core$Maybe$Nothing,
+			translateExtent: _Utils_Tuple2(
+				_Utils_Tuple2(-$gampleman$elm_visualization$Zoom$infinity, -$gampleman$elm_visualization$Zoom$infinity),
+				_Utils_Tuple2($gampleman$elm_visualization$Zoom$infinity, $gampleman$elm_visualization$Zoom$infinity))
+		});
+};
+var $author$project$MyCharts$Chart$init = function (maybeLastChart) {
+	if (maybeLastChart.$ === 'Nothing') {
 		return {
 			chartID: 1,
 			curves: _List_fromArray(
 				[
-					$author$project$MyChart$initCurve($elm$core$Maybe$Nothing)
+					$author$project$MyCharts$Chart$Curve$init($elm$core$Maybe$Nothing)
 				]),
-			editingCurves: false
+			editingCurves: false,
+			zoom: $gampleman$elm_visualization$Zoom$init(
+				{height: $author$project$UI$elementHeight, width: $author$project$UI$elementWidth}),
+			zoomModel: $author$project$MyCharts$Chart$Zoom$init
 		};
 	} else {
-		var lastChartParam = maybeLastChartParam.a;
+		var lastChart = maybeLastChart.a;
 		var lastChartID = function ($) {
 			return $.chartID;
-		}(lastChartParam);
+		}(lastChart);
 		var chartID = lastChartID + 1;
 		return {
 			chartID: chartID,
 			curves: _List_fromArray(
 				[
-					$author$project$MyChart$initCurve($elm$core$Maybe$Nothing)
+					$author$project$MyCharts$Chart$Curve$init($elm$core$Maybe$Nothing)
 				]),
-			editingCurves: false
+			editingCurves: false,
+			zoom: $gampleman$elm_visualization$Zoom$init(
+				{height: $author$project$UI$elementHeight, width: $author$project$UI$elementWidth}),
+			zoomModel: $author$project$MyCharts$Chart$Zoom$init
 		};
 	}
 };
-var $author$project$Controller$PidP = function (a) {
-	return {$: 'PidP', a: a};
-};
-var $author$project$Controller$initPidParam = {kd: 0.0, kdStr: '0', ki: 0.0, kiStr: '0', kp: 0.0, kpStr: '0'};
-var $author$project$Controller$initControlParam = function (controlType) {
-	return $author$project$Controller$PidP($author$project$Controller$initPidParam);
-};
+var $author$project$MyCharts$init = _List_fromArray(
+	[
+		$author$project$MyCharts$Chart$init($elm$core$Maybe$Nothing)
+	]);
 var $author$project$EdoSolver$zipWith = F3(
 	function (func, l1, l2) {
 		if (!l1.b) {
@@ -5356,50 +5471,48 @@ var $author$project$EdoSolver$rungeKutta = F4(
 						k3,
 						k4))));
 	});
-var $author$project$EdoSolver$initEdoParamAndIStates = _Utils_Tuple2(
-	{controlMemory: _List_Nil, passo: 0.001, relPassoSaida: 100, solver: $author$project$EdoSolver$rungeKutta, tempo: 0.0, tfim: 10.0},
-	{tfimStr: '10', tiniStr: '0'});
-var $author$project$Models$LevelP = function (a) {
-	return {$: 'LevelP', a: a};
-};
-var $author$project$Models$initLevelParam = {ag: 1.0, agStr: '1', ap: 0.1, apStr: '0.1', h0: 10.0, h0Str: '10'};
-var $author$project$Models$initModelParam = function (modelType) {
-	return $author$project$Models$LevelP($author$project$Models$initLevelParam);
-};
-var $author$project$Reference$Step1P = function (a) {
-	return {$: 'Step1P', a: a};
-};
-var $author$project$Reference$initStep1Param = {fVal: 0.0, fValStr: '0', iVal: 0.0, iValStr: '0', tStep: 0.0, tStepStr: '0'};
-var $author$project$Reference$initRefParam = function (refType) {
-	return $author$project$Reference$Step1P($author$project$Reference$initStep1Param);
+var $author$project$ModelSystem$Level$initEdoParam = {controlMemory: _List_Nil, passo: 0.001, relPassoSaida: 100, solver: $author$project$EdoSolver$rungeKutta, tempo: 0.0, tfim: 10.0};
+var $author$project$ModelSystem$initEdoParam = function (modelType) {
+	return $author$project$ModelSystem$Level$initEdoParam;
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Reference$Step1 = {$: 'Step1'};
+var $author$project$Reference$Step1Model = function (a) {
+	return {$: 'Step1Model', a: a};
+};
+var $author$project$Reference$Step1$init = {fVal: 0.0, fValStr: '0', iVal: 0.0, iValStr: '0', tStep: 0.0, tStepStr: '0'};
+var $author$project$Reference$init = function (refType) {
+	return $author$project$Reference$Step1Model($author$project$Reference$Step1$init);
+};
+var $author$project$ModelSystem$Level$ref = $author$project$Reference$init($author$project$Reference$Step1);
+var $author$project$ModelSystem$ref = function (modelType) {
+	return $author$project$ModelSystem$Level$ref;
+};
 var $author$project$Main$init = function (_v0) {
-	var _v1 = $author$project$EdoSolver$initEdoParamAndIStates;
-	var edoParam = _v1.a;
-	var edoIStates = _v1.b;
+	var modelSystemType = $author$project$ModelSystem$Level;
+	var edoParam = $author$project$ModelSystem$initEdoParam(modelSystemType);
+	var edoIStates = $author$project$EdoSolver$edoIStatesFromEdoParam(edoParam);
 	return _Utils_Tuple2(
 		$author$project$Main$SolvingEdo(
 			{
 				chartData: _List_Nil,
-				chartsParam: _List_fromArray(
-					[
-						$author$project$MyChart$initChartParam($elm$core$Maybe$Nothing)
-					]),
-				controlParam: $author$project$Controller$initControlParam($author$project$Controller$Pid),
+				chartsModel: $author$project$MyCharts$init,
+				controlModel: $author$project$ModelSystem$control(modelSystemType),
 				edoIStates: edoIStates,
 				edoParam: edoParam,
-				modelParam: $author$project$Models$initModelParam($author$project$Models$Level),
-				refParam: $author$project$Reference$initRefParam($author$project$Reference$Step1)
+				modelSystemModel: $author$project$ModelSystem$init(modelSystemType),
+				modelSystemType: modelSystemType,
+				refModel: $author$project$ModelSystem$ref(modelSystemType)
 			}),
 		$elm$core$Platform$Cmd$none);
+};
+var $author$project$Main$MyChartsMsg = function (a) {
+	return {$: 'MyChartsMsg', a: a};
 };
 var $author$project$Main$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $elm$browser$Browser$AnimationManager$Delta = function (a) {
 	return {$: 'Delta', a: a};
 };
@@ -5534,19 +5647,651 @@ var $elm$browser$Browser$AnimationManager$onAnimationFrameDelta = function (tagg
 		$elm$browser$Browser$AnimationManager$Delta(tagger));
 };
 var $elm$browser$Browser$Events$onAnimationFrameDelta = $elm$browser$Browser$AnimationManager$onAnimationFrameDelta;
-var $author$project$Main$subscriptions = function (bigModel) {
-	if (bigModel.$ === 'SolvingEdo') {
-		return $elm$core$Platform$Sub$none;
+var $author$project$MyCharts$ChartMsg = F2(
+	function (a, b) {
+		return {$: 'ChartMsg', a: a, b: b};
+	});
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$MyCharts$Chart$EVZoomMsg = function (a) {
+	return {$: 'EVZoomMsg', a: a};
+};
+var $gampleman$elm_visualization$Zoom$MouseMove = function (a) {
+	return {$: 'MouseMove', a: a};
+};
+var $gampleman$elm_visualization$Zoom$MouseUp = {$: 'MouseUp'};
+var $gampleman$elm_visualization$Zoom$Tick = function (a) {
+	return {$: 'Tick', a: a};
+};
+var $gampleman$elm_visualization$Zoom$TouchStartedExpired = {$: 'TouchStartedExpired'};
+var $elm$core$Basics$always = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var $elm$time$Time$Every = F2(
+	function (a, b) {
+		return {$: 'Every', a: a, b: b};
+	});
+var $elm$time$Time$State = F2(
+	function (taggers, processes) {
+		return {processes: processes, taggers: taggers};
+	});
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
+var $elm$time$Time$init = $elm$core$Task$succeed(
+	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
+var $elm$core$Basics$compare = _Utils_compare;
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
+		}
+	});
+var $elm$core$Dict$Black = {$: 'Black'};
+var $elm$core$Dict$RBNode_elm_builtin = F5(
+	function (a, b, c, d, e) {
+		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
+	});
+var $elm$core$Dict$Red = {$: 'Red'};
+var $elm$core$Dict$balance = F5(
+	function (color, key, value, left, right) {
+		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
+			var _v1 = right.a;
+			var rK = right.b;
+			var rV = right.c;
+			var rLeft = right.d;
+			var rRight = right.e;
+			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+				var _v3 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var lLeft = left.d;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					key,
+					value,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					color,
+					rK,
+					rV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, left, rLeft),
+					rRight);
+			}
+		} else {
+			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
+				var _v5 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var _v6 = left.d;
+				var _v7 = _v6.a;
+				var llK = _v6.b;
+				var llV = _v6.c;
+				var llLeft = _v6.d;
+				var llRight = _v6.e;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					lK,
+					lV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, lRight, right));
+			} else {
+				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
+			}
+		}
+	});
+var $elm$core$Dict$insertHelp = F3(
+	function (key, value, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
+		} else {
+			var nColor = dict.a;
+			var nKey = dict.b;
+			var nValue = dict.c;
+			var nLeft = dict.d;
+			var nRight = dict.e;
+			var _v1 = A2($elm$core$Basics$compare, key, nKey);
+			switch (_v1.$) {
+				case 'LT':
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						A3($elm$core$Dict$insertHelp, key, value, nLeft),
+						nRight);
+				case 'EQ':
+					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
+				default:
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						nLeft,
+						A3($elm$core$Dict$insertHelp, key, value, nRight));
+			}
+		}
+	});
+var $elm$core$Dict$insert = F3(
+	function (key, value, dict) {
+		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
+		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
+		} else {
+			var x = _v0;
+			return x;
+		}
+	});
+var $elm$time$Time$addMySub = F2(
+	function (_v0, state) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		var _v1 = A2($elm$core$Dict$get, interval, state);
+		if (_v1.$ === 'Nothing') {
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				_List_fromArray(
+					[tagger]),
+				state);
+		} else {
+			var taggers = _v1.a;
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				A2($elm$core$List$cons, tagger, taggers),
+				state);
+		}
+	});
+var $elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
+var $elm$core$Dict$merge = F6(
+	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
+		var stepState = F3(
+			function (rKey, rValue, _v0) {
+				stepState:
+				while (true) {
+					var list = _v0.a;
+					var result = _v0.b;
+					if (!list.b) {
+						return _Utils_Tuple2(
+							list,
+							A3(rightStep, rKey, rValue, result));
+					} else {
+						var _v2 = list.a;
+						var lKey = _v2.a;
+						var lValue = _v2.b;
+						var rest = list.b;
+						if (_Utils_cmp(lKey, rKey) < 0) {
+							var $temp$rKey = rKey,
+								$temp$rValue = rValue,
+								$temp$_v0 = _Utils_Tuple2(
+								rest,
+								A3(leftStep, lKey, lValue, result));
+							rKey = $temp$rKey;
+							rValue = $temp$rValue;
+							_v0 = $temp$_v0;
+							continue stepState;
+						} else {
+							if (_Utils_cmp(lKey, rKey) > 0) {
+								return _Utils_Tuple2(
+									list,
+									A3(rightStep, rKey, rValue, result));
+							} else {
+								return _Utils_Tuple2(
+									rest,
+									A4(bothStep, lKey, lValue, rValue, result));
+							}
+						}
+					}
+				}
+			});
+		var _v3 = A3(
+			$elm$core$Dict$foldl,
+			stepState,
+			_Utils_Tuple2(
+				$elm$core$Dict$toList(leftDict),
+				initialResult),
+			rightDict);
+		var leftovers = _v3.a;
+		var intermediateResult = _v3.b;
+		return A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v4, result) {
+					var k = _v4.a;
+					var v = _v4.b;
+					return A3(leftStep, k, v, result);
+				}),
+			intermediateResult,
+			leftovers);
+	});
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$setInterval = _Time_setInterval;
+var $elm$time$Time$spawnHelp = F3(
+	function (router, intervals, processes) {
+		if (!intervals.b) {
+			return $elm$core$Task$succeed(processes);
+		} else {
+			var interval = intervals.a;
+			var rest = intervals.b;
+			var spawnTimer = $elm$core$Process$spawn(
+				A2(
+					$elm$time$Time$setInterval,
+					interval,
+					A2($elm$core$Platform$sendToSelf, router, interval)));
+			var spawnRest = function (id) {
+				return A3(
+					$elm$time$Time$spawnHelp,
+					router,
+					rest,
+					A3($elm$core$Dict$insert, interval, id, processes));
+			};
+			return A2($elm$core$Task$andThen, spawnRest, spawnTimer);
+		}
+	});
+var $elm$time$Time$onEffects = F3(
+	function (router, subs, _v0) {
+		var processes = _v0.processes;
+		var rightStep = F3(
+			function (_v6, id, _v7) {
+				var spawns = _v7.a;
+				var existing = _v7.b;
+				var kills = _v7.c;
+				return _Utils_Tuple3(
+					spawns,
+					existing,
+					A2(
+						$elm$core$Task$andThen,
+						function (_v5) {
+							return kills;
+						},
+						$elm$core$Process$kill(id)));
+			});
+		var newTaggers = A3($elm$core$List$foldl, $elm$time$Time$addMySub, $elm$core$Dict$empty, subs);
+		var leftStep = F3(
+			function (interval, taggers, _v4) {
+				var spawns = _v4.a;
+				var existing = _v4.b;
+				var kills = _v4.c;
+				return _Utils_Tuple3(
+					A2($elm$core$List$cons, interval, spawns),
+					existing,
+					kills);
+			});
+		var bothStep = F4(
+			function (interval, taggers, id, _v3) {
+				var spawns = _v3.a;
+				var existing = _v3.b;
+				var kills = _v3.c;
+				return _Utils_Tuple3(
+					spawns,
+					A3($elm$core$Dict$insert, interval, id, existing),
+					kills);
+			});
+		var _v1 = A6(
+			$elm$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			newTaggers,
+			processes,
+			_Utils_Tuple3(
+				_List_Nil,
+				$elm$core$Dict$empty,
+				$elm$core$Task$succeed(_Utils_Tuple0)));
+		var spawnList = _v1.a;
+		var existingDict = _v1.b;
+		var killTask = _v1.c;
+		return A2(
+			$elm$core$Task$andThen,
+			function (newProcesses) {
+				return $elm$core$Task$succeed(
+					A2($elm$time$Time$State, newTaggers, newProcesses));
+			},
+			A2(
+				$elm$core$Task$andThen,
+				function (_v2) {
+					return A3($elm$time$Time$spawnHelp, router, spawnList, existingDict);
+				},
+				killTask));
+	});
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $elm$time$Time$onSelfMsg = F3(
+	function (router, interval, state) {
+		var _v0 = A2($elm$core$Dict$get, interval, state.taggers);
+		if (_v0.$ === 'Nothing') {
+			return $elm$core$Task$succeed(state);
+		} else {
+			var taggers = _v0.a;
+			var tellTaggers = function (time) {
+				return $elm$core$Task$sequence(
+					A2(
+						$elm$core$List$map,
+						function (tagger) {
+							return A2(
+								$elm$core$Platform$sendToApp,
+								router,
+								tagger(time));
+						},
+						taggers));
+			};
+			return A2(
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$succeed(state);
+				},
+				A2($elm$core$Task$andThen, tellTaggers, $elm$time$Time$now));
+		}
+	});
+var $elm$time$Time$subMap = F2(
+	function (f, _v0) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		return A2(
+			$elm$time$Time$Every,
+			interval,
+			A2($elm$core$Basics$composeL, f, tagger));
+	});
+_Platform_effectManagers['Time'] = _Platform_createManager($elm$time$Time$init, $elm$time$Time$onEffects, $elm$time$Time$onSelfMsg, 0, $elm$time$Time$subMap);
+var $elm$time$Time$subscription = _Platform_leaf('Time');
+var $elm$time$Time$every = F2(
+	function (interval, tagger) {
+		return $elm$time$Time$subscription(
+			A2($elm$time$Time$Every, interval, tagger));
+	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$float = _Json_decodeFloat;
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$browser$Browser$Events$Document = {$: 'Document'};
+var $elm$browser$Browser$Events$MySub = F3(
+	function (a, b, c) {
+		return {$: 'MySub', a: a, b: b, c: c};
+	});
+var $elm$browser$Browser$Events$State = F2(
+	function (subs, pids) {
+		return {pids: pids, subs: subs};
+	});
+var $elm$browser$Browser$Events$init = $elm$core$Task$succeed(
+	A2($elm$browser$Browser$Events$State, _List_Nil, $elm$core$Dict$empty));
+var $elm$browser$Browser$Events$nodeToKey = function (node) {
+	if (node.$ === 'Document') {
+		return 'd_';
 	} else {
-		return $elm$browser$Browser$Events$onAnimationFrameDelta($author$project$Main$Tick);
+		return 'w_';
 	}
 };
-var $author$project$Main$Animation = F3(
-	function (a, b, c) {
-		return {$: 'Animation', a: a, b: b, c: c};
+var $elm$browser$Browser$Events$addKey = function (sub) {
+	var node = sub.a;
+	var name = sub.b;
+	return _Utils_Tuple2(
+		_Utils_ap(
+			$elm$browser$Browser$Events$nodeToKey(node),
+			name),
+		sub);
+};
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $elm$browser$Browser$Events$Event = F2(
+	function (key, event) {
+		return {event: event, key: key};
 	});
-var $author$project$Main$UpdateEdoParam = {$: 'UpdateEdoParam'};
-var $elm$core$String$toFloat = _String_toFloat;
+var $elm$browser$Browser$Events$spawn = F3(
+	function (router, key, _v0) {
+		var node = _v0.a;
+		var name = _v0.b;
+		var actualNode = function () {
+			if (node.$ === 'Document') {
+				return _Browser_doc;
+			} else {
+				return _Browser_window;
+			}
+		}();
+		return A2(
+			$elm$core$Task$map,
+			function (value) {
+				return _Utils_Tuple2(key, value);
+			},
+			A3(
+				_Browser_on,
+				actualNode,
+				name,
+				function (event) {
+					return A2(
+						$elm$core$Platform$sendToSelf,
+						router,
+						A2($elm$browser$Browser$Events$Event, key, event));
+				}));
+	});
+var $elm$core$Dict$union = F2(
+	function (t1, t2) {
+		return A3($elm$core$Dict$foldl, $elm$core$Dict$insert, t2, t1);
+	});
+var $elm$browser$Browser$Events$onEffects = F3(
+	function (router, subs, state) {
+		var stepRight = F3(
+			function (key, sub, _v6) {
+				var deads = _v6.a;
+				var lives = _v6.b;
+				var news = _v6.c;
+				return _Utils_Tuple3(
+					deads,
+					lives,
+					A2(
+						$elm$core$List$cons,
+						A3($elm$browser$Browser$Events$spawn, router, key, sub),
+						news));
+			});
+		var stepLeft = F3(
+			function (_v4, pid, _v5) {
+				var deads = _v5.a;
+				var lives = _v5.b;
+				var news = _v5.c;
+				return _Utils_Tuple3(
+					A2($elm$core$List$cons, pid, deads),
+					lives,
+					news);
+			});
+		var stepBoth = F4(
+			function (key, pid, _v2, _v3) {
+				var deads = _v3.a;
+				var lives = _v3.b;
+				var news = _v3.c;
+				return _Utils_Tuple3(
+					deads,
+					A3($elm$core$Dict$insert, key, pid, lives),
+					news);
+			});
+		var newSubs = A2($elm$core$List$map, $elm$browser$Browser$Events$addKey, subs);
+		var _v0 = A6(
+			$elm$core$Dict$merge,
+			stepLeft,
+			stepBoth,
+			stepRight,
+			state.pids,
+			$elm$core$Dict$fromList(newSubs),
+			_Utils_Tuple3(_List_Nil, $elm$core$Dict$empty, _List_Nil));
+		var deadPids = _v0.a;
+		var livePids = _v0.b;
+		var makeNewPids = _v0.c;
+		return A2(
+			$elm$core$Task$andThen,
+			function (pids) {
+				return $elm$core$Task$succeed(
+					A2(
+						$elm$browser$Browser$Events$State,
+						newSubs,
+						A2(
+							$elm$core$Dict$union,
+							livePids,
+							$elm$core$Dict$fromList(pids))));
+			},
+			A2(
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$sequence(makeNewPids);
+				},
+				$elm$core$Task$sequence(
+					A2($elm$core$List$map, $elm$core$Process$kill, deadPids))));
+	});
+var $elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _v0 = f(mx);
+		if (_v0.$ === 'Just') {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var $elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var $elm$browser$Browser$Events$onSelfMsg = F3(
+	function (router, _v0, state) {
+		var key = _v0.key;
+		var event = _v0.event;
+		var toMessage = function (_v2) {
+			var subKey = _v2.a;
+			var _v3 = _v2.b;
+			var node = _v3.a;
+			var name = _v3.b;
+			var decoder = _v3.c;
+			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : $elm$core$Maybe$Nothing;
+		};
+		var messages = A2($elm$core$List$filterMap, toMessage, state.subs);
+		return A2(
+			$elm$core$Task$andThen,
+			function (_v1) {
+				return $elm$core$Task$succeed(state);
+			},
+			$elm$core$Task$sequence(
+				A2(
+					$elm$core$List$map,
+					$elm$core$Platform$sendToApp(router),
+					messages)));
+	});
+var $elm$browser$Browser$Events$subMap = F2(
+	function (func, _v0) {
+		var node = _v0.a;
+		var name = _v0.b;
+		var decoder = _v0.c;
+		return A3(
+			$elm$browser$Browser$Events$MySub,
+			node,
+			name,
+			A2($elm$json$Json$Decode$map, func, decoder));
+	});
+_Platform_effectManagers['Browser.Events'] = _Platform_createManager($elm$browser$Browser$Events$init, $elm$browser$Browser$Events$onEffects, $elm$browser$Browser$Events$onSelfMsg, 0, $elm$browser$Browser$Events$subMap);
+var $elm$browser$Browser$Events$subscription = _Platform_leaf('Browser.Events');
+var $elm$browser$Browser$Events$on = F3(
+	function (node, name, decoder) {
+		return $elm$browser$Browser$Events$subscription(
+			A3($elm$browser$Browser$Events$MySub, node, name, decoder));
+	});
+var $elm$browser$Browser$Events$onMouseMove = A2($elm$browser$Browser$Events$on, $elm$browser$Browser$Events$Document, 'mousemove');
+var $elm$browser$Browser$Events$onMouseUp = A2($elm$browser$Browser$Events$on, $elm$browser$Browser$Events$Document, 'mouseup');
+var $gampleman$elm_visualization$Zoom$touchDelay = 500;
 var $elm$core$Maybe$withDefault = F2(
 	function (_default, maybe) {
 		if (maybe.$ === 'Just') {
@@ -5556,347 +6301,96 @@ var $elm$core$Maybe$withDefault = F2(
 			return _default;
 		}
 	});
-var $author$project$Controller$changePidParam = F2(
-	function (pidParam, pidInteract) {
-		switch (pidInteract.$) {
-			case 'PidKp':
-				var valueStr = pidInteract.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var kp = function ($) {
-					return $.kp;
-				}(pidParam);
-				var val = A2($elm$core$Maybe$withDefault, kp, maybeVal);
-				return _Utils_update(
-					pidParam,
-					{kp: val, kpStr: valueStr});
-			case 'PidKi':
-				var valueStr = pidInteract.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var ki = function ($) {
-					return $.ki;
-				}(pidParam);
-				var val = A2($elm$core$Maybe$withDefault, ki, maybeVal);
-				return _Utils_update(
-					pidParam,
-					{ki: val, kiStr: valueStr});
-			default:
-				var valueStr = pidInteract.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var kd = function ($) {
-					return $.kd;
-				}(pidParam);
-				var val = A2($elm$core$Maybe$withDefault, kd, maybeVal);
-				return _Utils_update(
-					pidParam,
-					{kd: val, kdStr: valueStr});
-		}
+var $gampleman$elm_visualization$Zoom$subscriptions = F2(
+	function (_v0, tagger) {
+		var zoom = _v0.a;
+		return $elm$core$Platform$Sub$batch(
+			_List_fromArray(
+				[
+					function () {
+					var _v1 = zoom.drag;
+					if (_v1.$ === 'Just') {
+						return $elm$core$Platform$Sub$batch(
+							_List_fromArray(
+								[
+									$elm$browser$Browser$Events$onMouseMove(
+									A3(
+										$elm$json$Json$Decode$map2,
+										F2(
+											function (x, y) {
+												return tagger(
+													$gampleman$elm_visualization$Zoom$MouseMove(
+														_Utils_Tuple2(x, y)));
+											}),
+										A2($elm$json$Json$Decode$field, 'clientX', $elm$json$Json$Decode$float),
+										A2($elm$json$Json$Decode$field, 'clientY', $elm$json$Json$Decode$float))),
+									$elm$browser$Browser$Events$onMouseUp(
+									$elm$json$Json$Decode$succeed(
+										tagger($gampleman$elm_visualization$Zoom$MouseUp)))
+								]));
+					} else {
+						return $elm$core$Platform$Sub$none;
+					}
+				}(),
+					zoom.touchStarted ? A2(
+					$elm$time$Time$every,
+					$gampleman$elm_visualization$Zoom$touchDelay,
+					A2(
+						$elm$core$Basics$composeR,
+						$elm$core$Basics$always($gampleman$elm_visualization$Zoom$TouchStartedExpired),
+						tagger)) : $elm$core$Platform$Sub$none,
+					A2(
+					$elm$core$Maybe$withDefault,
+					$elm$core$Platform$Sub$none,
+					A2(
+						$elm$core$Maybe$map,
+						$elm$core$Basics$always(
+							$elm$browser$Browser$Events$onAnimationFrameDelta(
+								A2($elm$core$Basics$composeR, $gampleman$elm_visualization$Zoom$Tick, tagger))),
+						zoom.transition))
+				]));
 	});
-var $author$project$Controller$changeControlParam = F2(
-	function (controlParam, controlInteract) {
-		var pidInteract = controlInteract.a;
-		var pidParam = controlParam.a;
-		return $author$project$Controller$PidP(
-			A2($author$project$Controller$changePidParam, pidParam, pidInteract));
+var $author$project$MyCharts$Chart$subscriptions = F2(
+	function (model, msgToMainMsg) {
+		return A2(
+			$gampleman$elm_visualization$Zoom$subscriptions,
+			model.zoom,
+			A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$MyCharts$Chart$EVZoomMsg));
 	});
-var $author$project$EdoSolver$changeEdoIStates = F2(
-	function (edoIStates, edoInteract) {
-		if (edoInteract.$ === 'Tini') {
-			var valueStr = edoInteract.a;
-			return _Utils_update(
-				edoIStates,
-				{tiniStr: valueStr});
+var $author$project$MyCharts$subscriptions = F2(
+	function (model, msgToMainMsg) {
+		if (!model.b) {
+			return $elm$core$Platform$Sub$none;
 		} else {
-			var valueStr = edoInteract.a;
-			return _Utils_update(
-				edoIStates,
-				{tfimStr: valueStr});
-		}
-	});
-var $author$project$Models$changeLevelParam = F2(
-	function (levelParam, levelInteract) {
-		switch (levelInteract.$) {
-			case 'H0':
-				var valueStr = levelInteract.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var h0 = function ($) {
-					return $.h0;
-				}(levelParam);
-				var val = A2($elm$core$Maybe$withDefault, h0, maybeVal);
-				return _Utils_update(
-					levelParam,
-					{h0: val, h0Str: valueStr});
-			case 'Ag':
-				var valueStr = levelInteract.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var ag = function ($) {
-					return $.ag;
-				}(levelParam);
-				var val = A2($elm$core$Maybe$withDefault, ag, maybeVal);
-				return _Utils_update(
-					levelParam,
-					{ag: val, agStr: valueStr});
-			default:
-				var valueStr = levelInteract.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var ap = function ($) {
-					return $.ap;
-				}(levelParam);
-				var val = A2($elm$core$Maybe$withDefault, ap, maybeVal);
-				return _Utils_update(
-					levelParam,
-					{ap: val, apStr: valueStr});
-		}
-	});
-var $author$project$Models$changeModelParam = F2(
-	function (modelParam, modelInteract) {
-		var levelInteract = modelInteract.a;
-		var levelParam = modelParam.a;
-		return $author$project$Models$LevelP(
-			A2($author$project$Models$changeLevelParam, levelParam, levelInteract));
-	});
-var $author$project$Reference$changeStep1Param = F2(
-	function (step1Param, step1Interact) {
-		switch (step1Interact.$) {
-			case 'Step1IVal':
-				var valueStr = step1Interact.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var iVal = function ($) {
-					return $.iVal;
-				}(step1Param);
-				var val = A2($elm$core$Maybe$withDefault, iVal, maybeVal);
-				return _Utils_update(
-					step1Param,
-					{iVal: val, iValStr: valueStr});
-			case 'Step1TStep':
-				var valueStr = step1Interact.a;
-				var tStep = function ($) {
-					return $.tStep;
-				}(step1Param);
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var val = A2($elm$core$Maybe$withDefault, tStep, maybeVal);
-				return _Utils_update(
-					step1Param,
-					{tStep: val, tStepStr: valueStr});
-			default:
-				var valueStr = step1Interact.a;
-				var maybeVal = $elm$core$String$toFloat(valueStr);
-				var fVal = function ($) {
-					return $.fVal;
-				}(step1Param);
-				var val = A2($elm$core$Maybe$withDefault, fVal, maybeVal);
-				return _Utils_update(
-					step1Param,
-					{fVal: val, fValStr: valueStr});
-		}
-	});
-var $author$project$Reference$changeRefParam = F2(
-	function (refParam, refInteract) {
-		var step1Interact = refInteract.a;
-		var step1Param = refParam.a;
-		return $author$project$Reference$Step1P(
-			A2($author$project$Reference$changeStep1Param, step1Param, step1Interact));
-	});
-var $author$project$MyChart$changeChartParam = F3(
-	function (chartID, newChartParam, chartParam) {
-		return _Utils_eq(
-			chartID,
-			function ($) {
-				return $.chartID;
-			}(chartParam)) ? newChartParam : chartParam;
-	});
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(x);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $author$project$MyChart$chartFromChartID = F2(
-	function (chartID, chartsParam) {
-		var filteredList = A2(
-			$elm$core$List$filter,
-			function (chartParam) {
-				return _Utils_eq(
-					function ($) {
-						return $.chartID;
-					}(chartParam),
-					chartID);
-			},
-			chartsParam);
-		return $elm$core$List$head(filteredList);
-	});
-var $author$project$MyChart$changeCurveAxis = F4(
-	function (curveID, axisType, axisString, curve) {
-		var otherCurveID = function ($) {
-			return $.curveID;
-		}(curve);
-		var _v0 = function ($) {
-			return $.axesString;
-		}(curve);
-		var xAxis = _v0.a;
-		var yAxis = _v0.b;
-		if (_Utils_eq(curveID, otherCurveID)) {
-			if (axisType.$ === 'XAxis') {
-				return _Utils_update(
-					curve,
-					{
-						axesString: _Utils_Tuple2(axisString, yAxis)
-					});
-			} else {
-				return _Utils_update(
-					curve,
-					{
-						axesString: _Utils_Tuple2(xAxis, axisString)
-					});
-			}
-		} else {
-			return curve;
-		}
-	});
-var $author$project$MyChart$lastElem = function (list) {
-	lastElem:
-	while (true) {
-		if (!list.b) {
-			return $elm$core$Maybe$Nothing;
-		} else {
-			if (!list.b.b) {
-				var last = list.a;
-				return $elm$core$Maybe$Just(last);
-			} else {
-				var head = list.a;
-				var rest = list.b;
-				var $temp$list = rest;
-				list = $temp$list;
-				continue lastElem;
-			}
-		}
-	}
-};
-var $elm$core$Basics$not = _Basics_not;
-var $author$project$MyChart$chartInteractAction = F2(
-	function (chartParam, chartInteract) {
-		switch (chartInteract.$) {
-			case 'ChangeAxis':
-				var curveID = chartInteract.a;
-				var axisType = chartInteract.b;
-				var valueStr = chartInteract.c;
-				var curves = function ($) {
-					return $.curves;
-				}(chartParam);
-				var axisString = valueStr;
-				var newCurves = A2(
+			var chs = model;
+			return $elm$core$Platform$Sub$batch(
+				A2(
 					$elm$core$List$map,
-					A3($author$project$MyChart$changeCurveAxis, curveID, axisType, axisString),
-					curves);
-				return _Utils_update(
-					chartParam,
-					{curves: newCurves});
-			case 'AddCurve':
-				var curves = function ($) {
-					return $.curves;
-				}(chartParam);
-				var maybeLastCurve = $author$project$MyChart$lastElem(curves);
-				var newCurve = $author$project$MyChart$initCurve(maybeLastCurve);
-				var newCurves = _Utils_ap(
-					curves,
-					A2($elm$core$List$cons, newCurve, _List_Nil));
-				return _Utils_update(
-					chartParam,
-					{curves: newCurves});
-			case 'RemoveCurve':
-				var curveID = chartInteract.a;
-				var curves = function ($) {
-					return $.curves;
-				}(chartParam);
-				var newCurves = A2(
-					$elm$core$List$filter,
-					function (c) {
-						return _Utils_eq(
-							function ($) {
-								return $.curveID;
-							}(c),
-							curveID) ? false : true;
+					function (ch) {
+						return A2(
+							$author$project$MyCharts$Chart$subscriptions,
+							ch,
+							A2(
+								$elm$core$Basics$composeL,
+								msgToMainMsg,
+								$author$project$MyCharts$ChartMsg(ch.chartID)));
 					},
-					curves);
-				return _Utils_update(
-					chartParam,
-					{curves: newCurves});
-			default:
-				var editingCurves = function ($) {
-					return $.editingCurves;
-				}(chartParam);
-				return _Utils_update(
-					chartParam,
-					{editingCurves: !editingCurves});
+					chs));
 		}
 	});
-var $author$project$MyChart$chartIndividualInteractAction = F3(
-	function (chartID, chartsParam, chartInteract) {
-		var _v0 = A2($author$project$MyChart$chartFromChartID, chartID, chartsParam);
-		if (_v0.$ === 'Nothing') {
-			return chartsParam;
-		} else {
-			var chartParam = _v0.a;
-			var newChartParam = A2($author$project$MyChart$chartInteractAction, chartParam, chartInteract);
-			return A2(
-				$elm$core$List$map,
-				A2($author$project$MyChart$changeChartParam, chartID, newChartParam),
-				chartsParam);
-		}
-	});
-var $author$project$MyChart$addChartParam = function (chartID) {
-	return {
-		chartID: chartID,
-		curves: _List_fromArray(
-			[
-				$author$project$MyChart$initCurve($elm$core$Maybe$Nothing)
-			]),
-		editingCurves: false
-	};
+var $author$project$Main$subscriptions = function (bigModel) {
+	if (bigModel.$ === 'SolvingEdo') {
+		var model = bigModel.a;
+		return A2($author$project$MyCharts$subscriptions, model.chartsModel, $author$project$Main$MyChartsMsg);
+	} else {
+		return $elm$browser$Browser$Events$onAnimationFrameDelta($author$project$Main$Tick);
+	}
 };
-var $elm$core$List$sortBy = _List_sortBy;
-var $author$project$MyChart$chartsInteractAction = F2(
-	function (chartsParam, chartsInteract) {
-		if (chartsInteract.$ === 'AddChart') {
-			var chartID = chartsInteract.a;
-			var newChartParam = $author$project$MyChart$addChartParam(chartID);
-			var newChartsParam = A2($elm$core$List$cons, newChartParam, chartsParam);
-			return A2(
-				$elm$core$List$sortBy,
-				function (cp) {
-					return cp.chartID;
-				},
-				newChartsParam);
-		} else {
-			var chartID = chartsInteract.a;
-			return A2(
-				$elm$core$List$filter,
-				function (chartParam) {
-					return !_Utils_eq(
-						function ($) {
-							return $.chartID;
-						}(chartParam),
-						chartID);
-				},
-				chartsParam);
-		}
+var $author$project$Main$Animation = F3(
+	function (a, b, c) {
+		return {$: 'Animation', a: a, b: b, c: c};
 	});
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
+var $author$project$Main$UpdateEdoParam = {$: 'UpdateEdoParam'};
 var $elm$core$Basics$abs = function (n) {
 	return (n < 0) ? (-n) : n;
 };
@@ -5907,7 +6401,16 @@ var $author$project$EdoSolver$checkEndTimeEps = F2(
 			$elm$core$Basics$abs(tempo - tfim),
 			$author$project$EdoSolver$eps) < 1) ? true : false;
 	});
-var $author$project$Controller$pid = F8(
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Controller$PID$pid = F8(
 	function (kp, ki, kd, mem, errors, passo, tempo, xs) {
 		var error = A2(
 			$elm$core$Maybe$withDefault,
@@ -5936,21 +6439,21 @@ var $author$project$Controller$pid = F8(
 			_List_fromArray(
 				[error, integral_error]));
 	});
-var $author$project$Controller$pidFromPidParam = function (pidParam) {
+var $author$project$Controller$PID$controllerFromModel = function (model) {
 	var kp = function ($) {
 		return $.kp;
-	}(pidParam);
+	}(model);
 	var ki = function ($) {
 		return $.ki;
-	}(pidParam);
+	}(model);
 	var kd = function ($) {
 		return $.kd;
-	}(pidParam);
-	return A3($author$project$Controller$pid, kp, ki, kd);
+	}(model);
+	return A3($author$project$Controller$PID$pid, kp, ki, kd);
 };
-var $author$project$Controller$controllerFromControlParam = function (controlParam) {
-	var pidParam = controlParam.a;
-	return $author$project$Controller$pidFromPidParam(pidParam);
+var $author$project$Controller$controllerFromModel = function (model) {
+	var pidModel = model.a;
+	return $author$project$Controller$PID$controllerFromModel(pidModel);
 };
 var $elm$core$Basics$min = F2(
 	function (x, y) {
@@ -5966,27 +6469,27 @@ var $author$project$Main$modelFromBigModel = function (bigModel) {
 	}
 };
 var $elm$core$Basics$ge = _Utils_ge;
-var $author$project$Reference$step1 = F5(
+var $author$project$Reference$Step1$step1 = F5(
 	function (iVal, tStep, fVal, tempo, output) {
 		return (_Utils_cmp(tStep, tempo) > -1) ? _List_fromArray(
 			[iVal]) : _List_fromArray(
 			[fVal]);
 	});
-var $author$project$Reference$step1FromStep1Param = function (step1Param) {
+var $author$project$Reference$Step1$refFunctionFromModel = function (model) {
 	var tStep = function ($) {
 		return $.tStep;
-	}(step1Param);
+	}(model);
 	var iVal = function ($) {
 		return $.iVal;
-	}(step1Param);
+	}(model);
 	var fVal = function ($) {
 		return $.fVal;
-	}(step1Param);
-	return A3($author$project$Reference$step1, iVal, tStep, fVal);
+	}(model);
+	return A3($author$project$Reference$Step1$step1, iVal, tStep, fVal);
 };
-var $author$project$Reference$refFunctionFromRefParam = function (refParam) {
-	var step1Param = refParam.a;
-	return $author$project$Reference$step1FromStep1Param(step1Param);
+var $author$project$Reference$refFunctionFromModel = function (model) {
+	var step1Model = model.a;
+	return $author$project$Reference$Step1$refFunctionFromModel(step1Model);
 };
 var $author$project$EdoSolver$Controlled = function (a) {
 	return {$: 'Controlled', a: a};
@@ -6217,9 +6720,20 @@ var $author$project$EdoSolver$edoSolverReversed = F3(
 		var paramFinal = _v0.b;
 		return _Utils_Tuple2(reversedData, paramFinal);
 	});
+var $author$project$ModelSystem$Level$output = F2(
+	function (tempo, xs) {
+		if (xs.b) {
+			var x = xs.a;
+			var ls = xs.b;
+			return _List_fromArray(
+				[x]);
+		} else {
+			return xs;
+		}
+	});
 var $elm$core$Basics$sqrt = _Basics_sqrt;
-var $author$project$Models$levelSyst = F4(
-	function (levelParam, us, t, state) {
+var $author$project$ModelSystem$Level$system = F4(
+	function (model, us, t, state) {
 		var uAux = A2(
 			$elm$core$Maybe$withDefault,
 			0.0,
@@ -6228,10 +6742,10 @@ var $author$project$Models$levelSyst = F4(
 		var g = 9.28;
 		var ap = function ($) {
 			return $.ap;
-		}(levelParam);
+		}(model);
 		var ag = function ($) {
 			return $.ag;
-		}(levelParam);
+		}(model);
 		if (state.b) {
 			var h = state.a;
 			var ls = state.b;
@@ -6243,35 +6757,6 @@ var $author$project$Models$levelSyst = F4(
 		} else {
 			return A2($elm$core$List$cons, 0.0, _List_Nil);
 		}
-	});
-var $author$project$Models$outputX1 = F2(
-	function (tempo, xs) {
-		if (xs.b) {
-			var x = xs.a;
-			var ls = xs.b;
-			return _List_fromArray(
-				[x]);
-		} else {
-			return xs;
-		}
-	});
-var $elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _v0 = f(mx);
-		if (_v0.$ === 'Just') {
-			var x = _v0.a;
-			return A2($elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var $elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			$elm$core$List$foldr,
-			$elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
 	});
 var $author$project$DataConvert$TS1E1R1U4 = function (a) {
 	return {$: 'TS1E1R1U4', a: a};
@@ -6302,20 +6787,20 @@ var $author$project$DataConvert$toChartDatumTS1E1R1U4 = function (edoDatum) {
 	}
 };
 var $author$project$DataConvert$toChartDataTS1E1R1U4 = $elm$core$List$filterMap($author$project$DataConvert$toChartDatumTS1E1R1U4);
-var $author$project$Models$runEdoLevel = F4(
-	function (levelParam, edoParam, refFunc, controller) {
+var $author$project$ModelSystem$Level$runEdo = F4(
+	function (model, edoParam, refFunc, controller) {
 		var initState = A2(
 			$elm$core$List$cons,
 			function ($) {
 				return $.h0;
-			}(levelParam),
+			}(model),
 			_List_Nil);
 		var edoSist = $author$project$EdoSolver$Controlled(
 			{
 				controller: controller,
-				outputFunc: $author$project$Models$outputX1,
+				outputFunc: $author$project$ModelSystem$Level$output,
 				refFunc: refFunc,
-				sistFunc: $author$project$Models$levelSyst(levelParam)
+				sistFunc: $author$project$ModelSystem$Level$system(model)
 			});
 		var _v0 = A3($author$project$EdoSolver$edoSolverReversed, edoParam, edoSist, initState);
 		var edoData = _v0.a;
@@ -6324,10 +6809,1004 @@ var $author$project$Models$runEdoLevel = F4(
 			$author$project$DataConvert$toChartDataTS1E1R1U4(edoData),
 			edoParamNew);
 	});
-var $author$project$Models$runEdoModel = F4(
-	function (modelParam, edoParam, refFunc, controller) {
-		var levelParam = modelParam.a;
-		return A4($author$project$Models$runEdoLevel, levelParam, edoParam, refFunc, controller);
+var $author$project$ModelSystem$runEdo = F4(
+	function (model, edoParam, refFunc, controller) {
+		var levelModel = model.a;
+		return A4($author$project$ModelSystem$Level$runEdo, levelModel, edoParam, refFunc, controller);
+	});
+var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Controller$PID$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'PidKp':
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var kp = function ($) {
+					return $.kp;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, kp, maybeVal);
+				return _Utils_update(
+					model,
+					{kp: val, kpStr: valueStr});
+			case 'PidKi':
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var ki = function ($) {
+					return $.ki;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, ki, maybeVal);
+				return _Utils_update(
+					model,
+					{ki: val, kiStr: valueStr});
+			default:
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var kd = function ($) {
+					return $.kd;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, kd, maybeVal);
+				return _Utils_update(
+					model,
+					{kd: val, kdStr: valueStr});
+		}
+	});
+var $author$project$Controller$update = F2(
+	function (msg, model) {
+		var pidMsg = msg.a;
+		var pidModel = model.a;
+		return $author$project$Controller$PidModel(
+			A2($author$project$Controller$PID$update, pidMsg, pidModel));
+	});
+var $author$project$ModelSystem$Level$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'H0':
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var h0 = function ($) {
+					return $.h0;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, h0, maybeVal);
+				return _Utils_update(
+					model,
+					{h0: val, h0Str: valueStr});
+			case 'Ag':
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var ag = function ($) {
+					return $.ag;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, ag, maybeVal);
+				return _Utils_update(
+					model,
+					{ag: val, agStr: valueStr});
+			default:
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var ap = function ($) {
+					return $.ap;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, ap, maybeVal);
+				return _Utils_update(
+					model,
+					{ap: val, apStr: valueStr});
+		}
+	});
+var $author$project$ModelSystem$update = F2(
+	function (msg, model) {
+		var levelMsg = msg.a;
+		var levelModel = model.a;
+		return $author$project$ModelSystem$LevelModel(
+			A2($author$project$ModelSystem$Level$update, levelMsg, levelModel));
+	});
+var $author$project$MyCharts$Chart$addModel = function (chartID) {
+	return {
+		chartID: chartID,
+		curves: _List_fromArray(
+			[
+				$author$project$MyCharts$Chart$Curve$init($elm$core$Maybe$Nothing)
+			]),
+		editingCurves: false,
+		zoom: $gampleman$elm_visualization$Zoom$init(
+			{height: $author$project$UI$elementHeight, width: $author$project$UI$elementWidth}),
+		zoomModel: $author$project$MyCharts$Chart$Zoom$init
+	};
+};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Basics$not = _Basics_not;
+var $elm$core$List$sortBy = _List_sortBy;
+var $author$project$MyCharts$Chart$lastElem = function (list) {
+	lastElem:
+	while (true) {
+		if (!list.b) {
+			return $elm$core$Maybe$Nothing;
+		} else {
+			if (!list.b.b) {
+				var last = list.a;
+				return $elm$core$Maybe$Just(last);
+			} else {
+				var head = list.a;
+				var rest = list.b;
+				var $temp$list = rest;
+				list = $temp$list;
+				continue lastElem;
+			}
+		}
+	}
+};
+var $author$project$MyCharts$Chart$Curve$update = F2(
+	function (msg, model) {
+		var otherCurveID = function ($) {
+			return $.curveID;
+		}(model);
+		var _v0 = function ($) {
+			return $.axesString;
+		}(model);
+		var xAxis = _v0.a;
+		var yAxis = _v0.b;
+		if (msg.$ === 'XAxis') {
+			var axisString = msg.a;
+			return _Utils_update(
+				model,
+				{
+					axesString: _Utils_Tuple2(axisString, yAxis)
+				});
+		} else {
+			var axisString = msg.a;
+			return _Utils_update(
+				model,
+				{
+					axesString: _Utils_Tuple2(xAxis, axisString)
+				});
+		}
+	});
+var $author$project$MyCharts$Chart$Zoom$ReZooming = F4(
+	function (a, b, c, d) {
+		return {$: 'ReZooming', a: a, b: b, c: c, d: d};
+	});
+var $author$project$MyCharts$Chart$Zoom$Zoomed = F2(
+	function (a, b) {
+		return {$: 'Zoomed', a: a, b: b};
+	});
+var $author$project$MyCharts$Chart$Zoom$Zooming = F2(
+	function (a, b) {
+		return {$: 'Zooming', a: a, b: b};
+	});
+var $author$project$MyCharts$Chart$Zoom$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'OnDown':
+				var point = msg.a;
+				switch (model.$) {
+					case 'NoZoom':
+						return A2($author$project$MyCharts$Chart$Zoom$Zooming, point, point);
+					case 'Zoomed':
+						var start = model.a;
+						var end = model.b;
+						return A4($author$project$MyCharts$Chart$Zoom$ReZooming, start, end, point, point);
+					default:
+						return model;
+				}
+			case 'OnMove':
+				var point = msg.a;
+				switch (model.$) {
+					case 'Zooming':
+						var start = model.a;
+						return A2($author$project$MyCharts$Chart$Zoom$Zooming, start, point);
+					case 'ReZooming':
+						var startOld = model.a;
+						var endOld = model.b;
+						var start = model.c;
+						return A4($author$project$MyCharts$Chart$Zoom$ReZooming, startOld, endOld, start, point);
+					default:
+						return model;
+				}
+			case 'OnUp':
+				var point = msg.a;
+				switch (model.$) {
+					case 'Zooming':
+						var start = model.a;
+						return A2(
+							$author$project$MyCharts$Chart$Zoom$Zoomed,
+							{
+								x: A2($elm$core$Basics$min, start.x, point.x),
+								y: A2($elm$core$Basics$min, start.y, point.y)
+							},
+							{
+								x: A2($elm$core$Basics$max, start.x, point.x),
+								y: A2($elm$core$Basics$max, start.y, point.y)
+							});
+					case 'ReZooming':
+						var start = model.c;
+						return A2(
+							$author$project$MyCharts$Chart$Zoom$Zoomed,
+							{
+								x: A2($elm$core$Basics$min, start.x, point.x),
+								y: A2($elm$core$Basics$min, start.y, point.y)
+							},
+							{
+								x: A2($elm$core$Basics$max, start.x, point.x),
+								y: A2($elm$core$Basics$max, start.y, point.y)
+							});
+					default:
+						return model;
+				}
+			default:
+				return $author$project$MyCharts$Chart$Zoom$NoZoom;
+		}
+	});
+var $gampleman$elm_visualization$Zoom$OneFinger = function (a) {
+	return {$: 'OneFinger', a: a};
+};
+var $gampleman$elm_visualization$Zoom$TwoFingers = F2(
+	function (a, b) {
+		return {$: 'TwoFingers', a: a, b: b};
+	});
+var $elm$core$Basics$clamp = F3(
+	function (low, high, number) {
+		return (_Utils_cmp(number, low) < 0) ? low : ((_Utils_cmp(number, high) > 0) ? high : number);
+	});
+var $gampleman$elm_visualization$Zoom$Transform$invert = F2(
+	function (_v0, _v1) {
+		var locX = _v0.a;
+		var locY = _v0.b;
+		var k = _v1.k;
+		var x = _v1.x;
+		var y = _v1.y;
+		return _Utils_Tuple2((locX - x) / k, (locY - y) / k);
+	});
+var $gampleman$elm_visualization$Zoom$Transform$translate = F2(
+	function (_v0, _v1) {
+		var locX = _v0.a;
+		var locY = _v0.b;
+		var k = _v1.k;
+		var x = _v1.x;
+		var y = _v1.y;
+		return A3($gampleman$elm_visualization$Zoom$Transform$Transform, k, x + (k * locX), y + (k * locY));
+	});
+var $gampleman$elm_visualization$Zoom$constrain = F3(
+	function (_v0, _v1, tsfm) {
+		var extentT = _v0.a;
+		var extentB = _v0.b;
+		var translateExtentT = _v1.a;
+		var translateExtentB = _v1.b;
+		var minus = F2(
+			function (_v5, _v6) {
+				var a = _v5.a;
+				var b = _v5.b;
+				var c = _v6.a;
+				var d = _v6.b;
+				return _Utils_Tuple2(c - a, d - b);
+			});
+		var _v2 = A2(
+			minus,
+			translateExtentB,
+			A2($gampleman$elm_visualization$Zoom$Transform$invert, extentB, tsfm));
+		var dx1 = _v2.a;
+		var dy1 = _v2.b;
+		var _v3 = A2(
+			minus,
+			translateExtentT,
+			A2($gampleman$elm_visualization$Zoom$Transform$invert, extentT, tsfm));
+		var dx0 = _v3.a;
+		var dy0 = _v3.b;
+		var _v4 = _Utils_Tuple2(
+			A2($elm$core$Basics$min, 0, dx0),
+			A2($elm$core$Basics$min, 0, dy0));
+		var minDX = _v4.a;
+		var minDY = _v4.b;
+		return A2(
+			$gampleman$elm_visualization$Zoom$Transform$translate,
+			_Utils_Tuple2(
+				(_Utils_cmp(dx1, dx0) > 0) ? ((dx0 + dx1) / 2) : ((!minDX) ? A2($elm$core$Basics$max, 0, dx1) : minDX),
+				(_Utils_cmp(dy1, dy0) > 0) ? ((dy0 + dy1) / 2) : ((!minDY) ? A2($elm$core$Basics$max, 0, dy1) : minDY)),
+			tsfm);
+	});
+var $elm$core$Basics$pow = _Basics_pow;
+var $gampleman$elm_visualization$Zoom$dist2 = F2(
+	function (_v0, _v1) {
+		var x1 = _v0.a;
+		var y1 = _v0.b;
+		var x2 = _v1.a;
+		var y2 = _v1.b;
+		return A2($elm$core$Basics$pow, x2 - x1, 2) + A2($elm$core$Basics$pow, y2 - y1, 2);
+	});
+var $gampleman$elm_visualization$Zoom$easingInOutCubic = function (t) {
+	return (t < 0.5) ? (A2($elm$core$Basics$pow, t * 2, 3) / 2) : (1 - (0.5 * A2($elm$core$Basics$pow, ((-2) * t) + 2, 3)));
+};
+var $gampleman$elm_visualization$Zoom$findAssociatedTouch = function (_v0) {
+	var identifier = _v0.identifier;
+	return A2(
+		$elm$core$Basics$composeR,
+		$elm$core$List$filter(
+			function (t) {
+				return _Utils_eq(t.identifier, identifier);
+			}),
+		$elm$core$List$head);
+};
+var $gampleman$elm_visualization$Zoom$midpoint = F2(
+	function (_v0, _v1) {
+		var x1 = _v0.a;
+		var y1 = _v0.b;
+		var x2 = _v1.a;
+		var y2 = _v1.b;
+		return _Utils_Tuple2((x1 + x2) / 2, (y1 + y2) / 2);
+	});
+var $gampleman$elm_visualization$Zoom$Matrix$transform = F2(
+	function (_v0, _v1) {
+		var x = _v0.a;
+		var y = _v0.b;
+		var _v2 = _v1.a;
+		var a11 = _v2.a;
+		var a12 = _v2.b;
+		var a13 = _v2.c;
+		var _v3 = _v1.b;
+		var a21 = _v3.a;
+		var a22 = _v3.b;
+		var a23 = _v3.c;
+		return _Utils_Tuple2(((a11 * x) + (a12 * y)) + (a13 * 1), ((a21 * x) + (a22 * y)) + (a23 * 1));
+	});
+var $gampleman$elm_visualization$Events$normalizePointerPosition = F2(
+	function (position, maybeMatrix) {
+		if (maybeMatrix.$ === 'Just') {
+			var matrix = maybeMatrix.a;
+			return A2($gampleman$elm_visualization$Zoom$Matrix$transform, position, matrix);
+		} else {
+			return position;
+		}
+	});
+var $gampleman$elm_visualization$Zoom$scale = F3(
+	function (_v0, k, trfm) {
+		var mi = _v0.a;
+		var mx = _v0.b;
+		return _Utils_update(
+			trfm,
+			{
+				k: A3($elm$core$Basics$clamp, mi, mx, k)
+			});
+	});
+var $gampleman$elm_visualization$Zoom$Transform$scale = F2(
+	function (k_, _v0) {
+		var k = _v0.k;
+		var x = _v0.x;
+		var y = _v0.y;
+		return A3($gampleman$elm_visualization$Zoom$Transform$Transform, k * k_, x, y);
+	});
+var $elm$core$Basics$e = _Basics_e;
+var $gampleman$elm_visualization$Zoom$Interpolation$exp = function (x) {
+	return A2($elm$core$Basics$pow, $elm$core$Basics$e, x);
+};
+var $gampleman$elm_visualization$Zoom$Interpolation$cosh = function (x) {
+	var x_ = $gampleman$elm_visualization$Zoom$Interpolation$exp(x);
+	return (x_ + (1 / x_)) / 2;
+};
+var $gampleman$elm_visualization$Zoom$Interpolation$epsilon2 = 1.0e-12;
+var $gampleman$elm_visualization$Zoom$Interpolation$log = $elm$core$Basics$logBase($elm$core$Basics$e);
+var $gampleman$elm_visualization$Zoom$Interpolation$rho = $elm$core$Basics$sqrt(2);
+var $gampleman$elm_visualization$Zoom$Interpolation$sinh = function (x) {
+	var x_ = $gampleman$elm_visualization$Zoom$Interpolation$exp(x);
+	return (x_ - (1 / x_)) / 2;
+};
+var $gampleman$elm_visualization$Zoom$Interpolation$tanh = function (x) {
+	var x_ = $gampleman$elm_visualization$Zoom$Interpolation$exp(2 * x);
+	return (x_ - 1) / (x_ + 1);
+};
+var $gampleman$elm_visualization$Zoom$Interpolation$interpolate = F2(
+	function (a, b) {
+		var dy = b.cy - a.cy;
+		var dx = b.cx - a.cx;
+		var d2 = A2($elm$core$Basics$pow, dx, 2) + A2($elm$core$Basics$pow, dy, 2);
+		if (_Utils_cmp(d2, $gampleman$elm_visualization$Zoom$Interpolation$epsilon2) < 0) {
+			var s = $gampleman$elm_visualization$Zoom$Interpolation$log(b.size / a.size) / $gampleman$elm_visualization$Zoom$Interpolation$rho;
+			return _Utils_Tuple2(
+				$elm$core$Basics$abs(s) * 1000,
+				function (t) {
+					return {
+						cx: a.cx + (t * dx),
+						cy: a.cy + (t * dy),
+						size: a.size * $gampleman$elm_visualization$Zoom$Interpolation$exp(($gampleman$elm_visualization$Zoom$Interpolation$rho * t) * s)
+					};
+				});
+		} else {
+			var d1 = $elm$core$Basics$sqrt(d2);
+			var b1 = ((A2($elm$core$Basics$pow, b.size, 2) - A2($elm$core$Basics$pow, a.size, 2)) - (A2($elm$core$Basics$pow, $gampleman$elm_visualization$Zoom$Interpolation$rho, 4) * d2)) / (((2 * b.size) * A2($elm$core$Basics$pow, $gampleman$elm_visualization$Zoom$Interpolation$rho, 2)) * d1);
+			var r1 = $gampleman$elm_visualization$Zoom$Interpolation$log(
+				$elm$core$Basics$sqrt(
+					A2($elm$core$Basics$pow, b1, 2) + 1) - b1);
+			var b0 = ((A2($elm$core$Basics$pow, b.size, 2) - A2($elm$core$Basics$pow, a.size, 2)) + (A2($elm$core$Basics$pow, $gampleman$elm_visualization$Zoom$Interpolation$rho, 4) * d2)) / (((2 * a.size) * A2($elm$core$Basics$pow, $gampleman$elm_visualization$Zoom$Interpolation$rho, 2)) * d1);
+			var r0 = $gampleman$elm_visualization$Zoom$Interpolation$log(
+				$elm$core$Basics$sqrt(
+					A2($elm$core$Basics$pow, b0, 2) + 1) - b0);
+			var s_ = (r1 - r0) / $gampleman$elm_visualization$Zoom$Interpolation$rho;
+			return _Utils_Tuple2(
+				s_ * 1000,
+				function (t) {
+					var s = t * s_;
+					var coshr0 = $gampleman$elm_visualization$Zoom$Interpolation$cosh(r0);
+					var u = (a.size / (A2($elm$core$Basics$pow, $gampleman$elm_visualization$Zoom$Interpolation$rho, 2) * d1)) * ((coshr0 * $gampleman$elm_visualization$Zoom$Interpolation$tanh(($gampleman$elm_visualization$Zoom$Interpolation$rho * s) + r0)) - $gampleman$elm_visualization$Zoom$Interpolation$sinh(r0));
+					return {
+						cx: a.cx + (u * dx),
+						cy: a.cy + (u * dy),
+						size: (a.size * coshr0) / $gampleman$elm_visualization$Zoom$Interpolation$cosh(($gampleman$elm_visualization$Zoom$Interpolation$rho * s) + r0)
+					};
+				});
+		}
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $gampleman$elm_visualization$Zoom$schedule = F3(
+	function (btransform, center, _v0) {
+		var model = _v0.a;
+		var atransform = model.transform;
+		var _v1 = model.extent;
+		var _v2 = _v1.a;
+		var top = _v2.a;
+		var left = _v2.b;
+		var _v3 = _v1.b;
+		var bottom = _v3.a;
+		var right = _v3.b;
+		var w = A2($elm$core$Basics$max, bottom - top, right - left);
+		var _v4 = A2($gampleman$elm_visualization$Zoom$Transform$invert, center, btransform);
+		var bx = _v4.a;
+		var by = _v4.b;
+		var _v5 = A2($gampleman$elm_visualization$Zoom$Transform$invert, center, atransform);
+		var ax = _v5.a;
+		var ay = _v5.b;
+		var _v6 = A2(
+			$gampleman$elm_visualization$Zoom$Interpolation$interpolate,
+			{cx: ax, cy: ay, size: w / atransform.k},
+			{cx: bx, cy: by, size: w / btransform.k});
+		var dur = _v6.a;
+		var interp = _v6.b;
+		return $gampleman$elm_visualization$Zoom$Zoom(
+			_Utils_update(
+				model,
+				{
+					transition: $elm$core$Maybe$Just(
+						{
+							duration: dur,
+							elapsed: 0,
+							interpolation: function (t) {
+								if (t === 1) {
+									return btransform;
+								} else {
+									var l = interp(t);
+									var k = w / l.size;
+									return {k: k, x: center.a - (l.cx * k), y: center.b - (l.cy * k)};
+								}
+							}
+						})
+				}));
+	});
+var $gampleman$elm_visualization$Zoom$translate = F3(
+	function (_v0, _v1, trfm) {
+		var position0x = _v0.a;
+		var position0y = _v0.b;
+		var position1x = _v1.a;
+		var position1y = _v1.b;
+		return _Utils_update(
+			trfm,
+			{x: position0x - (position1x * trfm.k), y: position0y - (position1y * trfm.k)});
+	});
+var $gampleman$elm_visualization$Zoom$update = F2(
+	function (msg, _v0) {
+		var model = _v0.a;
+		switch (msg.$) {
+			case 'DoubleClicked':
+				var shiftKey = msg.a;
+				var position0 = msg.b;
+				var position1 = A2($gampleman$elm_visualization$Zoom$Transform$invert, position0, model.transform);
+				var k = model.transform.k * (shiftKey ? 0.5 : 2);
+				var newTransform = A3(
+					$gampleman$elm_visualization$Zoom$constrain,
+					model.extent,
+					model.translateExtent,
+					A3(
+						$gampleman$elm_visualization$Zoom$translate,
+						position0,
+						position1,
+						A3($gampleman$elm_visualization$Zoom$scale, model.scaleExtent, k, model.transform)));
+				return A3(
+					$gampleman$elm_visualization$Zoom$schedule,
+					newTransform,
+					position0,
+					$gampleman$elm_visualization$Zoom$Zoom(
+						_Utils_update(
+							model,
+							{touchStarted: false})));
+			case 'MouseDown':
+				var position = msg.a;
+				var matrix = msg.b;
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{
+							drag: $elm$core$Maybe$Just(
+								{
+									current: A2(
+										$gampleman$elm_visualization$Zoom$Transform$invert,
+										A2($gampleman$elm_visualization$Events$normalizePointerPosition, position, matrix),
+										model.transform),
+									matrix: matrix
+								}),
+							transition: $elm$core$Maybe$Nothing
+						}));
+			case 'MouseMove':
+				var position_ = msg.a;
+				var _v2 = model.drag;
+				if (_v2.$ === 'Just') {
+					var drag = _v2.a;
+					var position = A2($gampleman$elm_visualization$Events$normalizePointerPosition, position_, drag.matrix);
+					var trasform_ = A3($gampleman$elm_visualization$Zoom$translate, position, drag.current, model.transform);
+					return $gampleman$elm_visualization$Zoom$Zoom(
+						_Utils_update(
+							model,
+							{
+								drag: $elm$core$Maybe$Just(
+									_Utils_update(
+										drag,
+										{
+											current: A2($gampleman$elm_visualization$Zoom$Transform$invert, position, trasform_)
+										})),
+								transform: A3($gampleman$elm_visualization$Zoom$constrain, model.extent, model.translateExtent, trasform_),
+								transition: $elm$core$Maybe$Nothing
+							}));
+				} else {
+					return $gampleman$elm_visualization$Zoom$Zoom(model);
+				}
+			case 'MouseUp':
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{drag: $elm$core$Maybe$Nothing}));
+			case 'Wheeled':
+				var delta = msg.a;
+				var position0 = msg.b;
+				var position1 = A2($gampleman$elm_visualization$Zoom$Transform$invert, position0, model.transform);
+				var k = model.transform.k * A2($elm$core$Basics$pow, 2, delta);
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{
+							transform: A3(
+								$gampleman$elm_visualization$Zoom$constrain,
+								model.extent,
+								model.translateExtent,
+								A3(
+									$gampleman$elm_visualization$Zoom$translate,
+									position0,
+									position1,
+									A3($gampleman$elm_visualization$Zoom$scale, model.scaleExtent, k, model.transform))),
+							transition: $elm$core$Maybe$Nothing
+						}));
+			case 'GestureStarted':
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{gestureLastScale: 1}));
+			case 'Gestured':
+				var scl = msg.a;
+				var position0 = msg.b;
+				var position1 = A2($gampleman$elm_visualization$Zoom$Transform$invert, position0, model.transform);
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{
+							gestureLastScale: scl,
+							transform: A3(
+								$gampleman$elm_visualization$Zoom$constrain,
+								model.extent,
+								model.translateExtent,
+								A3(
+									$gampleman$elm_visualization$Zoom$translate,
+									position0,
+									position1,
+									A2($gampleman$elm_visualization$Zoom$Transform$scale, scl / model.gestureLastScale, model.transform))),
+							transition: $elm$core$Maybe$Nothing
+						}));
+			case 'TouchStartedExpired':
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{touchStarted: false}));
+			case 'TouchStarted':
+				var touches = msg.a;
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{
+							touchStarted: true,
+							touches: function () {
+								var _v3 = _Utils_Tuple2(model.touches, touches);
+								_v3$3:
+								while (true) {
+									if (_v3.b.b) {
+										switch (_v3.a.$) {
+											case 'NoTouches':
+												if (!_v3.b.b.b) {
+													var _v4 = _v3.a;
+													var _v5 = _v3.b;
+													var single = _v5.a;
+													return $gampleman$elm_visualization$Zoom$OneFinger(
+														{
+															identifier: single.identifier,
+															position: single.position,
+															previous: A2($gampleman$elm_visualization$Zoom$Transform$invert, single.position, model.transform)
+														});
+												} else {
+													var _v6 = _v3.a;
+													var _v7 = _v3.b;
+													var one = _v7.a;
+													var _v8 = _v7.b;
+													var two = _v8.a;
+													return A2(
+														$gampleman$elm_visualization$Zoom$TwoFingers,
+														{
+															identifier: one.identifier,
+															position: one.position,
+															previous: A2($gampleman$elm_visualization$Zoom$Transform$invert, one.position, model.transform)
+														},
+														{
+															identifier: two.identifier,
+															position: two.position,
+															previous: A2($gampleman$elm_visualization$Zoom$Transform$invert, two.position, model.transform)
+														});
+												}
+											case 'OneFinger':
+												var id1 = _v3.a.a;
+												var _v9 = _v3.b;
+												var one = _v9.a;
+												return A2(
+													$gampleman$elm_visualization$Zoom$TwoFingers,
+													id1,
+													{
+														identifier: one.identifier,
+														position: one.position,
+														previous: A2($gampleman$elm_visualization$Zoom$Transform$invert, one.position, model.transform)
+													});
+											default:
+												break _v3$3;
+										}
+									} else {
+										break _v3$3;
+									}
+								}
+								return model.touches;
+							}(),
+							transition: $elm$core$Maybe$Nothing
+						}));
+			case 'TouchMoved':
+				var touches = msg.a;
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					function () {
+						var _v10 = model.touches;
+						switch (_v10.$) {
+							case 'OneFinger':
+								var before = _v10.a;
+								var _v11 = A2($gampleman$elm_visualization$Zoom$findAssociatedTouch, before, touches);
+								if (_v11.$ === 'Just') {
+									var after = _v11.a;
+									return _Utils_update(
+										model,
+										{
+											touchStarted: false,
+											touches: $gampleman$elm_visualization$Zoom$OneFinger(
+												_Utils_update(
+													before,
+													{position: after.position})),
+											transform: A3(
+												$gampleman$elm_visualization$Zoom$constrain,
+												model.extent,
+												model.translateExtent,
+												A3($gampleman$elm_visualization$Zoom$translate, after.position, before.previous, model.transform)),
+											transition: $elm$core$Maybe$Nothing
+										});
+								} else {
+									return model;
+								}
+							case 'TwoFingers':
+								var beforeTouch1 = _v10.a;
+								var beforeTouch2 = _v10.b;
+								var t = model.transform;
+								var before2 = beforeTouch2.previous;
+								var before1 = beforeTouch1.previous;
+								var distBefore = A2($gampleman$elm_visualization$Zoom$dist2, before1, before2);
+								var after2 = A2(
+									$elm$core$Maybe$withDefault,
+									beforeTouch2.position,
+									A2(
+										$elm$core$Maybe$map,
+										function ($) {
+											return $.position;
+										},
+										A2($gampleman$elm_visualization$Zoom$findAssociatedTouch, beforeTouch2, touches)));
+								var after1 = A2(
+									$elm$core$Maybe$withDefault,
+									beforeTouch1.position,
+									A2(
+										$elm$core$Maybe$map,
+										function ($) {
+											return $.position;
+										},
+										A2($gampleman$elm_visualization$Zoom$findAssociatedTouch, beforeTouch1, touches)));
+								var distAfter = A2($gampleman$elm_visualization$Zoom$dist2, after1, after2);
+								return _Utils_update(
+									model,
+									{
+										touchStarted: false,
+										touches: A2(
+											$gampleman$elm_visualization$Zoom$TwoFingers,
+											_Utils_update(
+												beforeTouch1,
+												{position: after1}),
+											_Utils_update(
+												beforeTouch2,
+												{position: after2})),
+										transform: A3(
+											$gampleman$elm_visualization$Zoom$constrain,
+											model.extent,
+											model.translateExtent,
+											A3(
+												$gampleman$elm_visualization$Zoom$translate,
+												A2($gampleman$elm_visualization$Zoom$midpoint, after1, after2),
+												A2($gampleman$elm_visualization$Zoom$midpoint, before1, before2),
+												A3(
+													$gampleman$elm_visualization$Zoom$scale,
+													model.scaleExtent,
+													$elm$core$Basics$sqrt(distAfter / distBefore),
+													t))),
+										transition: $elm$core$Maybe$Nothing
+									});
+							default:
+								return model;
+						}
+					}());
+			case 'TouchEnded':
+				var touches = msg.a;
+				return $gampleman$elm_visualization$Zoom$Zoom(
+					_Utils_update(
+						model,
+						{
+							touches: function () {
+								var _v12 = model.touches;
+								switch (_v12.$) {
+									case 'NoTouches':
+										return $gampleman$elm_visualization$Zoom$NoTouches;
+									case 'OneFinger':
+										var touch1 = _v12.a;
+										var _v13 = A2($gampleman$elm_visualization$Zoom$findAssociatedTouch, touch1, touches);
+										if (_v13.$ === 'Just') {
+											return $gampleman$elm_visualization$Zoom$NoTouches;
+										} else {
+											return model.touches;
+										}
+									default:
+										var before1 = _v12.a;
+										var before2 = _v12.b;
+										var _v14 = _Utils_Tuple2(
+											A2($gampleman$elm_visualization$Zoom$findAssociatedTouch, before1, touches),
+											A2($gampleman$elm_visualization$Zoom$findAssociatedTouch, before2, touches));
+										if (_v14.a.$ === 'Just') {
+											if (_v14.b.$ === 'Just') {
+												return $gampleman$elm_visualization$Zoom$NoTouches;
+											} else {
+												var _v15 = _v14.b;
+												return $gampleman$elm_visualization$Zoom$OneFinger(before2);
+											}
+										} else {
+											if (_v14.b.$ === 'Just') {
+												var _v16 = _v14.a;
+												return $gampleman$elm_visualization$Zoom$OneFinger(before1);
+											} else {
+												var _v17 = _v14.a;
+												var _v18 = _v14.b;
+												return model.touches;
+											}
+										}
+								}
+							}()
+						}));
+			default:
+				var delta = msg.a;
+				var _v19 = model.transition;
+				if (_v19.$ === 'Just') {
+					var transition = _v19.a;
+					var duration = transition.duration;
+					var elapsed = transition.elapsed;
+					var interpolation = transition.interpolation;
+					return $gampleman$elm_visualization$Zoom$Zoom(
+						_Utils_update(
+							model,
+							{
+								transform: interpolation(
+									$gampleman$elm_visualization$Zoom$easingInOutCubic(
+										A3($elm$core$Basics$clamp, 0, 1, (elapsed + delta) / duration))),
+								transition: (_Utils_cmp(elapsed + delta, duration) > -1) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
+									_Utils_update(
+										transition,
+										{elapsed: elapsed + delta}))
+							}));
+				} else {
+					return $gampleman$elm_visualization$Zoom$Zoom(model);
+				}
+		}
+	});
+var $author$project$MyCharts$Chart$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'CurveMsg':
+				var curveID = msg.a;
+				var curveMsg = msg.b;
+				var curves = function ($) {
+					return $.curves;
+				}(model);
+				var newCurves = A2(
+					$elm$core$List$map,
+					function (curve) {
+						return _Utils_eq(curve.curveID, curveID) ? A2($author$project$MyCharts$Chart$Curve$update, curveMsg, curve) : curve;
+					},
+					curves);
+				return _Utils_update(
+					model,
+					{curves: newCurves});
+			case 'AddCurve':
+				var curves = function ($) {
+					return $.curves;
+				}(model);
+				var maybeLastCurve = $author$project$MyCharts$Chart$lastElem(curves);
+				var newCurve = $author$project$MyCharts$Chart$Curve$init(maybeLastCurve);
+				var newCurves = _Utils_ap(
+					curves,
+					A2($elm$core$List$cons, newCurve, _List_Nil));
+				return _Utils_update(
+					model,
+					{curves: newCurves});
+			case 'RemoveCurve':
+				var curveID = msg.a;
+				var curves = function ($) {
+					return $.curves;
+				}(model);
+				var newCurves = A2(
+					$elm$core$List$filter,
+					function (c) {
+						return _Utils_eq(
+							function ($) {
+								return $.curveID;
+							}(c),
+							curveID) ? false : true;
+					},
+					curves);
+				return _Utils_update(
+					model,
+					{curves: newCurves});
+			case 'ToggleEditCurve':
+				var editingCurves = function ($) {
+					return $.editingCurves;
+				}(model);
+				return _Utils_update(
+					model,
+					{editingCurves: !editingCurves});
+			case 'ZoomMsg':
+				var zoomMsg = msg.a;
+				var zoomModel = function ($) {
+					return $.zoomModel;
+				}(model);
+				var newZoomModel = A2($author$project$MyCharts$Chart$Zoom$update, zoomMsg, zoomModel);
+				return _Utils_update(
+					model,
+					{zoomModel: newZoomModel});
+			default:
+				var evZoomMsg = msg.a;
+				return _Utils_update(
+					model,
+					{
+						zoom: A2($gampleman$elm_visualization$Zoom$update, evZoomMsg, model.zoom)
+					});
+		}
+	});
+var $author$project$MyCharts$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'AddChart':
+				var chartID = msg.a;
+				var newChartParam = $author$project$MyCharts$Chart$addModel(chartID);
+				var newChartsParam = A2($elm$core$List$cons, newChartParam, model);
+				return A2(
+					$elm$core$List$sortBy,
+					function (cp) {
+						return cp.chartID;
+					},
+					newChartsParam);
+			case 'RemoveChart':
+				var chartID = msg.a;
+				return A2(
+					$elm$core$List$filter,
+					function (chartModel) {
+						return !_Utils_eq(
+							function ($) {
+								return $.chartID;
+							}(chartModel),
+							chartID);
+					},
+					model);
+			default:
+				var chartID = msg.a;
+				var chartMsg = msg.b;
+				return A2(
+					$elm$core$List$map,
+					function (chartModel) {
+						return _Utils_eq(chartModel.chartID, chartID) ? A2($author$project$MyCharts$Chart$update, chartMsg, chartModel) : chartModel;
+					},
+					model);
+		}
+	});
+var $author$project$Reference$Step1$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'Step1IVal':
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var iVal = function ($) {
+					return $.iVal;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, iVal, maybeVal);
+				return _Utils_update(
+					model,
+					{iVal: val, iValStr: valueStr});
+			case 'Step1TStep':
+				var valueStr = msg.a;
+				var tStep = function ($) {
+					return $.tStep;
+				}(model);
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var val = A2($elm$core$Maybe$withDefault, tStep, maybeVal);
+				return _Utils_update(
+					model,
+					{tStep: val, tStepStr: valueStr});
+			default:
+				var valueStr = msg.a;
+				var maybeVal = $elm$core$String$toFloat(valueStr);
+				var fVal = function ($) {
+					return $.fVal;
+				}(model);
+				var val = A2($elm$core$Maybe$withDefault, fVal, maybeVal);
+				return _Utils_update(
+					model,
+					{fVal: val, fValStr: valueStr});
+		}
+	});
+var $author$project$Reference$update = F2(
+	function (msg, model) {
+		var step1Msg = msg.a;
+		var step1Model = model.a;
+		return $author$project$Reference$Step1Model(
+			A2($author$project$Reference$Step1$update, step1Msg, step1Model));
+	});
+var $author$project$EdoSolver$updateEdoIStates = F2(
+	function (msg, edoIStates) {
+		if (msg.$ === 'Tini') {
+			var valueStr = msg.a;
+			return _Utils_update(
+				edoIStates,
+				{tiniStr: valueStr});
+		} else {
+			var valueStr = msg.a;
+			return _Utils_update(
+				edoIStates,
+				{tfimStr: valueStr});
+		}
 	});
 var $author$project$EdoSolver$updateEdoParam = F2(
 	function (edoParam, edoIStates) {
@@ -6351,24 +7830,24 @@ var $author$project$EdoSolver$updateEdoParam = F2(
 			return edoParam;
 		}
 	});
-var $author$project$Models$updateLevelParamFromXs = F2(
-	function (xs, levelParam) {
+var $author$project$ModelSystem$Level$updateModelFromXs = F2(
+	function (xs, model) {
 		var h0 = function ($) {
 			return $.h0;
-		}(levelParam);
+		}(model);
 		var newH0 = A2(
 			$elm$core$Maybe$withDefault,
 			h0,
 			$elm$core$List$head(xs));
 		return _Utils_update(
-			levelParam,
+			model,
 			{h0: newH0});
 	});
-var $author$project$Models$updateModelParamFromXs = F2(
-	function (xs, modelParam) {
-		var levelParam = modelParam.a;
-		return $author$project$Models$LevelP(
-			A2($author$project$Models$updateLevelParamFromXs, xs, levelParam));
+var $author$project$ModelSystem$updateModelFromXs = F2(
+	function (xs, model) {
+		var levelModel = model.a;
+		return $author$project$ModelSystem$LevelModel(
+			A2($author$project$ModelSystem$Level$updateModelFromXs, xs, levelModel));
 	});
 var $author$project$Main$updatingBigModelFromModel = F2(
 	function (bigModel, newModel) {
@@ -6408,129 +7887,35 @@ var $author$project$DataConvert$xsFromDatum = function (chartDatum) {
 				]);
 	}
 };
-var $author$project$Models$xsFromLevelParam = function (levelParam) {
+var $author$project$ModelSystem$Level$xsFromModel = function (model) {
 	return _List_fromArray(
 		[
 			function ($) {
 			return $.h0;
-		}(levelParam)
+		}(model)
 		]);
 };
-var $author$project$Models$xsFromModelParam = function (modelParam) {
-	var levelParam = modelParam.a;
-	return $author$project$Models$xsFromLevelParam(levelParam);
+var $author$project$ModelSystem$xsFromModel = function (model) {
+	var levelModel = model.a;
+	return $author$project$ModelSystem$Level$xsFromModel(levelModel);
 };
 var $author$project$Main$update = F2(
 	function (msg, bigModel) {
+		var model = $author$project$Main$modelFromBigModel(bigModel);
 		switch (msg.$) {
-			case 'RunEdo':
-				var newModel = $author$project$Main$modelFromBigModel(
-					A2($author$project$Main$update, $author$project$Main$UpdateEdoParam, bigModel).a);
-				var refParam = function ($) {
-					return $.refParam;
-				}(newModel);
-				var refFunc = $author$project$Reference$refFunctionFromRefParam(refParam);
-				var modelParam = function ($) {
-					return $.modelParam;
-				}(newModel);
-				var edoParam = function ($) {
-					return $.edoParam;
-				}(newModel);
-				var controlParam = function ($) {
-					return $.controlParam;
-				}(newModel);
-				var controller = $author$project$Controller$controllerFromControlParam(controlParam);
-				var controlMem = _List_Nil;
-				var newEdoParam = _Utils_update(
-					edoParam,
-					{controlMemory: controlMem});
-				var data = A4($author$project$Models$runEdoModel, modelParam, newEdoParam, refFunc, controller).a;
+			case 'EdoMsg':
+				var edoMsg = msg.a;
+				var edoIStates = function ($) {
+					return $.edoIStates;
+				}(model);
+				var edoIStatesNew = A2($author$project$EdoSolver$updateEdoIStates, edoMsg, edoIStates);
+				var newModel = _Utils_update(
+					model,
+					{edoIStates: edoIStatesNew});
 				return _Utils_Tuple2(
-					$author$project$Main$SolvingEdo(
-						_Utils_update(
-							newModel,
-							{chartData: data, edoParam: newEdoParam})),
+					A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
 					$elm$core$Platform$Cmd$none);
-			case 'ChangeInteract':
-				var interact = msg.a;
-				var model = $author$project$Main$modelFromBigModel(bigModel);
-				switch (interact.$) {
-					case 'Edo':
-						var edoInteract = interact.a;
-						var edoIStates = function ($) {
-							return $.edoIStates;
-						}(model);
-						var edoIStatesNew = A2($author$project$EdoSolver$changeEdoIStates, edoIStates, edoInteract);
-						var newModel = _Utils_update(
-							model,
-							{edoIStates: edoIStatesNew});
-						return _Utils_Tuple2(
-							A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
-							$elm$core$Platform$Cmd$none);
-					case 'Models':
-						var modelInteract = interact.a;
-						var modelParam = function ($) {
-							return $.modelParam;
-						}(model);
-						var modelParamNew = A2($author$project$Models$changeModelParam, modelParam, modelInteract);
-						var newModel = _Utils_update(
-							model,
-							{modelParam: modelParamNew});
-						return _Utils_Tuple2(
-							A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
-							$elm$core$Platform$Cmd$none);
-					case 'Control':
-						var controlInteract = interact.a;
-						var controlParam = function ($) {
-							return $.controlParam;
-						}(model);
-						var controlParamNew = A2($author$project$Controller$changeControlParam, controlParam, controlInteract);
-						var newModel = _Utils_update(
-							model,
-							{controlParam: controlParamNew});
-						return _Utils_Tuple2(
-							A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
-							$elm$core$Platform$Cmd$none);
-					case 'Ref':
-						var refInteract = interact.a;
-						var refParam = function ($) {
-							return $.refParam;
-						}(model);
-						var refParamNew = A2($author$project$Reference$changeRefParam, refParam, refInteract);
-						var newModel = _Utils_update(
-							model,
-							{refParam: refParamNew});
-						return _Utils_Tuple2(
-							A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
-							$elm$core$Platform$Cmd$none);
-					case 'MChart':
-						var chartID = interact.a;
-						var chartInteract = interact.b;
-						var chartsParam = function ($) {
-							return $.chartsParam;
-						}(model);
-						var newChartsParam = A3($author$project$MyChart$chartIndividualInteractAction, chartID, chartsParam, chartInteract);
-						var newModel = _Utils_update(
-							model,
-							{chartsParam: newChartsParam});
-						return _Utils_Tuple2(
-							A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
-							$elm$core$Platform$Cmd$none);
-					default:
-						var chartsInteract = interact.a;
-						var chartsParam = function ($) {
-							return $.chartsParam;
-						}(model);
-						var newChartsParam = A2($author$project$MyChart$chartsInteractAction, chartsParam, chartsInteract);
-						var newModel = _Utils_update(
-							model,
-							{chartsParam: newChartsParam});
-						return _Utils_Tuple2(
-							A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
-							$elm$core$Platform$Cmd$none);
-				}
 			case 'UpdateEdoParam':
-				var model = $author$project$Main$modelFromBigModel(bigModel);
 				var edoParam = function ($) {
 					return $.edoParam;
 				}(model);
@@ -6544,79 +7929,89 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
 					$elm$core$Platform$Cmd$none);
-			case 'Tick':
-				var dTime = msg.a;
-				if (bigModel.$ === 'SolvingEdo') {
-					return _Utils_Tuple2(bigModel, $elm$core$Platform$Cmd$none);
-				} else {
-					var model = bigModel.a;
-					var animatingEdoParam = bigModel.b;
-					var xs = bigModel.c;
-					var tempo = function ($) {
-						return $.tempo;
-					}(animatingEdoParam);
-					var modelEdoParam = function ($) {
-						return $.edoParam;
-					}(model);
-					var tfimAnimation = function ($) {
-						return $.tfim;
-					}(modelEdoParam);
-					if (A2($author$project$EdoSolver$checkEndTimeEps, tempo, tfimAnimation)) {
-						return _Utils_Tuple2(
-							$author$project$Main$SolvingEdo(model),
-							$elm$core$Platform$Cmd$none);
-					} else {
-						var tfimStep = function ($) {
-							return $.tfim;
-						}(animatingEdoParam);
-						var refParam = function ($) {
-							return $.refParam;
-						}(model);
-						var refFunc = $author$project$Reference$refFunctionFromRefParam(refParam);
-						var modelParam = function ($) {
-							return $.modelParam;
-						}(model);
-						var stateUpdatedModelParam = A2($author$project$Models$updateModelParamFromXs, xs, modelParam);
-						var modelData = function ($) {
-							return $.chartData;
-						}(model);
-						var dTimeSec = dTime / 1000.0;
-						var newTfimStep = A2($elm$core$Basics$min, tfimAnimation, tfimStep + dTimeSec);
-						var controlParam = function ($) {
-							return $.controlParam;
-						}(model);
-						var controller = $author$project$Controller$controllerFromControlParam(controlParam);
-						var animatingEdoParam2 = _Utils_update(
-							animatingEdoParam,
-							{tfim: newTfimStep});
-						var _v3 = A4($author$project$Models$runEdoModel, stateUpdatedModelParam, animatingEdoParam2, refFunc, controller);
-						var data = _v3.a;
-						var newAnimationEdoParam = _v3.b;
-						var newData = _Utils_ap(data, modelData);
-						var newModel = _Utils_update(
-							model,
-							{chartData: newData});
-						var newXs = function () {
-							if (data.b) {
-								var d = data.a;
-								var ds = data.b;
-								return $author$project$DataConvert$xsFromDatum(d);
-							} else {
-								return _List_Nil;
-							}
-						}();
-						return _Utils_Tuple2(
-							A3($author$project$Main$Animation, newModel, newAnimationEdoParam, newXs),
-							$elm$core$Platform$Cmd$none);
-					}
-				}
-			default:
+			case 'ModelSystemMsg':
+				var modelSystemMsg = msg.a;
+				var modelSystemModel = function ($) {
+					return $.modelSystemModel;
+				}(model);
+				var modelSystemModelNew = A2($author$project$ModelSystem$update, modelSystemMsg, modelSystemModel);
+				var newModel = _Utils_update(
+					model,
+					{modelSystemModel: modelSystemModelNew});
+				return _Utils_Tuple2(
+					A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
+					$elm$core$Platform$Cmd$none);
+			case 'ControlMsg':
+				var controlMsg = msg.a;
+				var controlModel = function ($) {
+					return $.controlModel;
+				}(model);
+				var controlModelNew = A2($author$project$Controller$update, controlMsg, controlModel);
+				var newModel = _Utils_update(
+					model,
+					{controlModel: controlModelNew});
+				return _Utils_Tuple2(
+					A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
+					$elm$core$Platform$Cmd$none);
+			case 'RefMsg':
+				var refMsg = msg.a;
+				var refModel = function ($) {
+					return $.refModel;
+				}(model);
+				var refModelNew = A2($author$project$Reference$update, refMsg, refModel);
+				var newModel = _Utils_update(
+					model,
+					{refModel: refModelNew});
+				return _Utils_Tuple2(
+					A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
+					$elm$core$Platform$Cmd$none);
+			case 'MyChartsMsg':
+				var chartsMsg = msg.a;
+				var chartsModel = function ($) {
+					return $.chartsModel;
+				}(model);
+				var newChartsModel = A2($author$project$MyCharts$update, chartsMsg, chartsModel);
+				var newModel = _Utils_update(
+					model,
+					{chartsModel: newChartsModel});
+				return _Utils_Tuple2(
+					A2($author$project$Main$updatingBigModelFromModel, bigModel, newModel),
+					$elm$core$Platform$Cmd$none);
+			case 'RunEdo':
+				var newModel = $author$project$Main$modelFromBigModel(
+					A2($author$project$Main$update, $author$project$Main$UpdateEdoParam, bigModel).a);
+				var refModel = function ($) {
+					return $.refModel;
+				}(newModel);
+				var refFunc = $author$project$Reference$refFunctionFromModel(refModel);
+				var modelSystemModel = function ($) {
+					return $.modelSystemModel;
+				}(newModel);
+				var edoParam = function ($) {
+					return $.edoParam;
+				}(newModel);
+				var controlModel = function ($) {
+					return $.controlModel;
+				}(newModel);
+				var controller = $author$project$Controller$controllerFromModel(controlModel);
+				var controlMem = _List_Nil;
+				var newEdoParam = _Utils_update(
+					edoParam,
+					{controlMemory: controlMem});
+				var data = A4($author$project$ModelSystem$runEdo, modelSystemModel, newEdoParam, refFunc, controller).a;
+				return _Utils_Tuple2(
+					$author$project$Main$SolvingEdo(
+						_Utils_update(
+							newModel,
+							{chartData: data, edoParam: newEdoParam})),
+					$elm$core$Platform$Cmd$none);
+			case 'RunAnimation':
 				var updatedModel = $author$project$Main$modelFromBigModel(
 					A2($author$project$Main$update, $author$project$Main$UpdateEdoParam, bigModel).a);
-				var modelParam = function ($) {
-					return $.modelParam;
+				var modelSystemModel = function ($) {
+					return $.modelSystemModel;
 				}(updatedModel);
-				var xs = $author$project$Models$xsFromModelParam(modelParam);
+				var xs = $author$project$ModelSystem$xsFromModel(modelSystemModel);
 				var edoParam = function ($) {
 					return $.edoParam;
 				}(updatedModel);
@@ -6634,29 +8029,85 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					A3($author$project$Main$Animation, newModel, animatingEdoParam, xs),
 					$elm$core$Platform$Cmd$none);
+			default:
+				var dTime = msg.a;
+				if (bigModel.$ === 'SolvingEdo') {
+					return _Utils_Tuple2(bigModel, $elm$core$Platform$Cmd$none);
+				} else {
+					var modelAnimation = bigModel.a;
+					var animatingEdoParam = bigModel.b;
+					var xs = bigModel.c;
+					var tempo = function ($) {
+						return $.tempo;
+					}(animatingEdoParam);
+					var modelEdoParam = function ($) {
+						return $.edoParam;
+					}(modelAnimation);
+					var tfimAnimation = function ($) {
+						return $.tfim;
+					}(modelEdoParam);
+					if (A2($author$project$EdoSolver$checkEndTimeEps, tempo, tfimAnimation)) {
+						return _Utils_Tuple2(
+							$author$project$Main$SolvingEdo(modelAnimation),
+							$elm$core$Platform$Cmd$none);
+					} else {
+						var tfimStep = function ($) {
+							return $.tfim;
+						}(animatingEdoParam);
+						var refModel = function ($) {
+							return $.refModel;
+						}(modelAnimation);
+						var refFunc = $author$project$Reference$refFunctionFromModel(refModel);
+						var modelSystemModel = function ($) {
+							return $.modelSystemModel;
+						}(modelAnimation);
+						var stateUpdatedModel = A2($author$project$ModelSystem$updateModelFromXs, xs, modelSystemModel);
+						var modelData = function ($) {
+							return $.chartData;
+						}(modelAnimation);
+						var dTimeSec = dTime / 1000.0;
+						var newTfimStep = A2($elm$core$Basics$min, tfimAnimation, tfimStep + dTimeSec);
+						var controlModel = function ($) {
+							return $.controlModel;
+						}(modelAnimation);
+						var controller = $author$project$Controller$controllerFromModel(controlModel);
+						var animatingEdoParam2 = _Utils_update(
+							animatingEdoParam,
+							{tfim: newTfimStep});
+						var _v2 = A4($author$project$ModelSystem$runEdo, stateUpdatedModel, animatingEdoParam2, refFunc, controller);
+						var data = _v2.a;
+						var newAnimationEdoParam = _v2.b;
+						var newData = _Utils_ap(data, modelData);
+						var newModel = _Utils_update(
+							modelAnimation,
+							{chartData: newData});
+						var newXs = function () {
+							if (data.b) {
+								var d = data.a;
+								var ds = data.b;
+								return $author$project$DataConvert$xsFromDatum(d);
+							} else {
+								return _List_Nil;
+							}
+						}();
+						return _Utils_Tuple2(
+							A3($author$project$Main$Animation, newModel, newAnimationEdoParam, newXs),
+							$elm$core$Platform$Cmd$none);
+					}
+				}
 		}
 	});
-var $author$project$Main$ChangeInteract = function (a) {
-	return {$: 'ChangeInteract', a: a};
+var $author$project$Main$ControlMsg = function (a) {
+	return {$: 'ControlMsg', a: a};
 };
-var $author$project$Main$Control = function (a) {
-	return {$: 'Control', a: a};
+var $author$project$Main$EdoMsg = function (a) {
+	return {$: 'EdoMsg', a: a};
 };
-var $author$project$Main$Edo = function (a) {
-	return {$: 'Edo', a: a};
+var $author$project$Main$ModelSystemMsg = function (a) {
+	return {$: 'ModelSystemMsg', a: a};
 };
-var $author$project$Main$MChart = F2(
-	function (a, b) {
-		return {$: 'MChart', a: a, b: b};
-	});
-var $author$project$Main$MCharts = function (a) {
-	return {$: 'MCharts', a: a};
-};
-var $author$project$Main$Models = function (a) {
-	return {$: 'Models', a: a};
-};
-var $author$project$Main$Ref = function (a) {
-	return {$: 'Ref', a: a};
+var $author$project$Main$RefMsg = function (a) {
+	return {$: 'RefMsg', a: a};
 };
 var $author$project$Main$RunAnimation = {$: 'RunAnimation'};
 var $author$project$Main$RunEdo = {$: 'RunEdo'};
@@ -6822,8 +8273,6 @@ var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$core$Set$Set_elm_builtin = function (a) {
 	return {$: 'Set_elm_builtin', a: a};
 };
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$core$Set$empty = $elm$core$Set$Set_elm_builtin($elm$core$Dict$empty);
 var $mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 	switch (x.$) {
@@ -6844,10 +8293,6 @@ var $mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 			var len = x.b;
 			return 'max' + ($elm$core$String$fromInt(max) + $mdgriffith$elm_ui$Internal$Model$lengthClassName(len));
 	}
-};
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
 };
 var $elm$core$Basics$round = _Basics_round;
 var $mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
@@ -6974,151 +8419,11 @@ var $mdgriffith$elm_ui$Internal$Model$getStyleName = function (style) {
 				$mdgriffith$elm_ui$Internal$Model$transformClass(x));
 	}
 };
-var $elm$core$Dict$Black = {$: 'Black'};
-var $elm$core$Dict$RBNode_elm_builtin = F5(
-	function (a, b, c, d, e) {
-		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
-	});
-var $elm$core$Dict$Red = {$: 'Red'};
-var $elm$core$Dict$balance = F5(
-	function (color, key, value, left, right) {
-		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
-			var _v1 = right.a;
-			var rK = right.b;
-			var rV = right.c;
-			var rLeft = right.d;
-			var rRight = right.e;
-			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
-				var _v3 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var lLeft = left.d;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Red,
-					key,
-					value,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					color,
-					rK,
-					rV,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, left, rLeft),
-					rRight);
-			}
-		} else {
-			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
-				var _v5 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var _v6 = left.d;
-				var _v7 = _v6.a;
-				var llK = _v6.b;
-				var llV = _v6.c;
-				var llLeft = _v6.d;
-				var llRight = _v6.e;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Red,
-					lK,
-					lV,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, lRight, right));
-			} else {
-				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
-			}
-		}
-	});
-var $elm$core$Basics$compare = _Utils_compare;
-var $elm$core$Dict$insertHelp = F3(
-	function (key, value, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
-		} else {
-			var nColor = dict.a;
-			var nKey = dict.b;
-			var nValue = dict.c;
-			var nLeft = dict.d;
-			var nRight = dict.e;
-			var _v1 = A2($elm$core$Basics$compare, key, nKey);
-			switch (_v1.$) {
-				case 'LT':
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						A3($elm$core$Dict$insertHelp, key, value, nLeft),
-						nRight);
-				case 'EQ':
-					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
-				default:
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						nLeft,
-						A3($elm$core$Dict$insertHelp, key, value, nRight));
-			}
-		}
-	});
-var $elm$core$Dict$insert = F3(
-	function (key, value, dict) {
-		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
-		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
-			var _v1 = _v0.a;
-			var k = _v0.b;
-			var v = _v0.c;
-			var l = _v0.d;
-			var r = _v0.e;
-			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
-		} else {
-			var x = _v0;
-			return x;
-		}
-	});
 var $elm$core$Set$insert = F2(
 	function (key, _v0) {
 		var dict = _v0.a;
 		return $elm$core$Set$Set_elm_builtin(
 			A3($elm$core$Dict$insert, key, _Utils_Tuple0, dict));
-	});
-var $elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-				switch (_v1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return $elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
 	});
 var $elm$core$Dict$member = F2(
 	function (key, dict) {
@@ -7154,7 +8459,6 @@ var $mdgriffith$elm_ui$Internal$Model$Style = F2(
 var $mdgriffith$elm_ui$Internal$Style$dot = function (c) {
 	return '.' + c;
 };
-var $elm$core$String$fromFloat = _String_fromNumber;
 var $mdgriffith$elm_ui$Internal$Model$formatColor = function (_v0) {
 	var red = _v0.a;
 	var green = _v0.b;
@@ -7187,16 +8491,6 @@ var $mdgriffith$elm_ui$Internal$Model$formatBoxShadow = function (shadow) {
 					$mdgriffith$elm_ui$Internal$Model$formatColor(shadow.color))
 				])));
 };
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $elm$core$Tuple$mapFirst = F2(
 	function (func, _v0) {
 		var x = _v0.a;
@@ -12293,7 +13587,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 var $mdgriffith$elm_ui$Element$Events$onClick = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Events$onClick);
 var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $elm$json$Json$Decode$fail = _Json_fail;
-var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
 	return {$: 'MayPreventDefault', a: a};
 };
@@ -12568,13 +13861,13 @@ var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
 var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
 var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
-var $author$project$MyChart$fillWithMaybe = F2(
-	function (chartsParam, index) {
-		if (!chartsParam.b) {
+var $author$project$MyCharts$fillWithMaybe = F2(
+	function (model, index) {
+		if (!model.b) {
 			return _List_Nil;
 		} else {
-			var x = chartsParam.a;
-			var xs = chartsParam.b;
+			var x = model.a;
+			var xs = model.b;
 			var newIndex = index + 1;
 			var chartID = function ($) {
 				return $.chartID;
@@ -12582,13 +13875,13 @@ var $author$project$MyChart$fillWithMaybe = F2(
 			return _Utils_eq(index, chartID) ? A2(
 				$elm$core$List$cons,
 				$elm$core$Maybe$Just(x),
-				A2($author$project$MyChart$fillWithMaybe, xs, newIndex)) : ((_Utils_cmp(index, chartID) > 0) ? _List_Nil : A2(
+				A2($author$project$MyCharts$fillWithMaybe, xs, newIndex)) : ((_Utils_cmp(index, chartID) > 0) ? _List_Nil : A2(
 				$elm$core$List$cons,
 				$elm$core$Maybe$Nothing,
-				A2($author$project$MyChart$fillWithMaybe, chartsParam, newIndex)));
+				A2($author$project$MyCharts$fillWithMaybe, model, newIndex)));
 		}
 	});
-var $author$project$MyChart$AddChart = function (a) {
+var $author$project$MyCharts$AddChart = function (a) {
 	return {$: 'AddChart', a: a};
 };
 var $mdgriffith$elm_ui$Internal$Flag$fontAlignment = $mdgriffith$elm_ui$Internal$Flag$flag(12);
@@ -12604,8 +13897,6 @@ var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
 			'border-color',
 			clr));
 };
-var $author$project$UI$elementHeight = 400;
-var $author$project$UI$elementWidth = 400;
 var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
 	return {$: 'Px', a: a};
 };
@@ -12682,9 +13973,9 @@ var $author$project$UI$addNewElementSpace = function (msg) {
 				onPress: $elm$core$Maybe$Just(msg)
 			}));
 };
-var $author$project$MyChart$ToggleEditCurve = {$: 'ToggleEditCurve'};
-var $author$project$MyChart$buttonToggleChart = F2(
-	function (editingCurves, chartInteractToMsg) {
+var $author$project$MyCharts$Chart$ToggleEditCurve = {$: 'ToggleEditCurve'};
+var $author$project$MyCharts$buttonToggleChart = F2(
+	function (editingCurves, chartMsgToMainMsg) {
 		var text = function () {
 			if (editingCurves) {
 				return 'Show Charts';
@@ -12702,8 +13993,106 @@ var $author$project$MyChart$buttonToggleChart = F2(
 					_List_Nil,
 					$mdgriffith$elm_ui$Element$text(text)),
 				onPress: $elm$core$Maybe$Just(
-					chartInteractToMsg($author$project$MyChart$ToggleEditCurve))
+					chartMsgToMainMsg($author$project$MyCharts$Chart$ToggleEditCurve))
 			});
+	});
+var $mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
+var $mdgriffith$elm_ui$Internal$Model$asColumn = $mdgriffith$elm_ui$Internal$Model$AsColumn;
+var $mdgriffith$elm_ui$Element$column = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asColumn,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var $mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
+	return {$: 'Fill', a: a};
+};
+var $mdgriffith$elm_ui$Element$fill = $mdgriffith$elm_ui$Internal$Model$Fill(1);
+var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
+var $mdgriffith$elm_ui$Element$html = $mdgriffith$elm_ui$Internal$Model$unstyled;
+var $author$project$MyCharts$RemoveChart = function (a) {
+	return {$: 'RemoveChart', a: a};
+};
+var $author$project$MyCharts$removeChartButton = F2(
+	function (chartID, msgToMainMsg) {
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$button,
+			_List_fromArray(
+				[$mdgriffith$elm_ui$Element$alignLeft]),
+			{
+				label: A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_Nil,
+					$mdgriffith$elm_ui$Element$text('Remove Chart')),
+				onPress: $elm$core$Maybe$Just(
+					msgToMainMsg(
+						$author$project$MyCharts$RemoveChart(chartID)))
+			});
+	});
+var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
+var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
+var $mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asRow,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var $mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
+	function (a, b, c) {
+		return {$: 'SpacingStyle', a: a, b: b, c: c};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$spacing = $mdgriffith$elm_ui$Internal$Flag$flag(3);
+var $mdgriffith$elm_ui$Internal$Model$spacingName = F2(
+	function (x, y) {
+		return 'spacing-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y)));
+	});
+var $mdgriffith$elm_ui$Element$spacing = function (x) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$spacing,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$SpacingStyle,
+			A2($mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
+			x,
+			x));
+};
+var $terezka$elm_charts$Internal$Svg$Start = {$: 'Start'};
+var $terezka$elm_charts$Chart$Attributes$alignLeft = function (config) {
+	return _Utils_update(
+		config,
+		{
+			anchor: $elm$core$Maybe$Just($terezka$elm_charts$Internal$Svg$Start)
+		});
+};
+var $terezka$elm_charts$Chart$Attributes$attrs = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{attrs: v});
 	});
 var $terezka$elm_charts$Internal$Svg$Event = F2(
 	function (name, handler) {
@@ -12718,7 +14107,6 @@ var $terezka$elm_charts$Internal$Helpers$apply = F2(
 		return A3($elm$core$List$foldl, apply_, _default, funcs);
 	});
 var $elm$json$Json$Decode$map3 = _Json_map3;
-var $elm$json$Json$Decode$float = _Json_decodeFloat;
 var $debois$elm_dom$DOM$offsetHeight = A2($elm$json$Json$Decode$field, 'offsetHeight', $elm$json$Json$Decode$float);
 var $debois$elm_dom$DOM$offsetWidth = A2($elm$json$Json$Decode$field, 'offsetWidth', $elm$json$Json$Decode$float);
 var $elm$json$Json$Decode$map4 = _Json_map4;
@@ -13335,10 +14723,6 @@ var $elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
 var $elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var $elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
 var $elm$svg$Svg$g = $elm$svg$Svg$trustedNode('g');
-var $elm$core$Basics$clamp = F3(
-	function (low, high, number) {
-		return (_Utils_cmp(number, low) < 0) ? low : ((_Utils_cmp(number, high) > 0) ? high : number);
-	});
 var $terezka$elm_charts$Internal$Svg$isWithinPlane = F3(
 	function (plane, x, y) {
 		return _Utils_eq(
@@ -13620,11 +15004,6 @@ var $terezka$elm_charts$Internal$Commands$Move = F2(
 		return {$: 'Move', a: a, b: b};
 	});
 var $elm$core$Basics$cos = _Basics_cos;
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
 var $terezka$elm_charts$Internal$Commands$joinCommands = function (commands) {
 	return A2($elm$core$String$join, ' ', commands);
 };
@@ -14761,16 +16140,6 @@ var $author$project$DataConvert$funcMaybeToMaybeFunc = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $author$project$DataConvert$funcMaybeToMaybeFunc2 = F2(
-	function (data, func) {
-		if (data.b) {
-			var x = data.a;
-			var xs = data.b;
-			return A2($author$project$DataConvert$funcMaybeToMaybeFunc, x, func);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $terezka$elm_charts$Internal$Svg$Linear = {$: 'Linear'};
 var $terezka$elm_charts$Chart$Attributes$linear = function (config) {
 	return _Utils_update(
@@ -14813,6 +16182,90 @@ var $terezka$elm_charts$Chart$interpolated = F2(
 				_List_fromArray(
 					[$terezka$elm_charts$Chart$Attributes$linear]),
 				inter));
+	});
+var $terezka$elm_charts$Internal$Property$Stacked = function (a) {
+	return {$: 'Stacked', a: a};
+};
+var $terezka$elm_charts$Internal$Property$meta = F2(
+	function (value, prop) {
+		if (prop.$ === 'Property') {
+			var con = prop.a;
+			return $terezka$elm_charts$Internal$Property$Property(
+				_Utils_update(
+					con,
+					{
+						meta: $elm$core$Maybe$Just(value)
+					}));
+		} else {
+			var cons = prop.a;
+			return $terezka$elm_charts$Internal$Property$Stacked(
+				A2(
+					$elm$core$List$map,
+					function (con) {
+						return _Utils_update(
+							con,
+							{
+								meta: $elm$core$Maybe$Just(value)
+							});
+					},
+					cons));
+		}
+	});
+var $terezka$elm_charts$Chart$named = function (name) {
+	return $terezka$elm_charts$Internal$Property$meta(name);
+};
+var $author$project$MyCharts$Chart$Curve$optionToNameCurve = F2(
+	function (chartDatum, optStr) {
+		switch (chartDatum.$) {
+			case 'TS1':
+				var datum = chartDatum.a;
+				switch (optStr) {
+					case 't':
+						return 't';
+					case 'x1':
+						return 'x';
+					default:
+						return 'erro';
+				}
+			case 'TS1E1R1U1':
+				var datum = chartDatum.a;
+				switch (optStr) {
+					case 't':
+						return 't';
+					case 'x1':
+						return 'x';
+					case 'e1':
+						return 'e';
+					case 'r1':
+						return 'r';
+					case 'u1':
+						return 'u';
+					default:
+						return 'erro';
+				}
+			default:
+				var datum = chartDatum.a;
+				switch (optStr) {
+					case 't':
+						return 't';
+					case 'x1':
+						return 'x';
+					case 'e1':
+						return 'e';
+					case 'r1':
+						return 'r';
+					case 'u1':
+						return 'u';
+					case 'u2':
+						return 'up';
+					case 'u3':
+						return 'ui';
+					case 'u4':
+						return 'ud';
+					default:
+						return 'erro';
+				}
+		}
 	});
 var $terezka$elm_charts$Chart$Indexed = function (a) {
 	return {$: 'Indexed', a: a};
@@ -14964,18 +16417,6 @@ var $terezka$elm_charts$Internal$Helpers$green = '#71c614';
 var $terezka$elm_charts$Internal$Helpers$orange = '#FF8400';
 var $terezka$elm_charts$Internal$Helpers$purple = '#7b4dff';
 var $terezka$elm_charts$Internal$Helpers$red = '#F5325B';
-var $elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		$elm$core$List$foldl,
-		F2(
-			function (_v0, dict) {
-				var key = _v0.a;
-				var value = _v0.b;
-				return A3($elm$core$Dict$insert, key, value, dict);
-			}),
-		$elm$core$Dict$empty,
-		assocs);
-};
 var $elm$core$Tuple$pair = F2(
 	function (a, b) {
 		return _Utils_Tuple2(a, b);
@@ -15067,10 +16508,6 @@ var $terezka$elm_charts$Internal$Legend$toDotLegends = F2(
 var $terezka$elm_charts$Internal$Item$Dot = function (a) {
 	return {$: 'Dot', a: a};
 };
-var $elm$core$Basics$always = F2(
-	function (a, _v0) {
-		return a;
-	});
 var $terezka$elm_charts$Internal$Svg$clipperStyle = F2(
 	function (plane, limits) {
 		var topCut = ((plane.y.max - limits.y2) / $elm$core$Basics$abs(limits.y2 - limits.y1)) * 100;
@@ -16372,21 +17809,22 @@ var $author$project$DataConvert$stringToAxisFunc = function (str) {
 			return $elm$core$Maybe$Nothing;
 	}
 };
-var $author$project$MyChart$curveToChartSeriesView = F2(
-	function (chartData, curve) {
+var $author$project$MyCharts$Chart$Curve$curveToChartSeries = F3(
+	function (chartDatum, chartData, model) {
 		var _v0 = function ($) {
 			return $.axesString;
-		}(curve);
+		}(model);
 		var xstr = _v0.a;
 		var ystr = _v0.b;
 		var maybeXfuncMaybeFloat = $author$project$DataConvert$stringToAxisFunc(xstr);
 		var maybeYfuncMaybeFloat = $author$project$DataConvert$stringToAxisFunc(ystr);
+		var name = A2($author$project$MyCharts$Chart$Curve$optionToNameCurve, chartDatum, xstr) + (' – ' + A2($author$project$MyCharts$Chart$Curve$optionToNameCurve, chartDatum, ystr));
 		var _v1 = _Utils_Tuple2(maybeXfuncMaybeFloat, maybeYfuncMaybeFloat);
 		if ((_v1.a.$ === 'Just') && (_v1.b.$ === 'Just')) {
 			var xfuncMaybeFloat = _v1.a.a;
 			var yfuncMaybeFloat = _v1.b.a;
-			var maybeYfunc = A2($author$project$DataConvert$funcMaybeToMaybeFunc2, chartData, yfuncMaybeFloat);
-			var maybeXfunc = A2($author$project$DataConvert$funcMaybeToMaybeFunc2, chartData, xfuncMaybeFloat);
+			var maybeYfunc = A2($author$project$DataConvert$funcMaybeToMaybeFunc, chartDatum, yfuncMaybeFloat);
+			var maybeXfunc = A2($author$project$DataConvert$funcMaybeToMaybeFunc, chartDatum, xfuncMaybeFloat);
 			var _v2 = _Utils_Tuple2(maybeXfunc, maybeYfunc);
 			if ((_v2.a.$ === 'Just') && (_v2.b.$ === 'Just')) {
 				var xfunc = _v2.a.a;
@@ -16397,7 +17835,17 @@ var $author$project$MyChart$curveToChartSeriesView = F2(
 						xfunc,
 						_List_fromArray(
 							[
-								A3($terezka$elm_charts$Chart$interpolated, yfunc, _List_Nil, _List_Nil)
+								A2(
+								$terezka$elm_charts$Chart$named,
+								name,
+								A3(
+									$terezka$elm_charts$Chart$interpolated,
+									yfunc,
+									_List_fromArray(
+										[
+											$terezka$elm_charts$Chart$Attributes$width(2)
+										]),
+									_List_Nil))
 							]),
 						chartData));
 			} else {
@@ -16407,11 +17855,1015 @@ var $author$project$MyChart$curveToChartSeriesView = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
+var $gampleman$elm_visualization$Zoom$DoubleClicked = F2(
+	function (a, b) {
+		return {$: 'DoubleClicked', a: a, b: b};
+	});
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $elm$virtual_dom$VirtualDom$Custom = function (a) {
+	return {$: 'Custom', a: a};
+};
+var $elm$html$Html$Events$custom = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Custom(decoder));
+	});
+var $elm$svg$Svg$Events$custom = $elm$html$Html$Events$custom;
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $gampleman$elm_visualization$Events$Rect = F4(
+	function (x, y, width, height) {
+		return {height: height, width: width, x: x, y: y};
+	});
+var $gampleman$elm_visualization$Events$decodeRect = A5(
+	$elm$json$Json$Decode$map4,
+	$gampleman$elm_visualization$Events$Rect,
+	A2($elm$json$Json$Decode$field, 'x', $elm$json$Json$Decode$float),
+	A2($elm$json$Json$Decode$field, 'y', $elm$json$Json$Decode$float),
+	A2($elm$json$Json$Decode$field, 'width', $elm$json$Json$Decode$float),
+	A2($elm$json$Json$Decode$field, 'height', $elm$json$Json$Decode$float));
+var $gampleman$elm_visualization$Events$decodeSVGTransformMatrix = $elm$json$Json$Decode$oneOf(
+	_List_fromArray(
+		[
+			A4(
+			$elm$json$Json$Decode$map3,
+			F3(
+				function (viewBox, width, height) {
+					return $elm$core$Maybe$Just(
+						_Utils_Tuple2(
+							_Utils_Tuple3(viewBox.width / width, 0, 0),
+							_Utils_Tuple3(0, viewBox.height / height, 0)));
+				}),
+			A2(
+				$elm$json$Json$Decode$at,
+				_List_fromArray(
+					['currentTarget', 'viewBox', 'baseVal']),
+				$gampleman$elm_visualization$Events$decodeRect),
+			A2(
+				$elm$json$Json$Decode$at,
+				_List_fromArray(
+					['currentTarget', 'width', 'baseVal', 'value']),
+				$elm$json$Json$Decode$float),
+			A2(
+				$elm$json$Json$Decode$at,
+				_List_fromArray(
+					['currentTarget', 'height', 'baseVal', 'value']),
+				$elm$json$Json$Decode$float)),
+			$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+		]));
+var $gampleman$elm_visualization$Events$decodeMousePosition = A4(
+	$elm$json$Json$Decode$map3,
+	F3(
+		function (maybeMatrix, x, y) {
+			return A2(
+				$gampleman$elm_visualization$Events$normalizePointerPosition,
+				_Utils_Tuple2(x, y),
+				maybeMatrix);
+		}),
+	$gampleman$elm_visualization$Events$decodeSVGTransformMatrix,
+	$elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$field, 'offsetX', $elm$json$Json$Decode$float),
+				A2($elm$json$Json$Decode$field, 'clientX', $elm$json$Json$Decode$float)
+			])),
+	$elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$field, 'offsetY', $elm$json$Json$Decode$float),
+				A2($elm$json$Json$Decode$field, 'clientY', $elm$json$Json$Decode$float)
+			])));
+var $gampleman$elm_visualization$Zoom$onDoubleClick = F2(
+	function (_v0, tagger) {
+		return A2(
+			$elm$svg$Svg$Events$custom,
+			'dblclick',
+			A3(
+				$elm$json$Json$Decode$map2,
+				F2(
+					function (shiftDown, position) {
+						return {
+							message: tagger(
+								A2($gampleman$elm_visualization$Zoom$DoubleClicked, shiftDown, position)),
+							preventDefault: true,
+							stopPropagation: true
+						};
+					}),
+				A2($elm$json$Json$Decode$field, 'shiftKey', $elm$json$Json$Decode$bool),
+				$gampleman$elm_visualization$Events$decodeMousePosition));
+	});
+var $gampleman$elm_visualization$Zoom$MouseDown = F2(
+	function (a, b) {
+		return {$: 'MouseDown', a: a, b: b};
+	});
+var $gampleman$elm_visualization$Zoom$onDrag = F2(
+	function (_v0, tagger) {
+		var drag = _v0.a.drag;
+		if (drag.$ === 'Nothing') {
+			return _List_fromArray(
+				[
+					A2(
+					$elm$svg$Svg$Events$custom,
+					'mousedown',
+					A4(
+						$elm$json$Json$Decode$map3,
+						F3(
+							function (x, y, matrix) {
+								return {
+									message: tagger(
+										A2(
+											$gampleman$elm_visualization$Zoom$MouseDown,
+											_Utils_Tuple2(x, y),
+											matrix)),
+									preventDefault: false,
+									stopPropagation: true
+								};
+							}),
+						A2($elm$json$Json$Decode$field, 'clientX', $elm$json$Json$Decode$float),
+						A2($elm$json$Json$Decode$field, 'clientY', $elm$json$Json$Decode$float),
+						$gampleman$elm_visualization$Events$decodeSVGTransformMatrix))
+				]);
+		} else {
+			return _List_Nil;
+		}
+	});
+var $gampleman$elm_visualization$Zoom$GestureStarted = {$: 'GestureStarted'};
+var $gampleman$elm_visualization$Zoom$Gestured = F2(
+	function (a, b) {
+		return {$: 'Gestured', a: a, b: b};
+	});
+var $gampleman$elm_visualization$Zoom$onGesture = F2(
+	function (_v0, tagger) {
+		return _List_fromArray(
+			[
+				A2(
+				$elm$svg$Svg$Events$custom,
+				'gesturestart',
+				$elm$json$Json$Decode$succeed(
+					{
+						message: tagger($gampleman$elm_visualization$Zoom$GestureStarted),
+						preventDefault: true,
+						stopPropagation: true
+					})),
+				A2(
+				$elm$svg$Svg$Events$custom,
+				'gesturechange',
+				A3(
+					$elm$json$Json$Decode$map2,
+					F2(
+						function (scl, position) {
+							return {
+								message: tagger(
+									A2($gampleman$elm_visualization$Zoom$Gestured, scl, position)),
+								preventDefault: true,
+								stopPropagation: true
+							};
+						}),
+					A2($elm$json$Json$Decode$field, 'scale', $elm$json$Json$Decode$float),
+					$gampleman$elm_visualization$Events$decodeMousePosition))
+			]);
+	});
+var $gampleman$elm_visualization$Zoom$TouchEnded = function (a) {
+	return {$: 'TouchEnded', a: a};
+};
+var $gampleman$elm_visualization$Zoom$TouchMoved = function (a) {
+	return {$: 'TouchMoved', a: a};
+};
+var $gampleman$elm_visualization$Zoom$TouchStarted = function (a) {
+	return {$: 'TouchStarted', a: a};
+};
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $gampleman$elm_visualization$Events$listLike = function (itemDecoder) {
+	var decodeOne = function (n) {
+		return A2(
+			$elm$json$Json$Decode$field,
+			$elm$core$String$fromInt(n),
+			itemDecoder);
+	};
+	var decodeN = function (n) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$json$Json$Decode$map2($elm$core$List$cons),
+			$elm$json$Json$Decode$succeed(_List_Nil),
+			A2(
+				$elm$core$List$map,
+				decodeOne,
+				A2($elm$core$List$range, 0, n - 1)));
+	};
+	return A2(
+		$elm$json$Json$Decode$andThen,
+		decodeN,
+		A2($elm$json$Json$Decode$field, 'length', $elm$json$Json$Decode$int));
+};
+var $gampleman$elm_visualization$Events$decodeTouches = A2(
+	$elm$json$Json$Decode$andThen,
+	function (maybeMatrix) {
+		return A2(
+			$elm$json$Json$Decode$field,
+			'changedTouches',
+			$gampleman$elm_visualization$Events$listLike(
+				A4(
+					$elm$json$Json$Decode$map3,
+					F3(
+						function (x, y, identifier) {
+							return {
+								identifier: identifier,
+								position: A2(
+									$gampleman$elm_visualization$Events$normalizePointerPosition,
+									_Utils_Tuple2(x, y),
+									maybeMatrix)
+							};
+						}),
+					A2($elm$json$Json$Decode$field, 'clientX', $elm$json$Json$Decode$float),
+					A2($elm$json$Json$Decode$field, 'clientY', $elm$json$Json$Decode$float),
+					A2($elm$json$Json$Decode$field, 'identifier', $elm$json$Json$Decode$int))));
+	},
+	$gampleman$elm_visualization$Events$decodeSVGTransformMatrix);
+var $gampleman$elm_visualization$Zoom$onTouch = F2(
+	function (_v0, tagger) {
+		var zoom = _v0.a;
+		return _List_fromArray(
+			[
+				A2(
+				$elm$svg$Svg$Events$custom,
+				'touchstart',
+				A2(
+					$elm$json$Json$Decode$map,
+					function (touches) {
+						var _v1 = _Utils_Tuple3(zoom.touchStarted, touches, zoom.touches);
+						if (((_v1.a && _v1.b.b) && (!_v1.b.b.b)) && (_v1.c.$ === 'NoTouches')) {
+							var _v2 = _v1.b;
+							var touch0 = _v2.a;
+							var _v3 = _v1.c;
+							return {
+								message: tagger(
+									A2($gampleman$elm_visualization$Zoom$DoubleClicked, false, touch0.position)),
+								preventDefault: true,
+								stopPropagation: true
+							};
+						} else {
+							return {
+								message: tagger(
+									$gampleman$elm_visualization$Zoom$TouchStarted(touches)),
+								preventDefault: false,
+								stopPropagation: true
+							};
+						}
+					},
+					$gampleman$elm_visualization$Events$decodeTouches)),
+				A2(
+				$elm$svg$Svg$Events$custom,
+				'touchmove',
+				A2(
+					$elm$json$Json$Decode$map,
+					function (touches) {
+						return {
+							message: tagger(
+								$gampleman$elm_visualization$Zoom$TouchMoved(touches)),
+							preventDefault: true,
+							stopPropagation: true
+						};
+					},
+					$gampleman$elm_visualization$Events$decodeTouches)),
+				A2(
+				$elm$svg$Svg$Events$custom,
+				'touchend',
+				A2(
+					$elm$json$Json$Decode$map,
+					function (touches) {
+						return {
+							message: tagger(
+								$gampleman$elm_visualization$Zoom$TouchEnded(touches)),
+							preventDefault: false,
+							stopPropagation: true
+						};
+					},
+					$gampleman$elm_visualization$Events$decodeTouches)),
+				A2(
+				$elm$svg$Svg$Events$custom,
+				'touchcancel',
+				A2(
+					$elm$json$Json$Decode$map,
+					function (touches) {
+						return {
+							message: tagger(
+								$gampleman$elm_visualization$Zoom$TouchEnded(touches)),
+							preventDefault: false,
+							stopPropagation: true
+						};
+					},
+					$gampleman$elm_visualization$Events$decodeTouches)),
+				A2($elm$html$Html$Attributes$style, 'touch-action', 'none'),
+				A2($elm$html$Html$Attributes$style, '-webkit-tap-highlight-color', 'rgba(0,0,0,0)')
+			]);
+	});
+var $gampleman$elm_visualization$Zoom$Wheeled = F2(
+	function (a, b) {
+		return {$: 'Wheeled', a: a, b: b};
+	});
+var $gampleman$elm_visualization$Zoom$onWheel = F2(
+	function (_v0, tagger) {
+		return A2(
+			$elm$svg$Svg$Events$custom,
+			'wheel',
+			A4(
+				$elm$json$Json$Decode$map3,
+				F3(
+					function (deltaY, deltaMode, position) {
+						return {
+							message: tagger(
+								A2(
+									$gampleman$elm_visualization$Zoom$Wheeled,
+									(-deltaY) * ((!deltaMode) ? 0.002 : ((deltaMode === 1) ? 0.05 : 1)),
+									position)),
+							preventDefault: true,
+							stopPropagation: true
+						};
+					}),
+				A2($elm$json$Json$Decode$field, 'deltaY', $elm$json$Json$Decode$float),
+				A2($elm$json$Json$Decode$field, 'deltaMode', $elm$json$Json$Decode$int),
+				$gampleman$elm_visualization$Events$decodeMousePosition));
+	});
+var $gampleman$elm_visualization$Zoom$events = F2(
+	function (zoom, tagger) {
+		return A2(
+			$elm$core$List$cons,
+			A2($gampleman$elm_visualization$Zoom$onDoubleClick, zoom, tagger),
+			A2(
+				$elm$core$List$cons,
+				A2($gampleman$elm_visualization$Zoom$onWheel, zoom, tagger),
+				_Utils_ap(
+					A2($gampleman$elm_visualization$Zoom$onDrag, zoom, tagger),
+					_Utils_ap(
+						A2($gampleman$elm_visualization$Zoom$onGesture, zoom, tagger),
+						A2($gampleman$elm_visualization$Zoom$onTouch, zoom, tagger)))));
+	});
 var $terezka$elm_charts$Chart$Attributes$height = F2(
 	function (v, config) {
 		return _Utils_update(
 			config,
 			{height: v});
+	});
+var $terezka$elm_charts$Chart$HtmlElement = function (a) {
+	return {$: 'HtmlElement', a: a};
+};
+var $terezka$elm_charts$Internal$Coordinates$Axis = F4(
+	function (dataMin, dataMax, min, max) {
+		return {dataMax: dataMax, dataMin: dataMin, max: max, min: min};
+	});
+var $terezka$elm_charts$Internal$Coordinates$Margin = F4(
+	function (top, right, left, bottom) {
+		return {bottom: bottom, left: left, right: right, top: top};
+	});
+var $terezka$elm_charts$Internal$Svg$bar = F3(
+	function (plane, config, point) {
+		var viewBar = F7(
+			function (fill, fillOpacity, border, borderWidth, strokeOpacity, cmds, limits) {
+				return A4(
+					$terezka$elm_charts$Internal$Svg$withAttrs,
+					config.attrs,
+					$elm$svg$Svg$path,
+					_List_fromArray(
+						[
+							$elm$svg$Svg$Attributes$class('elm-charts__bar'),
+							$elm$svg$Svg$Attributes$fill(fill),
+							$elm$svg$Svg$Attributes$fillOpacity(
+							$elm$core$String$fromFloat(fillOpacity)),
+							$elm$svg$Svg$Attributes$stroke(border),
+							$elm$svg$Svg$Attributes$strokeWidth(
+							$elm$core$String$fromFloat(borderWidth)),
+							$elm$svg$Svg$Attributes$strokeOpacity(
+							$elm$core$String$fromFloat(strokeOpacity)),
+							$elm$svg$Svg$Attributes$d(
+							A2($terezka$elm_charts$Internal$Commands$description, plane, cmds)),
+							$elm$svg$Svg$Attributes$style(
+							A2($terezka$elm_charts$Internal$Svg$clipperStyle, plane, limits))
+						]),
+					_List_Nil);
+			});
+		var highlightColor = (config.highlightColor === '') ? config.color : config.highlightColor;
+		var borderWidthCarY = A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianY, plane, config.borderWidth / 2);
+		var highlightWidthCarY = borderWidthCarY + A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianY, plane, config.highlightWidth / 2);
+		var borderWidthCarX = A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianX, plane, config.borderWidth / 2);
+		var highlightWidthCarX = borderWidthCarX + A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianX, plane, config.highlightWidth / 2);
+		var pos = {
+			x1: A2($elm$core$Basics$min, point.x1, point.x2) + borderWidthCarX,
+			x2: A2($elm$core$Basics$max, point.x1, point.x2) - borderWidthCarX,
+			y1: A2($elm$core$Basics$min, point.y1, point.y2) + borderWidthCarY,
+			y2: A2($elm$core$Basics$max, point.y1, point.y2) - borderWidthCarY
+		};
+		var highlightPos = {x1: pos.x1 - highlightWidthCarX, x2: pos.x2 + highlightWidthCarX, y1: pos.y1 - highlightWidthCarY, y2: pos.y2 + highlightWidthCarY};
+		var w = $elm$core$Basics$abs(pos.x2 - pos.x1);
+		var roundingBottom = (A2($terezka$elm_charts$Internal$Coordinates$scaleSVGX, plane, w) * 0.5) * A3($elm$core$Basics$clamp, 0, 1, config.roundBottom);
+		var radiusBottomX = A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianX, plane, roundingBottom);
+		var radiusBottomY = A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianY, plane, roundingBottom);
+		var roundingTop = (A2($terezka$elm_charts$Internal$Coordinates$scaleSVGX, plane, w) * 0.5) * A3($elm$core$Basics$clamp, 0, 1, config.roundTop);
+		var radiusTopX = A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianX, plane, roundingTop);
+		var radiusTopY = A2($terezka$elm_charts$Internal$Coordinates$scaleCartesianY, plane, roundingTop);
+		var _v0 = function () {
+			if (_Utils_eq(pos.y1, pos.y2)) {
+				return _Utils_Tuple3(_List_Nil, _List_Nil, highlightPos);
+			} else {
+				var _v1 = _Utils_Tuple2(config.roundTop > 0, config.roundBottom > 0);
+				if (!_v1.a) {
+					if (!_v1.b) {
+						return _Utils_Tuple3(
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, pos.x1, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y1)
+								]),
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, highlightPos.x1, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x1, highlightPos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2, highlightPos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y1)
+								]),
+							{x1: pos.x1 - highlightWidthCarX, x2: pos.x2 + highlightWidthCarX, y1: pos.y1, y2: pos.y2 + highlightWidthCarY});
+					} else {
+						return _Utils_Tuple3(
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, pos.x1 + radiusBottomX, pos.y1),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, pos.x1, pos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1 + radiusBottomY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, pos.x2 - radiusBottomX, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1 + radiusBottomX, pos.y1)
+								]),
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, highlightPos.x1 + radiusBottomX, highlightPos.y1),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, highlightPos.x1, highlightPos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x1, highlightPos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2, highlightPos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2, highlightPos.y1 + radiusBottomY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, highlightPos.x2 - radiusBottomX, highlightPos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x1 + radiusBottomX, highlightPos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2 - radiusBottomX, pos.y1),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, false, pos.x2, pos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1)
+								]),
+							{x1: pos.x1 - highlightWidthCarX, x2: pos.x2 + highlightWidthCarX, y1: pos.y1 - highlightWidthCarY, y2: pos.y2 + highlightWidthCarY});
+					}
+				} else {
+					if (!_v1.b) {
+						return _Utils_Tuple3(
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, pos.x1, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y2 - radiusTopY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, pos.x1 + radiusTopX, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2 - radiusTopX, pos.y2),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, pos.x2, pos.y2 - radiusTopY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y1)
+								]),
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, highlightPos.x1, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x1, highlightPos.y2 - radiusTopY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, highlightPos.x1 + radiusTopX, highlightPos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2 - radiusTopX, highlightPos.y2),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, highlightPos.x2, highlightPos.y2 - radiusTopY),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y2 - radiusTopY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, false, pos.x2 - radiusTopX, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1 + radiusTopX, pos.y2),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, false, pos.x1, pos.y2 - radiusTopY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y1)
+								]),
+							{x1: pos.x1 - highlightWidthCarX, x2: pos.x2 + highlightWidthCarX, y1: pos.y1, y2: pos.y2 + highlightWidthCarY});
+					} else {
+						return _Utils_Tuple3(
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, pos.x1 + radiusBottomX, pos.y1),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, pos.x1, pos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y2 - radiusTopY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, pos.x1 + radiusTopX, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2 - radiusTopX, pos.y2),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, pos.x2, pos.y2 - radiusTopY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1 + radiusBottomY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, pos.x2 - radiusBottomX, pos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1 + radiusBottomX, pos.y1)
+								]),
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Commands$Move, highlightPos.x1 + radiusBottomX, highlightPos.y1),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, highlightPos.x1, highlightPos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x1, highlightPos.y2 - radiusTopY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, highlightPos.x1 + radiusTopX, highlightPos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2 - radiusTopX, highlightPos.y2),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, true, highlightPos.x2, highlightPos.y2 - radiusTopY),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x2, highlightPos.y1 + radiusBottomY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, true, highlightPos.x2 - radiusBottomX, highlightPos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, highlightPos.x1 + radiusBottomX, highlightPos.y1),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2 - radiusBottomX, pos.y1),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingBottom, roundingBottom, -45, false, false, pos.x2, pos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y2 - radiusTopY),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, false, pos.x2 - radiusTopX, pos.y2),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1 + radiusTopX, pos.y2),
+									A7($terezka$elm_charts$Internal$Commands$Arc, roundingTop, roundingTop, -45, false, false, pos.x1, pos.y2 - radiusTopY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x1, pos.y1 + radiusBottomY),
+									A2($terezka$elm_charts$Internal$Commands$Line, pos.x2, pos.y1)
+								]),
+							{x1: pos.x1 - highlightWidthCarX, x2: pos.x2 + highlightWidthCarX, y1: pos.y1 - highlightWidthCarY, y2: pos.y2 + highlightWidthCarY});
+					}
+				}
+			}
+		}();
+		var commands = _v0.a;
+		var highlightCommands = _v0.b;
+		var highlightCut = _v0.c;
+		var viewAuraBar = function (fill) {
+			return (!config.highlight) ? A7(viewBar, fill, config.opacity, config.border, config.borderWidth, 1, commands, pos) : A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$class('elm-charts__bar-with-highlight')
+					]),
+				_List_fromArray(
+					[
+						A7(viewBar, highlightColor, config.highlight, 'transparent', 0, 0, highlightCommands, highlightCut),
+						A7(viewBar, fill, config.opacity, config.border, config.borderWidth, 1, commands, pos)
+					]));
+		};
+		var _v2 = config.design;
+		if (_v2.$ === 'Nothing') {
+			return viewAuraBar(config.color);
+		} else {
+			var design = _v2.a;
+			var _v3 = A2($terezka$elm_charts$Internal$Svg$toPattern, config.color, design);
+			var patternDefs = _v3.a;
+			var fill = _v3.b;
+			return A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$class('elm-charts__bar-with-pattern')
+					]),
+				_List_fromArray(
+					[
+						patternDefs,
+						viewAuraBar(fill)
+					]));
+		}
+	});
+var $terezka$elm_charts$Internal$Svg$defaultContainer = {
+	attrs: _List_fromArray(
+		[
+			$elm$svg$Svg$Attributes$style('overflow: visible;')
+		]),
+	events: _List_Nil,
+	htmlAttrs: _List_Nil,
+	responsive: true
+};
+var $terezka$elm_charts$Internal$Svg$barLegend = F2(
+	function (config, barConfig) {
+		var fontStyle = function () {
+			var _v0 = config.fontSize;
+			if (_v0.$ === 'Just') {
+				var size_ = _v0.a;
+				return A2(
+					$elm$html$Html$Attributes$style,
+					'font-size',
+					$elm$core$String$fromInt(size_) + 'px');
+			} else {
+				return A2($elm$html$Html$Attributes$style, '', '');
+			}
+		}();
+		var fakePlane = {
+			height: config.height,
+			margin: A4($terezka$elm_charts$Internal$Coordinates$Margin, 0, 0, 0, 0),
+			width: config.width,
+			x: A4($terezka$elm_charts$Internal$Coordinates$Axis, 0, 10, 0, 10),
+			y: A4($terezka$elm_charts$Internal$Coordinates$Axis, 0, 10, 0, 10)
+		};
+		return A2(
+			$elm$html$Html$div,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('elm-charts__legend'),
+						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+						A2($elm$html$Html$Attributes$style, 'align-items', 'center')
+					]),
+				config.htmlAttrs),
+			_List_fromArray(
+				[
+					A5(
+					$terezka$elm_charts$Internal$Svg$container,
+					fakePlane,
+					_Utils_update(
+						$terezka$elm_charts$Internal$Svg$defaultContainer,
+						{responsive: false}),
+					_List_Nil,
+					_List_fromArray(
+						[
+							A3(
+							$terezka$elm_charts$Internal$Svg$bar,
+							fakePlane,
+							barConfig,
+							{x1: 0, x2: 10, y1: 0, y2: 10})
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							fontStyle,
+							A2(
+							$elm$html$Html$Attributes$style,
+							'margin-left',
+							$elm$core$String$fromFloat(config.spacing) + 'px')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(config.title)
+						]))
+				]));
+	});
+var $terezka$elm_charts$Internal$Svg$defaultBar = {attrs: _List_Nil, border: 'white', borderWidth: 0, color: $terezka$elm_charts$Internal$Helpers$pink, design: $elm$core$Maybe$Nothing, highlight: 0, highlightColor: '', highlightWidth: 10, opacity: 1, roundBottom: 0, roundTop: 0};
+var $terezka$elm_charts$Internal$Svg$defaultBarLegend = {color: '#808BAB', fontSize: $elm$core$Maybe$Nothing, height: 10, htmlAttrs: _List_Nil, spacing: 10, title: '', width: 10, xOff: 0, yOff: 0};
+var $terezka$elm_charts$Chart$Svg$barLegend = F2(
+	function (edits, barAttrs) {
+		return A2(
+			$terezka$elm_charts$Internal$Svg$barLegend,
+			A2($terezka$elm_charts$Internal$Helpers$apply, edits, $terezka$elm_charts$Internal$Svg$defaultBarLegend),
+			A2($terezka$elm_charts$Internal$Helpers$apply, barAttrs, $terezka$elm_charts$Internal$Svg$defaultBar));
+	});
+var $terezka$elm_charts$Internal$Svg$Row = {$: 'Row'};
+var $terezka$elm_charts$Internal$Svg$defaultLegends = {alignment: $terezka$elm_charts$Internal$Svg$Row, anchor: $elm$core$Maybe$Nothing, background: '', border: '', borderWidth: 0, htmlAttrs: _List_Nil, spacing: 10, xOff: 0, yOff: 0};
+var $elm$html$Html$node = $elm$virtual_dom$VirtualDom$node;
+var $terezka$elm_charts$Internal$Svg$positionHtml = F7(
+	function (plane, x, y, xOff, yOff, attrs, content) {
+		var yPercentage = ((A2($terezka$elm_charts$Internal$Coordinates$toSVGY, plane, y) - yOff) * 100) / plane.height;
+		var xPercentage = ((A2($terezka$elm_charts$Internal$Coordinates$toSVGX, plane, x) + xOff) * 100) / plane.width;
+		var posititonStyles = _List_fromArray(
+			[
+				A2(
+				$elm$html$Html$Attributes$style,
+				'left',
+				$elm$core$String$fromFloat(xPercentage) + '%'),
+				A2(
+				$elm$html$Html$Attributes$style,
+				'top',
+				$elm$core$String$fromFloat(yPercentage) + '%'),
+				A2($elm$html$Html$Attributes$style, 'margin-right', '-400px'),
+				A2($elm$html$Html$Attributes$style, 'position', 'absolute')
+			]);
+		return A2(
+			$elm$html$Html$div,
+			_Utils_ap(posititonStyles, attrs),
+			content);
+	});
+var $terezka$elm_charts$Internal$Svg$legendsAt = F5(
+	function (plane, x, y, config, children) {
+		var otherAttrs = _List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('elm-charts__legends'),
+				A2($elm$html$Html$Attributes$style, 'background', config.background),
+				A2($elm$html$Html$Attributes$style, 'border-color', config.border),
+				A2(
+				$elm$html$Html$Attributes$style,
+				'border-width',
+				$elm$core$String$fromFloat(config.borderWidth) + 'px'),
+				A2($elm$html$Html$Attributes$style, 'border-style', 'solid')
+			]);
+		var anchorAttrs = function () {
+			var _v2 = config.anchor;
+			if (_v2.$ === 'Nothing') {
+				return _List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'transform', 'translate(-0%, 0%)')
+					]);
+			} else {
+				switch (_v2.a.$) {
+					case 'End':
+						var _v3 = _v2.a;
+						return _List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'transform', 'translate(-100%, 0%)')
+							]);
+					case 'Start':
+						var _v4 = _v2.a;
+						return _List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'transform', 'translate(-0%, 0%)')
+							]);
+					default:
+						var _v5 = _v2.a;
+						return _List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'transform', 'translate(-50%, 0%)')
+							]);
+				}
+			}
+		}();
+		var _v0 = function () {
+			var _v1 = config.alignment;
+			if (_v1.$ === 'Row') {
+				return _Utils_Tuple2(
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+							A2($elm$html$Html$Attributes$style, 'align-items', 'center')
+						]),
+					'right');
+			} else {
+				return _Utils_Tuple2(
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+							A2($elm$html$Html$Attributes$style, 'flex-direction', 'column'),
+							A2($elm$html$Html$Attributes$style, 'align-items', 'baseline')
+						]),
+					'bottom');
+			}
+		}();
+		var alignmentAttrs = _v0.a;
+		var direction = _v0.b;
+		var paddingStyle = ' .elm-charts__legends .elm-charts__legend {\n              margin-' + (direction + (':' + ($elm$core$String$fromFloat(config.spacing) + ('px;\n            }\n\n            .elm-charts__legends .elm-charts__legend:last-child {\n              margin-' + (direction + ': 0px;\n            }\n        ')))));
+		return A7(
+			$terezka$elm_charts$Internal$Svg$positionHtml,
+			plane,
+			x,
+			y,
+			config.xOff,
+			-config.yOff,
+			_Utils_ap(
+				anchorAttrs,
+				_Utils_ap(
+					alignmentAttrs,
+					_Utils_ap(otherAttrs, config.htmlAttrs))),
+			A2(
+				$elm$core$List$cons,
+				A3(
+					$elm$html$Html$node,
+					'style',
+					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$text(paddingStyle)
+						])),
+				children));
+	});
+var $terezka$elm_charts$Chart$Svg$legendsAt = F4(
+	function (plane, x, y, edits) {
+		return A4(
+			$terezka$elm_charts$Internal$Svg$legendsAt,
+			plane,
+			x,
+			y,
+			A2($terezka$elm_charts$Internal$Helpers$apply, edits, $terezka$elm_charts$Internal$Svg$defaultLegends));
+	});
+var $terezka$elm_charts$Internal$Svg$defaultLineLegend = {color: '#808BAB', fontSize: $elm$core$Maybe$Nothing, height: 16, htmlAttrs: _List_Nil, spacing: 10, title: '', width: 30, xOff: 0, yOff: 0};
+var $terezka$elm_charts$Internal$Svg$Point = F2(
+	function (x, y) {
+		return {x: x, y: y};
+	});
+var $terezka$elm_charts$Internal$Svg$lineLegend = F3(
+	function (config, interConfig, dotConfig) {
+		var topMargin = function () {
+			var _v1 = dotConfig.shape;
+			if (_v1.$ === 'Just') {
+				var shape = _v1.a;
+				return A2($terezka$elm_charts$Internal$Svg$toRadius, dotConfig.size, shape);
+			} else {
+				return 0;
+			}
+		}();
+		var fontStyle = function () {
+			var _v0 = config.fontSize;
+			if (_v0.$ === 'Just') {
+				var size_ = _v0.a;
+				return A2(
+					$elm$html$Html$Attributes$style,
+					'font-size',
+					$elm$core$String$fromInt(size_) + 'px');
+			} else {
+				return A2($elm$html$Html$Attributes$style, '', '');
+			}
+		}();
+		var fakePlane = {
+			height: config.height,
+			margin: A4($terezka$elm_charts$Internal$Coordinates$Margin, 0, 0, 0, 0),
+			width: config.width,
+			x: A4($terezka$elm_charts$Internal$Coordinates$Axis, 0, 10, 0, 10),
+			y: A4($terezka$elm_charts$Internal$Coordinates$Axis, 0, 10, 0, 10)
+		};
+		var bottomMargin = (!interConfig.opacity) ? topMargin : 0;
+		return A2(
+			$elm$html$Html$div,
+			_Utils_ap(
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('elm-charts__legend'),
+						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+						A2($elm$html$Html$Attributes$style, 'align-items', 'center')
+					]),
+				config.htmlAttrs),
+			_List_fromArray(
+				[
+					A5(
+					$terezka$elm_charts$Internal$Svg$container,
+					fakePlane,
+					_Utils_update(
+						$terezka$elm_charts$Internal$Svg$defaultContainer,
+						{responsive: false}),
+					_List_Nil,
+					_List_fromArray(
+						[
+							A5(
+							$terezka$elm_charts$Internal$Svg$interpolation,
+							fakePlane,
+							function ($) {
+								return $.x;
+							},
+							A2(
+								$elm$core$Basics$composeR,
+								function ($) {
+									return $.y;
+								},
+								$elm$core$Maybe$Just),
+							interConfig,
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Svg$Point, 0, 5),
+									A2($terezka$elm_charts$Internal$Svg$Point, 10, 5)
+								])),
+							A6(
+							$terezka$elm_charts$Internal$Svg$area,
+							fakePlane,
+							function ($) {
+								return $.x;
+							},
+							$elm$core$Maybe$Nothing,
+							A2(
+								$elm$core$Basics$composeR,
+								function ($) {
+									return $.y;
+								},
+								$elm$core$Maybe$Just),
+							interConfig,
+							_List_fromArray(
+								[
+									A2($terezka$elm_charts$Internal$Svg$Point, 0, 5),
+									A2($terezka$elm_charts$Internal$Svg$Point, 10, 5)
+								])),
+							A5(
+							$terezka$elm_charts$Internal$Svg$dot,
+							fakePlane,
+							function ($) {
+								return $.x;
+							},
+							function ($) {
+								return $.y;
+							},
+							dotConfig,
+							A2($terezka$elm_charts$Internal$Svg$Point, 5, 5))
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							fontStyle,
+							A2(
+							$elm$html$Html$Attributes$style,
+							'margin-left',
+							$elm$core$String$fromFloat(config.spacing) + 'px')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(config.title)
+						]))
+				]));
+	});
+var $terezka$elm_charts$Chart$Svg$lineLegend = F3(
+	function (edits, interAttrsOrg, dotAttrsOrg) {
+		var interpolationConfigOrg = A2($terezka$elm_charts$Internal$Helpers$apply, interAttrsOrg, $terezka$elm_charts$Internal$Svg$defaultInterpolation);
+		var dotConfigOrg = A2($terezka$elm_charts$Internal$Helpers$apply, dotAttrsOrg, $terezka$elm_charts$Internal$Svg$defaultDot);
+		var adjustWidth = function (config) {
+			return _Utils_update(
+				config,
+				{width: 10});
+		};
+		var _v0 = function () {
+			var _v1 = _Utils_Tuple2(interpolationConfigOrg.method, dotConfigOrg.shape);
+			if (_v1.a.$ === 'Just') {
+				if (_v1.b.$ === 'Nothing') {
+					var _v2 = _v1.b;
+					return _Utils_Tuple3(
+						dotAttrsOrg,
+						interAttrsOrg,
+						A2(
+							$elm$core$List$cons,
+							$terezka$elm_charts$Chart$Attributes$width(10),
+							edits));
+				} else {
+					return _Utils_Tuple3(
+						dotAttrsOrg,
+						A2(
+							$elm$core$List$cons,
+							$terezka$elm_charts$Chart$Attributes$opacity(0),
+							interAttrsOrg),
+						edits);
+				}
+			} else {
+				if (_v1.b.$ === 'Nothing') {
+					var _v3 = _v1.a;
+					var _v4 = _v1.b;
+					return _Utils_Tuple3(
+						A2($elm$core$List$cons, $terezka$elm_charts$Chart$Attributes$circle, dotAttrsOrg),
+						A2($elm$core$List$cons, $terezka$elm_charts$Chart$Attributes$linear, interAttrsOrg),
+						A2(
+							$elm$core$List$cons,
+							$terezka$elm_charts$Chart$Attributes$width(10),
+							edits));
+				} else {
+					var _v5 = _v1.a;
+					return _Utils_Tuple3(
+						A2($elm$core$List$cons, $terezka$elm_charts$Chart$Attributes$circle, dotAttrsOrg),
+						interAttrsOrg,
+						A2(
+							$elm$core$List$cons,
+							$terezka$elm_charts$Chart$Attributes$width(10),
+							edits));
+				}
+			}
+		}();
+		var dotAttrs = _v0.a;
+		var interAttrs = _v0.b;
+		var lineLegendAttrs = _v0.c;
+		return A3(
+			$terezka$elm_charts$Internal$Svg$lineLegend,
+			A2($terezka$elm_charts$Internal$Helpers$apply, lineLegendAttrs, $terezka$elm_charts$Internal$Svg$defaultLineLegend),
+			A2($terezka$elm_charts$Internal$Helpers$apply, interAttrs, $terezka$elm_charts$Internal$Svg$defaultInterpolation),
+			A2($terezka$elm_charts$Internal$Helpers$apply, dotAttrs, $terezka$elm_charts$Internal$Svg$defaultDot));
+	});
+var $terezka$elm_charts$Chart$Attributes$title = F2(
+	function (value, config) {
+		return _Utils_update(
+			config,
+			{title: value});
+	});
+var $terezka$elm_charts$Chart$legendsAt = F4(
+	function (toX, toY, attrs, children) {
+		return $terezka$elm_charts$Chart$HtmlElement(
+			F2(
+				function (p, legends_) {
+					var viewLegend = function (legend) {
+						if (legend.$ === 'BarLegend') {
+							var name = legend.a;
+							var barAttrs = legend.b;
+							return A2(
+								$terezka$elm_charts$Chart$Svg$barLegend,
+								A2(
+									$elm$core$List$cons,
+									$terezka$elm_charts$Chart$Attributes$title(name),
+									children),
+								barAttrs);
+						} else {
+							var name = legend.a;
+							var interAttrs = legend.b;
+							var dotAttrs = legend.c;
+							return A3(
+								$terezka$elm_charts$Chart$Svg$lineLegend,
+								A2(
+									$elm$core$List$cons,
+									$terezka$elm_charts$Chart$Attributes$title(name),
+									children),
+								interAttrs,
+								dotAttrs);
+						}
+					};
+					return A5(
+						$terezka$elm_charts$Chart$Svg$legendsAt,
+						p,
+						toX(p.x),
+						toY(p.y),
+						attrs,
+						A2($elm$core$List$map, viewLegend, legends_));
+				}));
 	});
 var $terezka$elm_charts$Chart$Attributes$margin = F2(
 	function (v, config) {
@@ -16419,16 +18871,178 @@ var $terezka$elm_charts$Chart$Attributes$margin = F2(
 			config,
 			{margin: v});
 	});
+var $terezka$elm_charts$Chart$Attributes$moveRight = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{xOff: config.xOff + v});
+	});
+var $terezka$elm_charts$Chart$Attributes$moveUp = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{yOff: config.yOff - v});
+	});
 var $terezka$elm_charts$Chart$Attributes$padding = F2(
 	function (value, config) {
 		return _Utils_update(
 			config,
 			{padding: value});
 	});
+var $terezka$elm_charts$Chart$Attributes$pinned = F2(
+	function (value, config) {
+		return _Utils_update(
+			config,
+			{pinned: value});
+	});
+var $terezka$elm_charts$Chart$Attributes$row = function (config) {
+	return _Utils_update(
+		config,
+		{alignment: $terezka$elm_charts$Internal$Svg$Row});
+};
+var $terezka$elm_charts$Chart$Attributes$spacing = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{spacing: v});
+	});
+var $gampleman$elm_visualization$Zoom$Transform$toString = function (_v0) {
+	var k = _v0.k;
+	var x = _v0.x;
+	var y = _v0.y;
+	return 'translate(' + ($elm$core$String$fromFloat(x) + (',' + ($elm$core$String$fromFloat(y) + (') scale(' + ($elm$core$String$fromFloat(k) + ')')))));
+};
+var $gampleman$elm_visualization$Zoom$transform = function (_v0) {
+	var zoom = _v0.a;
+	return $elm$svg$Svg$Attributes$transform(
+		$gampleman$elm_visualization$Zoom$Transform$toString(zoom.transform));
+};
 var $terezka$elm_charts$Chart$Attributes$withGrid = function (config) {
 	return _Utils_update(
 		config,
 		{grid: true});
+};
+var $terezka$elm_charts$Chart$AxisElement = F2(
+	function (a, b) {
+		return {$: 'AxisElement', a: a, b: b};
+	});
+var $elm$svg$Svg$Attributes$points = _VirtualDom_attribute('points');
+var $elm$svg$Svg$polygon = $elm$svg$Svg$trustedNode('polygon');
+var $terezka$elm_charts$Internal$Svg$position = F6(
+	function (plane, rotation, x_, y_, xOff_, yOff_) {
+		return $elm$svg$Svg$Attributes$transform(
+			'translate(' + ($elm$core$String$fromFloat(
+				A2($terezka$elm_charts$Internal$Coordinates$toSVGX, plane, x_) + xOff_) + (',' + ($elm$core$String$fromFloat(
+				A2($terezka$elm_charts$Internal$Coordinates$toSVGY, plane, y_) + yOff_) + (') rotate(' + ($elm$core$String$fromFloat(rotation) + ')'))))));
+	});
+var $terezka$elm_charts$Internal$Svg$arrow = F3(
+	function (plane, config, point) {
+		var points_ = '0,0 ' + ($elm$core$String$fromFloat(config.length) + (',' + ($elm$core$String$fromFloat(config.width) + (' 0, ' + $elm$core$String$fromFloat(config.width * 2)))));
+		var commands = 'rotate(' + ($elm$core$String$fromFloat(config.rotate) + (') translate(0 ' + ($elm$core$String$fromFloat(-config.width) + ') ')));
+		return A2(
+			$elm$svg$Svg$g,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$class('elm-charts__arrow'),
+					A6($terezka$elm_charts$Internal$Svg$position, plane, 0, point.x, point.y, config.xOff, config.yOff)
+				]),
+			_List_fromArray(
+				[
+					A4(
+					$terezka$elm_charts$Internal$Svg$withAttrs,
+					config.attrs,
+					$elm$svg$Svg$polygon,
+					_List_fromArray(
+						[
+							$elm$svg$Svg$Attributes$fill(config.color),
+							$elm$svg$Svg$Attributes$points(points_),
+							$elm$svg$Svg$Attributes$transform(commands)
+						]),
+					_List_Nil)
+				]));
+	});
+var $terezka$elm_charts$Internal$Svg$defaultArrow = {attrs: _List_Nil, color: 'rgb(210, 210, 210)', length: 7, rotate: 0, width: 4, xOff: 0, yOff: 0};
+var $terezka$elm_charts$Chart$Svg$arrow = F2(
+	function (plane, edits) {
+		return A2(
+			$terezka$elm_charts$Internal$Svg$arrow,
+			plane,
+			A2($terezka$elm_charts$Internal$Helpers$apply, edits, $terezka$elm_charts$Internal$Svg$defaultArrow));
+	});
+var $terezka$elm_charts$Chart$Attributes$x2 = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{
+				x2: $elm$core$Maybe$Just(v)
+			});
+	});
+var $terezka$elm_charts$Chart$Attributes$zero = function (b) {
+	return A3($elm$core$Basics$clamp, b.min, b.max, 0);
+};
+var $terezka$elm_charts$Chart$xAxis = function (edits) {
+	var config = A2(
+		$terezka$elm_charts$Internal$Helpers$apply,
+		edits,
+		{arrow: true, color: '', limits: _List_Nil, pinned: $terezka$elm_charts$Chart$Attributes$zero, width: 1});
+	var addTickValues = F2(
+		function (p, ts) {
+			return _Utils_update(
+				ts,
+				{
+					yAxis: A2(
+						$elm$core$List$cons,
+						config.pinned(p.y),
+						ts.yAxis)
+				});
+		});
+	return A2(
+		$terezka$elm_charts$Chart$AxisElement,
+		addTickValues,
+		function (p) {
+			var xLimit = A3(
+				$elm$core$List$foldl,
+				F2(
+					function (f, x) {
+						return f(x);
+					}),
+				p.x,
+				config.limits);
+			return A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$class('elm-charts__x-axis')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$terezka$elm_charts$Chart$Svg$line,
+						p,
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$color(config.color),
+								$terezka$elm_charts$Chart$Attributes$width(config.width),
+								$terezka$elm_charts$Chart$Attributes$y1(
+								config.pinned(p.y)),
+								$terezka$elm_charts$Chart$Attributes$x1(
+								A2($elm$core$Basics$max, p.x.min, xLimit.min)),
+								$terezka$elm_charts$Chart$Attributes$x2(
+								A2($elm$core$Basics$min, p.x.max, xLimit.max))
+							])),
+						config.arrow ? A3(
+						$terezka$elm_charts$Chart$Svg$arrow,
+						p,
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$color(config.color)
+							]),
+						{
+							x: xLimit.max,
+							y: config.pinned(p.y)
+						}) : $elm$svg$Svg$text('')
+					]));
+		});
 };
 var $terezka$elm_charts$Internal$Svg$Floats = {$: 'Floats'};
 var $terezka$elm_charts$Chart$LabelsElement = F3(
@@ -16731,8 +19345,6 @@ var $terezka$intervals$Intervals$getPrecision = function (number) {
 		}
 	}
 };
-var $elm$core$Basics$e = _Basics_e;
-var $elm$core$Basics$pow = _Basics_pow;
 var $terezka$intervals$Intervals$toMagnitude = function (num) {
 	return A2(
 		$elm$core$Basics$pow,
@@ -18886,13 +21498,6 @@ var $terezka$elm_charts$Chart$generateValues = F4(
 						axis));
 		}
 	});
-var $terezka$elm_charts$Internal$Svg$position = F6(
-	function (plane, rotation, x_, y_, xOff_, yOff_) {
-		return $elm$svg$Svg$Attributes$transform(
-			'translate(' + ($elm$core$String$fromFloat(
-				A2($terezka$elm_charts$Internal$Coordinates$toSVGX, plane, x_) + xOff_) + (',' + ($elm$core$String$fromFloat(
-				A2($terezka$elm_charts$Internal$Coordinates$toSVGY, plane, y_) + yOff_) + (') rotate(' + ($elm$core$String$fromFloat(rotation) + ')'))))));
-	});
 var $elm$svg$Svg$text_ = $elm$svg$Svg$trustedNode('text');
 var $elm$svg$Svg$tspan = $elm$svg$Svg$trustedNode('tspan');
 var $terezka$elm_charts$Internal$Svg$label = F4(
@@ -18949,9 +21554,6 @@ var $terezka$elm_charts$Internal$Svg$label = F4(
 					A2($elm$svg$Svg$tspan, _List_Nil, inner)
 				]));
 	});
-var $terezka$elm_charts$Chart$Attributes$zero = function (b) {
-	return A3($elm$core$Basics$clamp, b.min, b.max, 0);
-};
 var $terezka$elm_charts$Chart$xLabels = function (edits) {
 	var toTicks = F2(
 		function (p, config) {
@@ -19033,8 +21635,202 @@ var $terezka$elm_charts$Chart$xLabels = function (edits) {
 						A2(toTicks, p, config)));
 			}));
 };
+var $terezka$elm_charts$Chart$TicksElement = F2(
+	function (a, b) {
+		return {$: 'TicksElement', a: a, b: b};
+	});
+var $terezka$elm_charts$Chart$Attributes$length = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{length: v});
+	});
+var $terezka$elm_charts$Internal$Svg$defaultTick = {attrs: _List_Nil, color: 'rgb(210, 210, 210)', length: 5, width: 1};
+var $terezka$elm_charts$Internal$Svg$tick = F4(
+	function (plane, config, isX, point) {
+		return A4(
+			$terezka$elm_charts$Internal$Svg$withAttrs,
+			config.attrs,
+			$elm$svg$Svg$line,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$class('elm-charts__tick'),
+					$elm$svg$Svg$Attributes$stroke(config.color),
+					$elm$svg$Svg$Attributes$strokeWidth(
+					$elm$core$String$fromFloat(config.width)),
+					$elm$svg$Svg$Attributes$x1(
+					$elm$core$String$fromFloat(
+						A2($terezka$elm_charts$Internal$Coordinates$toSVGX, plane, point.x))),
+					$elm$svg$Svg$Attributes$x2(
+					$elm$core$String$fromFloat(
+						A2($terezka$elm_charts$Internal$Coordinates$toSVGX, plane, point.x) + (isX ? 0 : (-config.length)))),
+					$elm$svg$Svg$Attributes$y1(
+					$elm$core$String$fromFloat(
+						A2($terezka$elm_charts$Internal$Coordinates$toSVGY, plane, point.y))),
+					$elm$svg$Svg$Attributes$y2(
+					$elm$core$String$fromFloat(
+						A2($terezka$elm_charts$Internal$Coordinates$toSVGY, plane, point.y) + (isX ? config.length : 0)))
+				]),
+			_List_Nil);
+	});
+var $terezka$elm_charts$Internal$Svg$xTick = F3(
+	function (plane, config, point) {
+		return A4($terezka$elm_charts$Internal$Svg$tick, plane, config, true, point);
+	});
+var $terezka$elm_charts$Chart$Svg$xTick = F2(
+	function (plane, edits) {
+		return A2(
+			$terezka$elm_charts$Internal$Svg$xTick,
+			plane,
+			A2($terezka$elm_charts$Internal$Helpers$apply, edits, $terezka$elm_charts$Internal$Svg$defaultTick));
+	});
+var $terezka$elm_charts$Chart$xTicks = function (edits) {
+	var config = A2(
+		$terezka$elm_charts$Internal$Helpers$apply,
+		edits,
+		{amount: 5, color: '', flip: false, generate: $terezka$elm_charts$Internal$Svg$Floats, grid: true, height: 5, limits: _List_Nil, pinned: $terezka$elm_charts$Chart$Attributes$zero, width: 1});
+	var toTicks = function (p) {
+		return A2(
+			$elm$core$List$map,
+			function ($) {
+				return $.value;
+			},
+			A4(
+				$terezka$elm_charts$Chart$generateValues,
+				config.amount,
+				config.generate,
+				$elm$core$Maybe$Nothing,
+				A3(
+					$elm$core$List$foldl,
+					F2(
+						function (f, x) {
+							return f(x);
+						}),
+					p.x,
+					config.limits)));
+	};
+	var addTickValues = F2(
+		function (p, ts) {
+			return (!config.grid) ? ts : _Utils_update(
+				ts,
+				{
+					xs: _Utils_ap(
+						ts.xs,
+						toTicks(p))
+				});
+		});
+	return A2(
+		$terezka$elm_charts$Chart$TicksElement,
+		addTickValues,
+		function (p) {
+			var toTick = function (x) {
+				return A3(
+					$terezka$elm_charts$Chart$Svg$xTick,
+					p,
+					_List_fromArray(
+						[
+							$terezka$elm_charts$Chart$Attributes$color(config.color),
+							$terezka$elm_charts$Chart$Attributes$length(
+							config.flip ? (-config.height) : config.height),
+							$terezka$elm_charts$Chart$Attributes$width(config.width)
+						]),
+					{
+						x: x,
+						y: config.pinned(p.y)
+					});
+			};
+			return A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$class('elm-charts__x-ticks')
+					]),
+				A2(
+					$elm$core$List$map,
+					toTick,
+					toTicks(p)));
+		});
+};
+var $terezka$elm_charts$Chart$Attributes$rotate = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{rotate: config.rotate + v});
+	});
+var $terezka$elm_charts$Chart$Attributes$y2 = F2(
+	function (v, config) {
+		return _Utils_update(
+			config,
+			{
+				y2: $elm$core$Maybe$Just(v)
+			});
+	});
+var $terezka$elm_charts$Chart$yAxis = function (edits) {
+	var config = A2(
+		$terezka$elm_charts$Internal$Helpers$apply,
+		edits,
+		{arrow: true, color: '', limits: _List_Nil, pinned: $terezka$elm_charts$Chart$Attributes$zero, width: 1});
+	var addTickValues = F2(
+		function (p, ts) {
+			return _Utils_update(
+				ts,
+				{
+					xAxis: A2(
+						$elm$core$List$cons,
+						config.pinned(p.x),
+						ts.xAxis)
+				});
+		});
+	return A2(
+		$terezka$elm_charts$Chart$AxisElement,
+		addTickValues,
+		function (p) {
+			var yLimit = A3(
+				$elm$core$List$foldl,
+				F2(
+					function (f, y) {
+						return f(y);
+					}),
+				p.y,
+				config.limits);
+			return A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$class('elm-charts__y-axis')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$terezka$elm_charts$Chart$Svg$line,
+						p,
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$color(config.color),
+								$terezka$elm_charts$Chart$Attributes$width(config.width),
+								$terezka$elm_charts$Chart$Attributes$x1(
+								config.pinned(p.x)),
+								$terezka$elm_charts$Chart$Attributes$y1(
+								A2($elm$core$Basics$max, p.y.min, yLimit.min)),
+								$terezka$elm_charts$Chart$Attributes$y2(
+								A2($elm$core$Basics$min, p.y.max, yLimit.max))
+							])),
+						config.arrow ? A3(
+						$terezka$elm_charts$Chart$Svg$arrow,
+						p,
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$color(config.color),
+								$terezka$elm_charts$Chart$Attributes$rotate(-90)
+							]),
+						{
+							x: config.pinned(p.x),
+							y: yLimit.max
+						}) : $elm$svg$Svg$text('')
+					]));
+		});
+};
 var $terezka$elm_charts$Internal$Svg$End = {$: 'End'};
-var $terezka$elm_charts$Internal$Svg$Start = {$: 'Start'};
 var $terezka$elm_charts$Chart$yLabels = function (edits) {
 	var toTicks = F2(
 		function (p, config) {
@@ -19125,34 +21921,188 @@ var $terezka$elm_charts$Chart$yLabels = function (edits) {
 						A2(toTicks, p, config)));
 			}));
 };
-var $author$project$MyChart$chart5View = F2(
-	function (chartData, curves) {
+var $terezka$elm_charts$Internal$Svg$yTick = F3(
+	function (plane, config, point) {
+		return A4($terezka$elm_charts$Internal$Svg$tick, plane, config, false, point);
+	});
+var $terezka$elm_charts$Chart$Svg$yTick = F2(
+	function (plane, edits) {
+		return A2(
+			$terezka$elm_charts$Internal$Svg$yTick,
+			plane,
+			A2($terezka$elm_charts$Internal$Helpers$apply, edits, $terezka$elm_charts$Internal$Svg$defaultTick));
+	});
+var $terezka$elm_charts$Chart$yTicks = function (edits) {
+	var config = A2(
+		$terezka$elm_charts$Internal$Helpers$apply,
+		edits,
+		{amount: 5, color: '', flip: false, generate: $terezka$elm_charts$Internal$Svg$Floats, grid: true, height: 5, limits: _List_Nil, pinned: $terezka$elm_charts$Chart$Attributes$zero, width: 1});
+	var toTicks = function (p) {
+		return A2(
+			$elm$core$List$map,
+			function ($) {
+				return $.value;
+			},
+			A4(
+				$terezka$elm_charts$Chart$generateValues,
+				config.amount,
+				config.generate,
+				$elm$core$Maybe$Nothing,
+				A3(
+					$elm$core$List$foldl,
+					F2(
+						function (f, y) {
+							return f(y);
+						}),
+					p.y,
+					config.limits)));
+	};
+	var addTickValues = F2(
+		function (p, ts) {
+			return _Utils_update(
+				ts,
+				{
+					ys: _Utils_ap(
+						ts.ys,
+						toTicks(p))
+				});
+		});
+	return A2(
+		$terezka$elm_charts$Chart$TicksElement,
+		addTickValues,
+		function (p) {
+			var toTick = function (y) {
+				return A3(
+					$terezka$elm_charts$Chart$Svg$yTick,
+					p,
+					_List_fromArray(
+						[
+							$terezka$elm_charts$Chart$Attributes$color(config.color),
+							$terezka$elm_charts$Chart$Attributes$length(
+							config.flip ? (-config.height) : config.height),
+							$terezka$elm_charts$Chart$Attributes$width(config.width)
+						]),
+					{
+						x: config.pinned(p.x),
+						y: y
+					});
+			};
+			return A2(
+				$elm$svg$Svg$g,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$class('elm-charts__y-ticks')
+					]),
+				A2(
+					$elm$core$List$map,
+					toTick,
+					toTicks(p)));
+		});
+};
+var $author$project$MyCharts$Chart$view = F4(
+	function (model, msgToMainMsg, chartData, curves) {
+		var zoomModel = function ($) {
+			return $.zoomModel;
+		}(model);
+		var evZoom = function ($) {
+			return $.zoom;
+		}(model);
 		return A2(
 			$terezka$elm_charts$Chart$chart,
 			_List_fromArray(
 				[
-					$terezka$elm_charts$Chart$Attributes$height(270),
-					$terezka$elm_charts$Chart$Attributes$width(300),
-					$terezka$elm_charts$Chart$Attributes$margin(
-					{bottom: 20, left: 25, right: 20, top: 10}),
+					$terezka$elm_charts$Chart$Attributes$height(380),
+					$terezka$elm_charts$Chart$Attributes$width(400),
 					$terezka$elm_charts$Chart$Attributes$padding(
-					{bottom: 5, left: 10, right: 10, top: 10})
+					{bottom: 0, left: 0, right: 20, top: 10}),
+					$terezka$elm_charts$Chart$Attributes$margin(
+					{bottom: 20, left: 20, right: 0, top: 40}),
+					$terezka$elm_charts$Chart$Attributes$attrs(
+					_List_fromArray(
+						[
+							$gampleman$elm_visualization$Zoom$transform(evZoom)
+						])),
+					$terezka$elm_charts$Chart$Attributes$attrs(
+					A2(
+						$gampleman$elm_visualization$Zoom$events,
+						evZoom,
+						A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$MyCharts$Chart$EVZoomMsg)))
 				]),
 			_Utils_ap(
 				_List_fromArray(
 					[
-						$terezka$elm_charts$Chart$xLabels(_List_Nil),
+						$terezka$elm_charts$Chart$xLabels(
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$pinned(
+								function ($) {
+									return $.min;
+								}),
+								$terezka$elm_charts$Chart$Attributes$withGrid
+							])),
 						$terezka$elm_charts$Chart$yLabels(
 						_List_fromArray(
-							[$terezka$elm_charts$Chart$Attributes$withGrid]))
+							[
+								$terezka$elm_charts$Chart$Attributes$pinned(
+								function ($) {
+									return $.min;
+								}),
+								$terezka$elm_charts$Chart$Attributes$withGrid
+							])),
+						$terezka$elm_charts$Chart$xAxis(
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$pinned(
+								function ($) {
+									return $.min;
+								})
+							])),
+						$terezka$elm_charts$Chart$yAxis(_List_Nil),
+						$terezka$elm_charts$Chart$xTicks(
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$pinned(
+								function ($) {
+									return $.min;
+								})
+							])),
+						$terezka$elm_charts$Chart$yTicks(_List_Nil),
+						A4(
+						$terezka$elm_charts$Chart$legendsAt,
+						function ($) {
+							return $.min;
+						},
+						function ($) {
+							return $.max;
+						},
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$row,
+								$terezka$elm_charts$Chart$Attributes$alignLeft,
+								$terezka$elm_charts$Chart$Attributes$moveRight(20),
+								$terezka$elm_charts$Chart$Attributes$moveUp(28),
+								$terezka$elm_charts$Chart$Attributes$spacing(15)
+							]),
+						_List_fromArray(
+							[
+								$terezka$elm_charts$Chart$Attributes$width(20)
+							]))
 					]),
-				A2(
-					$elm$core$List$filterMap,
-					$author$project$MyChart$curveToChartSeriesView(chartData),
-					curves)));
+				function () {
+					if (!chartData.b) {
+						return _List_Nil;
+					} else {
+						var chartDatum = chartData.a;
+						var cds = chartData.b;
+						return A2(
+							$elm$core$List$filterMap,
+							A2($author$project$MyCharts$Chart$Curve$curveToChartSeries, chartDatum, chartData),
+							curves);
+					}
+				}()));
 	});
-var $author$project$MyChart$AddCurve = {$: 'AddCurve'};
-var $author$project$MyChart$RemoveCurve = function (a) {
+var $author$project$MyCharts$Chart$AddCurve = {$: 'AddCurve'};
+var $author$project$MyCharts$Chart$RemoveCurve = function (a) {
 	return {$: 'RemoveCurve', a: a};
 };
 var $author$project$UI$addCurveButton = function (msg) {
@@ -19192,122 +22142,17 @@ var $author$project$UI$addCurveButtonSpace = A2(
 			$mdgriffith$elm_ui$Element$px(36))
 		]),
 	$mdgriffith$elm_ui$Element$none);
-var $author$project$MyChart$ChangeAxis = F3(
-	function (a, b, c) {
-		return {$: 'ChangeAxis', a: a, b: b, c: c};
+var $author$project$MyCharts$Chart$CurveMsg = F2(
+	function (a, b) {
+		return {$: 'CurveMsg', a: a, b: b};
 	});
-var $author$project$MyChart$XAxis = {$: 'XAxis'};
-var $author$project$MyChart$YAxis = {$: 'YAxis'};
-var $elm$html$Html$option = _VirtualDom_node('option');
-var $elm$html$Html$Attributes$selected = $elm$html$Html$Attributes$boolProperty('selected');
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$MyChart$chartAxisOptionView = F3(
-	function (val, txt, selStr) {
-		return _Utils_eq(selStr, val) ? A2(
-			$elm$html$Html$option,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$value(val),
-					$elm$html$Html$Attributes$selected(true)
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text(txt)
-				])) : A2(
-			$elm$html$Html$option,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$value(val)
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text(txt)
-				]));
-	});
-var $author$project$MyChart$chartAxesOptionsView = F2(
-	function (chartData, selStr) {
-		if (!chartData.b) {
-			return _List_Nil;
-		} else {
-			var chartDatum = chartData.a;
-			var ls = chartData.b;
-			switch (chartDatum.$) {
-				case 'TS1':
-					var datum = chartDatum.a;
-					return _List_fromArray(
-						[
-							A3($author$project$MyChart$chartAxisOptionView, 't', 't', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'x1', 'x', selStr)
-						]);
-				case 'TS1E1R1U1':
-					var datum = chartDatum.a;
-					return _List_fromArray(
-						[
-							A3($author$project$MyChart$chartAxisOptionView, 't', 't', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'x1', 'x', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'e1', 'e', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'r1', 'r', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'u1', 'u', selStr)
-						]);
-				default:
-					var datum = chartDatum.a;
-					return _List_fromArray(
-						[
-							A3($author$project$MyChart$chartAxisOptionView, 't', 't', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'x1', 'x', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'e1', 'e', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'r1', 'r', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'u1', 'u', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'u2', 'up', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'u3', 'ui', selStr),
-							A3($author$project$MyChart$chartAxisOptionView, 'u4', 'ud', selStr)
-						]);
-			}
-		}
-	});
-var $mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
-var $mdgriffith$elm_ui$Internal$Model$asColumn = $mdgriffith$elm_ui$Internal$Model$AsColumn;
-var $mdgriffith$elm_ui$Element$column = F2(
-	function (attrs, children) {
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asColumn,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
-var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
-var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
-var $mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asRow,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
+var $author$project$MyCharts$Chart$Curve$XAxis = function (a) {
+	return {$: 'XAxis', a: a};
+};
+var $author$project$MyCharts$Chart$Curve$YAxis = function (a) {
+	return {$: 'YAxis', a: a};
+};
 var $mdgriffith$elm_ui$Element$Font$alignRight = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textRight);
-var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
-var $mdgriffith$elm_ui$Element$html = $mdgriffith$elm_ui$Internal$Model$unstyled;
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -19320,10 +22165,6 @@ var $elm$html$Html$Events$stopPropagationOn = F2(
 			$elm$virtual_dom$VirtualDom$on,
 			event,
 			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
 	});
 var $elm$html$Html$Events$targetValue = A2(
 	$elm$json$Json$Decode$at,
@@ -19369,7 +22210,82 @@ var $author$project$UI$select = F2(
 						]),
 					options)));
 	});
-var $author$project$MyChart$chartCurveSelectionViewElement = F3(
+var $elm$html$Html$option = _VirtualDom_node('option');
+var $elm$html$Html$Attributes$selected = $elm$html$Html$Attributes$boolProperty('selected');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$MyCharts$Chart$Curve$chartAxisOptionView = F3(
+	function (val, txt, selStr) {
+		return _Utils_eq(selStr, val) ? A2(
+			$elm$html$Html$option,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$value(val),
+					$elm$html$Html$Attributes$selected(true)
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(txt)
+				])) : A2(
+			$elm$html$Html$option,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$value(val)
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(txt)
+				]));
+	});
+var $author$project$MyCharts$Chart$Curve$chartAxisOptionView2 = F3(
+	function (chartDatum, optStr, selStr) {
+		return A3(
+			$author$project$MyCharts$Chart$Curve$chartAxisOptionView,
+			optStr,
+			A2($author$project$MyCharts$Chart$Curve$optionToNameCurve, chartDatum, optStr),
+			selStr);
+	});
+var $author$project$MyCharts$Chart$Curve$view = F2(
+	function (chartData, selStr) {
+		if (!chartData.b) {
+			return _List_Nil;
+		} else {
+			var chartDatum = chartData.a;
+			var ls = chartData.b;
+			switch (chartDatum.$) {
+				case 'TS1':
+					var datum = chartDatum.a;
+					return _List_fromArray(
+						[
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 't', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'x1', selStr)
+						]);
+				case 'TS1E1R1U1':
+					var datum = chartDatum.a;
+					return _List_fromArray(
+						[
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 't', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'x1', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'e1', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'r1', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'u1', selStr)
+						]);
+				default:
+					var datum = chartDatum.a;
+					return _List_fromArray(
+						[
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 't', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'x1', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'e1', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'r1', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'u1', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'u2', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'u3', selStr),
+							A3($author$project$MyCharts$Chart$Curve$chartAxisOptionView2, chartDatum, 'u4', selStr)
+						]);
+			}
+		}
+	});
+var $author$project$MyCharts$Chart$curveSelectionView = F3(
 	function (chartData, chartIToMsg, curve) {
 		var curveID = function ($) {
 			return $.curveID;
@@ -19403,16 +22319,22 @@ var $author$project$MyChart$chartCurveSelectionViewElement = F3(
 							$author$project$UI$select,
 							A2(
 								$elm$core$Basics$composeL,
-								chartIToMsg,
-								A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$XAxis)),
-							A2($author$project$MyChart$chartAxesOptionsView, chartData, xstr)),
+								A2(
+									$elm$core$Basics$composeL,
+									chartIToMsg,
+									$author$project$MyCharts$Chart$CurveMsg(curveID)),
+								$author$project$MyCharts$Chart$Curve$XAxis),
+							A2($author$project$MyCharts$Chart$Curve$view, chartData, xstr)),
 							A2(
 							$author$project$UI$select,
 							A2(
 								$elm$core$Basics$composeL,
-								chartIToMsg,
-								A2($author$project$MyChart$ChangeAxis, curveID, $author$project$MyChart$YAxis)),
-							A2($author$project$MyChart$chartAxesOptionsView, chartData, ystr))
+								A2(
+									$elm$core$Basics$composeL,
+									chartIToMsg,
+									$author$project$MyCharts$Chart$CurveMsg(curveID)),
+								$author$project$MyCharts$Chart$Curve$YAxis),
+							A2($author$project$MyCharts$Chart$Curve$view, chartData, ystr))
 						]))
 				]));
 	});
@@ -19451,26 +22373,7 @@ var $author$project$UI$removeCurveButton = function (msg) {
 			onPress: $elm$core$Maybe$Just(msg)
 		});
 };
-var $mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
-	function (a, b, c) {
-		return {$: 'SpacingStyle', a: a, b: b, c: c};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$spacing = $mdgriffith$elm_ui$Internal$Flag$flag(3);
-var $mdgriffith$elm_ui$Internal$Model$spacingName = F2(
-	function (x, y) {
-		return 'spacing-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y)));
-	});
-var $mdgriffith$elm_ui$Element$spacing = function (x) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$spacing,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$SpacingStyle,
-			A2($mdgriffith$elm_ui$Internal$Model$spacingName, x, x),
-			x,
-			x));
-};
-var $author$project$MyChart$chartCurvesViewElement = F3(
+var $author$project$MyCharts$Chart$viewCurves = F3(
 	function (chartData, chartIToMsg, curves) {
 		var width = 0;
 		var spacing = $mdgriffith$elm_ui$Element$spacing(10);
@@ -19485,7 +22388,7 @@ var $author$project$MyChart$chartCurvesViewElement = F3(
 					_List_fromArray(
 						[
 							$author$project$UI$addCurveButton(
-							chartIToMsg($author$project$MyChart$AddCurve))
+							chartIToMsg($author$project$MyCharts$Chart$AddCurve))
 						])),
 				_List_Nil);
 		} else {
@@ -19499,15 +22402,15 @@ var $author$project$MyChart$chartCurvesViewElement = F3(
 							[align, spacing]),
 						_List_fromArray(
 							[
-								A3($author$project$MyChart$chartCurveSelectionViewElement, chartData, chartIToMsg, c),
+								A3($author$project$MyCharts$Chart$curveSelectionView, chartData, chartIToMsg, c),
 								$author$project$UI$removeCurveButton(
 								chartIToMsg(
-									$author$project$MyChart$RemoveCurve(
+									$author$project$MyCharts$Chart$RemoveCurve(
 										function ($) {
 											return $.curveID;
 										}(c)))),
 								$author$project$UI$addCurveButton(
-								chartIToMsg($author$project$MyChart$AddCurve)),
+								chartIToMsg($author$project$MyCharts$Chart$AddCurve)),
 								$author$project$UI$elementNoneWidth(width)
 							])),
 					_List_Nil);
@@ -19522,54 +22425,31 @@ var $author$project$MyChart$chartCurvesViewElement = F3(
 							[align, spacing]),
 						_List_fromArray(
 							[
-								A3($author$project$MyChart$chartCurveSelectionViewElement, chartData, chartIToMsg, c),
+								A3($author$project$MyCharts$Chart$curveSelectionView, chartData, chartIToMsg, c),
 								$author$project$UI$removeCurveButton(
 								chartIToMsg(
-									$author$project$MyChart$RemoveCurve(
+									$author$project$MyCharts$Chart$RemoveCurve(
 										function ($) {
 											return $.curveID;
 										}(c)))),
 								$author$project$UI$addCurveButtonSpace,
 								$author$project$UI$elementNoneWidth(width)
 							])),
-					A3($author$project$MyChart$chartCurvesViewElement, chartData, chartIToMsg, cs));
+					A3($author$project$MyCharts$Chart$viewCurves, chartData, chartIToMsg, cs));
 			}
 		}
 	});
-var $mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
-	return {$: 'Fill', a: a};
-};
-var $mdgriffith$elm_ui$Element$fill = $mdgriffith$elm_ui$Internal$Model$Fill(1);
-var $author$project$MyChart$RemoveChart = function (a) {
-	return {$: 'RemoveChart', a: a};
-};
-var $author$project$MyChart$removeChartButton = F2(
-	function (chartID, chartsInteractToMsg) {
-		return A2(
-			$mdgriffith$elm_ui$Element$Input$button,
-			_List_fromArray(
-				[$mdgriffith$elm_ui$Element$alignLeft]),
-			{
-				label: A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_Nil,
-					$mdgriffith$elm_ui$Element$text('Remove Chart')),
-				onPress: $elm$core$Maybe$Just(
-					chartsInteractToMsg(
-						$author$project$MyChart$RemoveChart(chartID)))
-			});
-	});
-var $author$project$MyChart$chartViewElement = F4(
-	function (chartData, chartParam, chartIDTochartIToMsg, chartsInteractToMsg) {
+var $author$project$MyCharts$view = F3(
+	function (chartData, chartModel, msgToMainMsg) {
 		var editingCurves = function ($) {
 			return $.editingCurves;
-		}(chartParam);
+		}(chartModel);
 		var curves = function ($) {
 			return $.curves;
-		}(chartParam);
+		}(chartModel);
 		var chartID = function ($) {
 			return $.chartID;
-		}(chartParam);
+		}(chartModel);
 		return A2(
 			$author$project$UI$element,
 			_List_Nil,
@@ -19594,17 +22474,23 @@ var $author$project$MyChart$chartViewElement = F4(
 										]),
 									_List_fromArray(
 										[
-											A2($author$project$MyChart$removeChartButton, chartID, chartsInteractToMsg),
+											A2($author$project$MyCharts$removeChartButton, chartID, msgToMainMsg),
 											A2(
-											$author$project$MyChart$buttonToggleChart,
+											$author$project$MyCharts$buttonToggleChart,
 											editingCurves,
-											chartIDTochartIToMsg(chartID))
+											A2(
+												$elm$core$Basics$composeL,
+												msgToMainMsg,
+												$author$project$MyCharts$ChartMsg(chartID)))
 										]))
 								]),
 							A3(
-								$author$project$MyChart$chartCurvesViewElement,
+								$author$project$MyCharts$Chart$viewCurves,
 								chartData,
-								chartIDTochartIToMsg(chartID),
+								A2(
+									$elm$core$Basics$composeL,
+									msgToMainMsg,
+									$author$project$MyCharts$ChartMsg(chartID)),
 								curves)));
 				} else {
 					return A2(
@@ -19625,11 +22511,14 @@ var $author$project$MyChart$chartViewElement = F4(
 									]),
 								_List_fromArray(
 									[
-										A2($author$project$MyChart$removeChartButton, chartID, chartsInteractToMsg),
+										A2($author$project$MyCharts$removeChartButton, chartID, msgToMainMsg),
 										A2(
-										$author$project$MyChart$buttonToggleChart,
+										$author$project$MyCharts$buttonToggleChart,
 										editingCurves,
-										chartIDTochartIToMsg(chartID))
+										A2(
+											$elm$core$Basics$composeL,
+											msgToMainMsg,
+											$author$project$MyCharts$ChartMsg(chartID)))
 									])),
 								A2(
 								$mdgriffith$elm_ui$Element$el,
@@ -19640,27 +22529,35 @@ var $author$project$MyChart$chartViewElement = F4(
 										$mdgriffith$elm_ui$Element$px(400))
 									]),
 								$mdgriffith$elm_ui$Element$html(
-									A2($author$project$MyChart$chart5View, chartData, curves)))
+									A4(
+										$author$project$MyCharts$Chart$view,
+										chartModel,
+										A2(
+											$elm$core$Basics$composeL,
+											msgToMainMsg,
+											$author$project$MyCharts$ChartMsg(chartID)),
+										chartData,
+										curves)))
 							]));
 				}
 			}());
 	});
-var $author$project$MyChart$listMaybeChartToListElement = F4(
-	function (listMaybe, chartData, chartIDTochartIToMsg, chartsInteractToMsg) {
+var $author$project$MyCharts$listMaybeChartToListElement = F3(
+	function (listMaybe, chartData, msgToMainMsg) {
 		var indexedFunc = F2(
 			function (index, maybeChart) {
 				if (maybeChart.$ === 'Just') {
-					var chartParam = maybeChart.a;
-					return A4($author$project$MyChart$chartViewElement, chartData, chartParam, chartIDTochartIToMsg, chartsInteractToMsg);
+					var chartModel = maybeChart.a;
+					return A3($author$project$MyCharts$view, chartData, chartModel, msgToMainMsg);
 				} else {
 					return $author$project$UI$addNewElementSpace(
-						chartsInteractToMsg(
-							$author$project$MyChart$AddChart(index + 1)));
+						msgToMainMsg(
+							$author$project$MyCharts$AddChart(index + 1)));
 				}
 			});
 		return A2($elm$core$List$indexedMap, indexedFunc, listMaybe);
 	});
-var $author$project$MyChart$listToTuple = function (listElement) {
+var $author$project$MyCharts$listToTuple = function (listElement) {
 	if (listElement.b && listElement.b.b) {
 		var a = listElement.a;
 		var _v1 = listElement.b;
@@ -19669,12 +22566,12 @@ var $author$project$MyChart$listToTuple = function (listElement) {
 		return A2(
 			$elm$core$List$cons,
 			_Utils_Tuple2(a, b),
-			$author$project$MyChart$listToTuple(xs));
+			$author$project$MyCharts$listToTuple(xs));
 	} else {
 		return _List_Nil;
 	}
 };
-var $author$project$MyChart$maxChartIDFromListCharts = function (chartsParam) {
+var $author$project$MyCharts$maxChartIDFromListCharts = function (model) {
 	return A3(
 		$elm$core$List$foldr,
 		F2(
@@ -19682,12 +22579,12 @@ var $author$project$MyChart$maxChartIDFromListCharts = function (chartsParam) {
 				return A2($elm$core$Basics$max, cp.chartID, acc);
 			}),
 		0,
-		chartsParam);
+		model);
 };
-var $author$project$MyChart$chartsTuple = F4(
-	function (chartsParam, chartData, chartIDTochartIToMsg, chartsInteractToMsg) {
-		var maxChartID = $author$project$MyChart$maxChartIDFromListCharts(chartsParam);
-		var listMaybe = A2($author$project$MyChart$fillWithMaybe, chartsParam, 1);
+var $author$project$MyCharts$chartsTuple = F3(
+	function (model, chartData, msgToMainMsg) {
+		var maxChartID = $author$project$MyCharts$maxChartIDFromListCharts(model);
+		var listMaybe = A2($author$project$MyCharts$fillWithMaybe, model, 1);
 		var newListMaybe = (!A2($elm$core$Basics$modBy, 2, maxChartID)) ? _Utils_ap(
 			listMaybe,
 			_List_fromArray(
@@ -19695,15 +22592,8 @@ var $author$project$MyChart$chartsTuple = F4(
 			listMaybe,
 			_List_fromArray(
 				[$elm$core$Maybe$Nothing]));
-		var listElement = A4($author$project$MyChart$listMaybeChartToListElement, newListMaybe, chartData, chartIDTochartIToMsg, chartsInteractToMsg);
-		return $author$project$MyChart$listToTuple(listElement);
-	});
-var $author$project$Main$fcomposition23 = F3(
-	function (f2, f3, c) {
-		return A2(
-			$elm$core$Basics$composeL,
-			f2,
-			f3(c));
+		var listElement = A3($author$project$MyCharts$listMaybeChartToListElement, newListMaybe, chartData, msgToMainMsg);
+		return $author$project$MyCharts$listToTuple(listElement);
 	});
 var $author$project$EdoSolver$getRsUs = F5(
 	function (xs, edoParam, outFunc, refFunc, controller) {
@@ -19740,6 +22630,38 @@ var $mdgriffith$elm_ui$Element$minimum = F2(
 	function (i, l) {
 		return A2($mdgriffith$elm_ui$Internal$Model$Min, i, l);
 	});
+var $mdgriffith$elm_ui$Element$moveDown = function (y) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$TransformComponent,
+		$mdgriffith$elm_ui$Internal$Flag$moveY,
+		$mdgriffith$elm_ui$Internal$Model$MoveY(y));
+};
+var $author$project$ModelSystem$output = function (modelType) {
+	return $author$project$ModelSystem$Level$output;
+};
+var $author$project$DataConvert$rsFromDatum = function (chartDatum) {
+	switch (chartDatum.$) {
+		case 'TS1':
+			var datum = chartDatum.a;
+			return _List_Nil;
+		case 'TS1E1R1U1':
+			var datum = chartDatum.a;
+			return _List_fromArray(
+				[
+					function ($) {
+					return $.r1;
+				}(datum)
+				]);
+		default:
+			var datum = chartDatum.a;
+			return _List_fromArray(
+				[
+					function ($) {
+					return $.r1;
+				}(datum)
+				]);
+	}
+};
 var $ianmackenzie$elm_geometry$Geometry$Types$BoundingBox2d = function (a) {
 	return {$: 'BoundingBox2d', a: a};
 };
@@ -20801,17 +23723,6 @@ var $author$project$Drawing2d$Attributes$addCursor = F2(
 			return A2($elm$core$List$cons, cursorAttribute, svgAttributes);
 		}
 	});
-var $elm$virtual_dom$VirtualDom$Custom = function (a) {
-	return {$: 'Custom', a: a};
-};
-var $elm$html$Html$Events$custom = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$Custom(decoder));
-	});
-var $elm$svg$Svg$Events$custom = $elm$html$Html$Events$custom;
 var $author$project$Drawing2d$Attributes$preventDefaultAndStopPropagation = $elm$json$Json$Decode$map(
 	function (message) {
 		return {message: message, preventDefault: true, stopPropagation: true};
@@ -20832,31 +23743,6 @@ var $author$project$Drawing2d$Attributes$addEventHandler = F3(
 				eventName,
 				$elm$json$Json$Decode$oneOf(decoders)),
 			svgAttributes);
-	});
-var $elm$core$Dict$foldl = F3(
-	function (func, acc, dict) {
-		foldl:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return acc;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$func = func,
-					$temp$acc = A3(
-					func,
-					key,
-					value,
-					A3($elm$core$Dict$foldl, func, acc, left)),
-					$temp$dict = right;
-				func = $temp$func;
-				acc = $temp$acc;
-				dict = $temp$dict;
-				continue foldl;
-			}
-		}
 	});
 var $author$project$Drawing2d$Attributes$suppressTouchActions = F2(
 	function (attributeValues, svgAttributes) {
@@ -21759,7 +24645,7 @@ var $ianmackenzie$elm_geometry$Point2d$pixels = F2(
 		return $ianmackenzie$elm_geometry$Geometry$Types$Point2d(
 			{x: x, y: y});
 	});
-var $author$project$Models$extendP2d = F3(
+var $author$project$ModelSystem$Level$extendP2d = F3(
 	function (p, dx, dy) {
 		var py = $ianmackenzie$elm_units$Pixels$toFloat(
 			$ianmackenzie$elm_geometry$Point2d$yCoordinate(p));
@@ -22343,8 +25229,8 @@ var $ianmackenzie$elm_geometry$Polyline2d$vertices = function (_v0) {
 	var polylineVertices = _v0.a;
 	return polylineVertices;
 };
-var $author$project$Models$levelSim = F4(
-	function (xs, rs, us, levelParam) {
+var $author$project$ModelSystem$Level$simulation = F4(
+	function (xs, rs, us, model) {
 		var yini = 100.0;
 		var xini = 100.0;
 		var waterFall = 50.0;
@@ -22352,7 +25238,7 @@ var $author$project$Models$levelSim = F4(
 			$ianmackenzie$elm_geometry$Rectangle2d$from,
 			$ianmackenzie$elm_geometry$Point2d$origin,
 			A2($ianmackenzie$elm_geometry$Point2d$pixels, 800, 450));
-		var ref = A2(
+		var reference = A2(
 			$elm$core$Maybe$withDefault,
 			0.0,
 			$elm$core$List$head(rs));
@@ -22378,27 +25264,27 @@ var $author$project$Models$levelSim = F4(
 		var pc = A2($ianmackenzie$elm_geometry$Point2d$pixels, xini, yini + h);
 		var esc = 30.0;
 		var e = 10.0;
-		var p3 = A3($author$project$Models$extendP2d, pa, -e, -e);
-		var p8 = A3($author$project$Models$extendP2d, pc, (-e) - esc, 0.0);
-		var p9 = A3($author$project$Models$extendP2d, p8, 0.0, e);
+		var p3 = A3($author$project$ModelSystem$Level$extendP2d, pa, -e, -e);
+		var p8 = A3($author$project$ModelSystem$Level$extendP2d, pc, (-e) - esc, 0.0);
+		var p9 = A3($author$project$ModelSystem$Level$extendP2d, p8, 0.0, e);
 		var ap = function ($) {
 			return $.ap;
-		}(levelParam);
+		}(model);
 		var qo = input2 / ap;
 		var angleb = $ianmackenzie$elm_units$Angle$degrees(90.0);
 		var anglea = $ianmackenzie$elm_units$Angle$degrees(90.0);
 		var ag = function ($) {
 			return $.ag;
-		}(levelParam);
+		}(model);
 		var l = lbase * $elm$core$Basics$sqrt(ag);
 		var pb = A2($ianmackenzie$elm_geometry$Point2d$pixels, xini + l, yini);
-		var p1 = A3($author$project$Models$extendP2d, pb, esc + e, 0.0);
-		var p2 = A3($author$project$Models$extendP2d, p1, 0.0, -e);
+		var p1 = A3($author$project$ModelSystem$Level$extendP2d, pb, esc + e, 0.0);
+		var p2 = A3($author$project$ModelSystem$Level$extendP2d, p1, 0.0, -e);
 		var prc1 = p1;
 		var prb1 = pb;
 		var pd = A2($ianmackenzie$elm_geometry$Point2d$pixels, xini + l, yini + h);
-		var p10 = A3($author$project$Models$extendP2d, pd, e, e);
-		var prect2 = A3($author$project$Models$extendP2d, prect1, l, levelPixel);
+		var p10 = A3($author$project$ModelSystem$Level$extendP2d, pd, e, e);
+		var prect2 = A3($author$project$ModelSystem$Level$extendP2d, prect1, l, levelPixel);
 		var rect = A2($ianmackenzie$elm_geometry$Rectangle2d$from, prect1, prect2);
 		var abbase = 20.0;
 		var ab = (3 * abbase) * $elm$core$Basics$sqrt(ap);
@@ -22409,8 +25295,8 @@ var $author$project$Models$levelSim = F4(
 			$elm$core$List$minimum(
 				_List_fromArray(
 					[levelPixel, ab])));
-		var parcb1 = A3($author$project$Models$extendP2d, p1, 0.0, hrb);
-		var parcb2 = A3($author$project$Models$extendP2d, p1, hrb, 0.0);
+		var parcb1 = A3($author$project$ModelSystem$Level$extendP2d, p1, 0.0, hrb);
+		var parcb2 = A3($author$project$ModelSystem$Level$extendP2d, p1, hrb, 0.0);
 		var arcb = A3($ianmackenzie$elm_geometry$Arc2d$from, parcb2, parcb1, angleb);
 		var arcAsPolylineSegsB = A2($ianmackenzie$elm_geometry$Arc2d$segments, nSegs, arcb);
 		var polyb = $ianmackenzie$elm_geometry$Polygon2d$singleLoop(
@@ -22418,28 +25304,28 @@ var $author$project$Models$levelSim = F4(
 				$elm$core$List$cons,
 				$ianmackenzie$elm_geometry$Arc2d$centerPoint(arcb),
 				$ianmackenzie$elm_geometry$Polyline2d$vertices(arcAsPolylineSegsB)));
-		var prb2 = A3($author$project$Models$extendP2d, prb1, e + esc, hrb);
+		var prb2 = A3($author$project$ModelSystem$Level$extendP2d, prb1, e + esc, hrb);
 		var rectb = A2($ianmackenzie$elm_geometry$Rectangle2d$from, prb1, prb2);
-		var prc2 = A3($author$project$Models$extendP2d, prc1, hrb, -waterFall);
+		var prc2 = A3($author$project$ModelSystem$Level$extendP2d, prc1, hrb, -waterFall);
 		var rectBB = A2($ianmackenzie$elm_geometry$Rectangle2d$from, prc2, p9);
 		var boundingBox = $ianmackenzie$elm_geometry$Rectangle2d$boundingBox(rectBB);
 		var rectBB2 = $ianmackenzie$elm_geometry$Rectangle2d$fromBoundingBox(boundingBox);
 		var rectc = A2($ianmackenzie$elm_geometry$Rectangle2d$from, prc1, prc2);
-		var p11 = A3($author$project$Models$extendP2d, pb, e, ab + e);
-		var p12 = A3($author$project$Models$extendP2d, p11, esc, 0.0);
-		var p13 = A3($author$project$Models$extendP2d, p12, 0.0, -e);
-		var p14 = A3($author$project$Models$extendP2d, pb, 0.0, ab);
+		var p11 = A3($author$project$ModelSystem$Level$extendP2d, pb, e, ab + e);
+		var p12 = A3($author$project$ModelSystem$Level$extendP2d, p11, esc, 0.0);
+		var p13 = A3($author$project$ModelSystem$Level$extendP2d, p12, 0.0, -e);
+		var p14 = A3($author$project$ModelSystem$Level$extendP2d, pb, 0.0, ab);
 		var poly2 = $ianmackenzie$elm_geometry$Polygon2d$singleLoop(
 			_List_fromArray(
 				[pc, p8, p9, p10, p11, p12, p13, p14, pd]));
-		var p4 = A3($author$project$Models$extendP2d, pc, -e, (-e) - ab);
-		var p5 = A3($author$project$Models$extendP2d, p4, -esc, 0.0);
-		var p6 = A3($author$project$Models$extendP2d, p5, 0.0, e);
-		var p7 = A3($author$project$Models$extendP2d, p6, e + esc, 0.0);
+		var p4 = A3($author$project$ModelSystem$Level$extendP2d, pc, -e, (-e) - ab);
+		var p5 = A3($author$project$ModelSystem$Level$extendP2d, p4, -esc, 0.0);
+		var p6 = A3($author$project$ModelSystem$Level$extendP2d, p5, 0.0, e);
+		var p7 = A3($author$project$ModelSystem$Level$extendP2d, p6, e + esc, 0.0);
 		var pra11 = p6;
-		var pra12 = A3($author$project$Models$extendP2d, pra11, esc + e, hqo);
+		var pra12 = A3($author$project$ModelSystem$Level$extendP2d, pra11, esc + e, hqo);
 		var parca1 = pra12;
-		var pra21 = A3($author$project$Models$extendP2d, pra11, (esc + e) + hqo, 0.0);
+		var pra21 = A3($author$project$ModelSystem$Level$extendP2d, pra11, (esc + e) + hqo, 0.0);
 		var parca2 = pra21;
 		var arca = A3($ianmackenzie$elm_geometry$Arc2d$from, parca2, parca1, anglea);
 		var arcAsPolylineSegsA = A2($ianmackenzie$elm_geometry$Arc2d$segments, nSegs, arca);
@@ -22492,40 +25378,11 @@ var $author$project$Models$levelSim = F4(
 				viewBox: rectBB2
 			});
 	});
-var $author$project$Models$modelSim = F4(
-	function (xs, rs, us, modelParam) {
-		var levelParam = modelParam.a;
-		return A4($author$project$Models$levelSim, xs, rs, us, levelParam);
+var $author$project$ModelSystem$simulation = F4(
+	function (xs, rs, us, model) {
+		var levelModel = model.a;
+		return A4($author$project$ModelSystem$Level$simulation, xs, rs, us, levelModel);
 	});
-var $mdgriffith$elm_ui$Element$moveDown = function (y) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$TransformComponent,
-		$mdgriffith$elm_ui$Internal$Flag$moveY,
-		$mdgriffith$elm_ui$Internal$Model$MoveY(y));
-};
-var $author$project$DataConvert$rsFromDatum = function (chartDatum) {
-	switch (chartDatum.$) {
-		case 'TS1':
-			var datum = chartDatum.a;
-			return _List_Nil;
-		case 'TS1E1R1U1':
-			var datum = chartDatum.a;
-			return _List_fromArray(
-				[
-					function ($) {
-					return $.r1;
-				}(datum)
-				]);
-		default:
-			var datum = chartDatum.a;
-			return _List_fromArray(
-				[
-					function ($) {
-					return $.r1;
-				}(datum)
-				]);
-	}
-};
 var $author$project$DataConvert$usFromDatum = function (chartDatum) {
 	switch (chartDatum.$) {
 		case 'TS1':
@@ -22558,267 +25415,37 @@ var $author$project$DataConvert$usFromDatum = function (chartDatum) {
 				]);
 	}
 };
-var $mdgriffith$elm_ui$Internal$Model$FontFamily = F2(
-	function (a, b) {
-		return {$: 'FontFamily', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$fontFamily = $mdgriffith$elm_ui$Internal$Flag$flag(5);
-var $elm$core$String$words = _String_words;
-var $mdgriffith$elm_ui$Internal$Model$renderFontClassName = F2(
-	function (font, current) {
-		return _Utils_ap(
-			current,
-			function () {
-				switch (font.$) {
-					case 'Serif':
-						return 'serif';
-					case 'SansSerif':
-						return 'sans-serif';
-					case 'Monospace':
-						return 'monospace';
-					case 'Typeface':
-						var name = font.a;
-						return A2(
-							$elm$core$String$join,
-							'-',
-							$elm$core$String$words(
-								$elm$core$String$toLower(name)));
-					case 'ImportFont':
-						var name = font.a;
-						var url = font.b;
-						return A2(
-							$elm$core$String$join,
-							'-',
-							$elm$core$String$words(
-								$elm$core$String$toLower(name)));
-					default:
-						var name = font.a.name;
-						return A2(
-							$elm$core$String$join,
-							'-',
-							$elm$core$String$words(
-								$elm$core$String$toLower(name)));
-				}
-			}());
-	});
-var $mdgriffith$elm_ui$Element$Font$family = function (families) {
+var $author$project$Controller$PidMsg = function (a) {
+	return {$: 'PidMsg', a: a};
+};
+var $author$project$Controller$PID$PidKd = function (a) {
+	return {$: 'PidKd', a: a};
+};
+var $author$project$Controller$PID$PidKi = function (a) {
+	return {$: 'PidKi', a: a};
+};
+var $author$project$Controller$PID$PidKp = function (a) {
+	return {$: 'PidKp', a: a};
+};
+var $author$project$UI$heading = function (str) {
 	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$fontFamily,
-		A2(
-			$mdgriffith$elm_ui$Internal$Model$FontFamily,
-			A3($elm$core$List$foldl, $mdgriffith$elm_ui$Internal$Model$renderFontClassName, 'ff-', families),
-			families));
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$centerX,
+				$mdgriffith$elm_ui$Element$alignTop,
+				$mdgriffith$elm_ui$Element$Font$size(20),
+				$mdgriffith$elm_ui$Element$Font$variant($mdgriffith$elm_ui$Element$Font$smallCaps)
+			]),
+		$mdgriffith$elm_ui$Element$text(str));
 };
-var $mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
-	function (a, b) {
-		return {$: 'OnlyDynamic', a: a, b: b};
+var $mdgriffith$elm_ui$Element$htmlAttribute = $mdgriffith$elm_ui$Internal$Model$Attr;
+var $mdgriffith$elm_ui$Element$Input$Label = F3(
+	function (a, b, c) {
+		return {$: 'Label', a: a, b: b, c: c};
 	});
-var $mdgriffith$elm_ui$Internal$Model$StaticRootAndDynamic = F2(
-	function (a, b) {
-		return {$: 'StaticRootAndDynamic', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Internal$Model$AllowHover = {$: 'AllowHover'};
-var $mdgriffith$elm_ui$Internal$Model$Layout = {$: 'Layout'};
-var $mdgriffith$elm_ui$Internal$Model$focusDefaultStyle = {
-	backgroundColor: $elm$core$Maybe$Nothing,
-	borderColor: $elm$core$Maybe$Nothing,
-	shadow: $elm$core$Maybe$Just(
-		{
-			blur: 0,
-			color: A4($mdgriffith$elm_ui$Internal$Model$Rgba, 155 / 255, 203 / 255, 1, 1),
-			offset: _Utils_Tuple2(0, 0),
-			size: 3
-		})
-};
-var $mdgriffith$elm_ui$Internal$Model$optionsToRecord = function (options) {
-	var combine = F2(
-		function (opt, record) {
-			switch (opt.$) {
-				case 'HoverOption':
-					var hoverable = opt.a;
-					var _v4 = record.hover;
-					if (_v4.$ === 'Nothing') {
-						return _Utils_update(
-							record,
-							{
-								hover: $elm$core$Maybe$Just(hoverable)
-							});
-					} else {
-						return record;
-					}
-				case 'FocusStyleOption':
-					var focusStyle = opt.a;
-					var _v5 = record.focus;
-					if (_v5.$ === 'Nothing') {
-						return _Utils_update(
-							record,
-							{
-								focus: $elm$core$Maybe$Just(focusStyle)
-							});
-					} else {
-						return record;
-					}
-				default:
-					var renderMode = opt.a;
-					var _v6 = record.mode;
-					if (_v6.$ === 'Nothing') {
-						return _Utils_update(
-							record,
-							{
-								mode: $elm$core$Maybe$Just(renderMode)
-							});
-					} else {
-						return record;
-					}
-			}
-		});
-	var andFinally = function (record) {
-		return {
-			focus: function () {
-				var _v0 = record.focus;
-				if (_v0.$ === 'Nothing') {
-					return $mdgriffith$elm_ui$Internal$Model$focusDefaultStyle;
-				} else {
-					var focusable = _v0.a;
-					return focusable;
-				}
-			}(),
-			hover: function () {
-				var _v1 = record.hover;
-				if (_v1.$ === 'Nothing') {
-					return $mdgriffith$elm_ui$Internal$Model$AllowHover;
-				} else {
-					var hoverable = _v1.a;
-					return hoverable;
-				}
-			}(),
-			mode: function () {
-				var _v2 = record.mode;
-				if (_v2.$ === 'Nothing') {
-					return $mdgriffith$elm_ui$Internal$Model$Layout;
-				} else {
-					var actualMode = _v2.a;
-					return actualMode;
-				}
-			}()
-		};
-	};
-	return andFinally(
-		A3(
-			$elm$core$List$foldr,
-			combine,
-			{focus: $elm$core$Maybe$Nothing, hover: $elm$core$Maybe$Nothing, mode: $elm$core$Maybe$Nothing},
-			options));
-};
-var $mdgriffith$elm_ui$Internal$Model$toHtml = F2(
-	function (mode, el) {
-		switch (el.$) {
-			case 'Unstyled':
-				var html = el.a;
-				return html($mdgriffith$elm_ui$Internal$Model$asEl);
-			case 'Styled':
-				var styles = el.a.styles;
-				var html = el.a.html;
-				return A2(
-					html,
-					mode(styles),
-					$mdgriffith$elm_ui$Internal$Model$asEl);
-			case 'Text':
-				var text = el.a;
-				return $mdgriffith$elm_ui$Internal$Model$textElement(text);
-			default:
-				return $mdgriffith$elm_ui$Internal$Model$textElement('');
-		}
-	});
-var $mdgriffith$elm_ui$Internal$Model$renderRoot = F3(
-	function (optionList, attributes, child) {
-		var options = $mdgriffith$elm_ui$Internal$Model$optionsToRecord(optionList);
-		var embedStyle = function () {
-			var _v0 = options.mode;
-			if (_v0.$ === 'NoStaticStyleSheet') {
-				return $mdgriffith$elm_ui$Internal$Model$OnlyDynamic(options);
-			} else {
-				return $mdgriffith$elm_ui$Internal$Model$StaticRootAndDynamic(options);
-			}
-		}();
-		return A2(
-			$mdgriffith$elm_ui$Internal$Model$toHtml,
-			embedStyle,
-			A4(
-				$mdgriffith$elm_ui$Internal$Model$element,
-				$mdgriffith$elm_ui$Internal$Model$asEl,
-				$mdgriffith$elm_ui$Internal$Model$div,
-				attributes,
-				$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-					_List_fromArray(
-						[child]))));
-	});
-var $mdgriffith$elm_ui$Internal$Model$SansSerif = {$: 'SansSerif'};
-var $mdgriffith$elm_ui$Internal$Model$Typeface = function (a) {
-	return {$: 'Typeface', a: a};
-};
-var $mdgriffith$elm_ui$Internal$Flag$bgColor = $mdgriffith$elm_ui$Internal$Flag$flag(8);
-var $mdgriffith$elm_ui$Internal$Model$rootStyle = function () {
-	var families = _List_fromArray(
-		[
-			$mdgriffith$elm_ui$Internal$Model$Typeface('Open Sans'),
-			$mdgriffith$elm_ui$Internal$Model$Typeface('Helvetica'),
-			$mdgriffith$elm_ui$Internal$Model$Typeface('Verdana'),
-			$mdgriffith$elm_ui$Internal$Model$SansSerif
-		]);
-	return _List_fromArray(
-		[
-			A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$bgColor,
-			A3(
-				$mdgriffith$elm_ui$Internal$Model$Colored,
-				'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(
-					A4($mdgriffith$elm_ui$Internal$Model$Rgba, 1, 1, 1, 0)),
-				'background-color',
-				A4($mdgriffith$elm_ui$Internal$Model$Rgba, 1, 1, 1, 0))),
-			A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$fontColor,
-			A3(
-				$mdgriffith$elm_ui$Internal$Model$Colored,
-				'fc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(
-					A4($mdgriffith$elm_ui$Internal$Model$Rgba, 0, 0, 0, 1)),
-				'color',
-				A4($mdgriffith$elm_ui$Internal$Model$Rgba, 0, 0, 0, 1))),
-			A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$fontSize,
-			$mdgriffith$elm_ui$Internal$Model$FontSize(20)),
-			A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$fontFamily,
-			A2(
-				$mdgriffith$elm_ui$Internal$Model$FontFamily,
-				A3($elm$core$List$foldl, $mdgriffith$elm_ui$Internal$Model$renderFontClassName, 'font-', families),
-				families))
-		]);
-}();
-var $mdgriffith$elm_ui$Element$layoutWith = F3(
-	function (_v0, attrs, child) {
-		var options = _v0.options;
-		return A3(
-			$mdgriffith$elm_ui$Internal$Model$renderRoot,
-			options,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass(
-					A2(
-						$elm$core$String$join,
-						' ',
-						_List_fromArray(
-							[$mdgriffith$elm_ui$Internal$Style$classes.root, $mdgriffith$elm_ui$Internal$Style$classes.any, $mdgriffith$elm_ui$Internal$Style$classes.single]))),
-				_Utils_ap($mdgriffith$elm_ui$Internal$Model$rootStyle, attrs)),
-			child);
-	});
-var $mdgriffith$elm_ui$Element$layout = $mdgriffith$elm_ui$Element$layoutWith(
-	{options: _List_Nil});
+var $mdgriffith$elm_ui$Element$Input$OnLeft = {$: 'OnLeft'};
+var $mdgriffith$elm_ui$Element$Input$labelLeft = $mdgriffith$elm_ui$Element$Input$Label($mdgriffith$elm_ui$Element$Input$OnLeft);
 var $mdgriffith$elm_ui$Internal$Model$paddingName = F4(
 	function (top, right, bottom, left) {
 		return 'pad-' + ($elm$core$String$fromInt(top) + ('-' + ($elm$core$String$fromInt(right) + ('-' + ($elm$core$String$fromInt(bottom) + ('-' + $elm$core$String$fromInt(left)))))));
@@ -22853,68 +25480,6 @@ var $mdgriffith$elm_ui$Element$paddingEach = function (_v0) {
 				left));
 	}
 };
-var $mdgriffith$elm_ui$Element$Font$sansSerif = $mdgriffith$elm_ui$Internal$Model$SansSerif;
-var $mdgriffith$elm_ui$Element$Font$typeface = $mdgriffith$elm_ui$Internal$Model$Typeface;
-var $author$project$UI$view = function (children) {
-	return A2(
-		$mdgriffith$elm_ui$Element$layout,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$Font$family(
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$Font$typeface('IBM Plex Sans'),
-						$mdgriffith$elm_ui$Element$Font$sansSerif
-					]))
-			]),
-		A2(
-			$mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width(
-					A2($mdgriffith$elm_ui$Element$maximum, 1060, $mdgriffith$elm_ui$Element$fill)),
-					$mdgriffith$elm_ui$Element$paddingEach(
-					{bottom: 20, left: 50, right: 50, top: 30}),
-					$mdgriffith$elm_ui$Element$centerX,
-					$mdgriffith$elm_ui$Element$Font$size(16),
-					$mdgriffith$elm_ui$Element$Font$color(
-					A3($mdgriffith$elm_ui$Element$rgb255, 80, 80, 80)),
-					$mdgriffith$elm_ui$Element$spacing(50)
-				]),
-			children));
-};
-var $author$project$Controller$PidI = function (a) {
-	return {$: 'PidI', a: a};
-};
-var $author$project$Controller$PidKd = function (a) {
-	return {$: 'PidKd', a: a};
-};
-var $author$project$Controller$PidKi = function (a) {
-	return {$: 'PidKi', a: a};
-};
-var $author$project$Controller$PidKp = function (a) {
-	return {$: 'PidKp', a: a};
-};
-var $author$project$UI$heading = function (str) {
-	return A2(
-		$mdgriffith$elm_ui$Element$el,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$centerX,
-				$mdgriffith$elm_ui$Element$alignTop,
-				$mdgriffith$elm_ui$Element$Font$size(20),
-				$mdgriffith$elm_ui$Element$Font$variant($mdgriffith$elm_ui$Element$Font$smallCaps)
-			]),
-		$mdgriffith$elm_ui$Element$text(str));
-};
-var $mdgriffith$elm_ui$Element$htmlAttribute = $mdgriffith$elm_ui$Internal$Model$Attr;
-var $mdgriffith$elm_ui$Element$Input$Label = F3(
-	function (a, b, c) {
-		return {$: 'Label', a: a, b: b, c: c};
-	});
-var $mdgriffith$elm_ui$Element$Input$OnLeft = {$: 'OnLeft'};
-var $mdgriffith$elm_ui$Element$Input$labelLeft = $mdgriffith$elm_ui$Element$Input$Label($mdgriffith$elm_ui$Element$Input$OnLeft);
 var $mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
 	return {$: 'TextInputNode', a: a};
 };
@@ -23045,6 +25610,7 @@ var $mdgriffith$elm_ui$Element$Input$calcMoveToCompensateForPadding = function (
 };
 var $mdgriffith$elm_ui$Internal$Flag$overflow = $mdgriffith$elm_ui$Internal$Flag$flag(20);
 var $mdgriffith$elm_ui$Element$clip = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.clip);
+var $mdgriffith$elm_ui$Internal$Flag$bgColor = $mdgriffith$elm_ui$Internal$Flag$flag(8);
 var $mdgriffith$elm_ui$Element$Background$color = function (clr) {
 	return A2(
 		$mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -23808,17 +26374,17 @@ var $author$project$UI$textField = F3(
 				text: str
 			});
 	});
-var $author$project$Controller$pidViewElement = F2(
-	function (pidParam, pidInteractToMsg) {
+var $author$project$Controller$PID$view = F2(
+	function (model, msgToMainMsg) {
 		var kpStr = function ($) {
 			return $.kpStr;
-		}(pidParam);
+		}(model);
 		var kiStr = function ($) {
 			return $.kiStr;
-		}(pidParam);
+		}(model);
 		var kdStr = function ($) {
 			return $.kdStr;
-		}(pidParam);
+		}(model);
 		return A2(
 			$mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -23842,27 +26408,27 @@ var $author$project$Controller$pidViewElement = F2(
 							$author$project$UI$textField,
 							kpStr,
 							'Kp',
-							A2($elm$core$Basics$composeL, pidInteractToMsg, $author$project$Controller$PidKp)),
+							A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Controller$PID$PidKp)),
 							A3(
 							$author$project$UI$textField,
 							kiStr,
 							'Ki',
-							A2($elm$core$Basics$composeL, pidInteractToMsg, $author$project$Controller$PidKi)),
+							A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Controller$PID$PidKi)),
 							A3(
 							$author$project$UI$textField,
 							kdStr,
 							'Kd',
-							A2($elm$core$Basics$composeL, pidInteractToMsg, $author$project$Controller$PidKd))
+							A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Controller$PID$PidKd))
 						]))
 				]));
 	});
-var $author$project$Controller$viewControllerElement = F2(
-	function (controlParam, controlInteractToMsg) {
-		var pidParam = controlParam.a;
+var $author$project$Controller$view = F2(
+	function (model, msgToMainMsg) {
+		var pidModel = model.a;
 		return A2(
-			$author$project$Controller$pidViewElement,
-			pidParam,
-			A2($elm$core$Basics$composeL, controlInteractToMsg, $author$project$Controller$PidI));
+			$author$project$Controller$PID$view,
+			pidModel,
+			A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Controller$PidMsg));
 	});
 var $author$project$EdoSolver$Tfim = function (a) {
 	return {$: 'Tfim', a: a};
@@ -23870,8 +26436,8 @@ var $author$project$EdoSolver$Tfim = function (a) {
 var $author$project$EdoSolver$Tini = function (a) {
 	return {$: 'Tini', a: a};
 };
-var $author$project$EdoSolver$viewEdoElement = F2(
-	function (edoIStates, edoInteractToMsg) {
+var $author$project$EdoSolver$view = F2(
+	function (edoIStates, msgToMainMsg) {
 		var tiniStr = function ($) {
 			return $.tiniStr;
 		}(edoIStates);
@@ -23892,37 +26458,37 @@ var $author$project$EdoSolver$viewEdoElement = F2(
 					$author$project$UI$textField,
 					tiniStr,
 					'Tini ',
-					A2($elm$core$Basics$composeL, edoInteractToMsg, $author$project$EdoSolver$Tini)),
+					A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$EdoSolver$Tini)),
 					A3(
 					$author$project$UI$textField,
 					tfimStr,
 					'Tfin',
-					A2($elm$core$Basics$composeL, edoInteractToMsg, $author$project$EdoSolver$Tfim))
+					A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$EdoSolver$Tfim))
 				]));
 	});
-var $author$project$Models$LevelI = function (a) {
-	return {$: 'LevelI', a: a};
+var $author$project$ModelSystem$LevelMsg = function (a) {
+	return {$: 'LevelMsg', a: a};
 };
-var $author$project$Models$Ag = function (a) {
+var $author$project$ModelSystem$Level$Ag = function (a) {
 	return {$: 'Ag', a: a};
 };
-var $author$project$Models$Ap = function (a) {
+var $author$project$ModelSystem$Level$Ap = function (a) {
 	return {$: 'Ap', a: a};
 };
-var $author$project$Models$H0 = function (a) {
+var $author$project$ModelSystem$Level$H0 = function (a) {
 	return {$: 'H0', a: a};
 };
-var $author$project$Models$viewLevelElement = F2(
-	function (levelParam, levelInteractToMsg) {
+var $author$project$ModelSystem$Level$view = F2(
+	function (model, msgToMainMsg) {
 		var h0Str = function ($) {
 			return $.h0Str;
-		}(levelParam);
+		}(model);
 		var apStr = function ($) {
 			return $.apStr;
-		}(levelParam);
+		}(model);
 		var agStr = function ($) {
 			return $.agStr;
-		}(levelParam);
+		}(model);
 		return A2(
 			$mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -23954,7 +26520,7 @@ var $author$project$Models$viewLevelElement = F2(
 									$author$project$UI$textField,
 									h0Str,
 									'Hini',
-									A2($elm$core$Basics$composeL, levelInteractToMsg, $author$project$Models$H0))
+									A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$ModelSystem$Level$H0))
 								])),
 							A2(
 							$mdgriffith$elm_ui$Element$column,
@@ -23969,47 +26535,47 @@ var $author$project$Models$viewLevelElement = F2(
 									$author$project$UI$textField,
 									agStr,
 									'A ',
-									A2($elm$core$Basics$composeL, levelInteractToMsg, $author$project$Models$Ag)),
+									A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$ModelSystem$Level$Ag)),
 									A3(
 									$author$project$UI$textField,
 									apStr,
 									'a ',
-									A2($elm$core$Basics$composeL, levelInteractToMsg, $author$project$Models$Ap))
+									A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$ModelSystem$Level$Ap))
 								]))
 						]))
 				]));
 	});
-var $author$project$Models$viewModelElement = F2(
-	function (modelParam, modelInteractToMsg) {
-		var levelParam = modelParam.a;
+var $author$project$ModelSystem$view = F2(
+	function (model, msgToMainMsg) {
+		var levelModel = model.a;
 		return A2(
-			$author$project$Models$viewLevelElement,
-			levelParam,
-			A2($elm$core$Basics$composeL, modelInteractToMsg, $author$project$Models$LevelI));
+			$author$project$ModelSystem$Level$view,
+			levelModel,
+			A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$ModelSystem$LevelMsg));
 	});
-var $author$project$Reference$Step1I = function (a) {
-	return {$: 'Step1I', a: a};
+var $author$project$Reference$Step1Msg = function (a) {
+	return {$: 'Step1Msg', a: a};
 };
-var $author$project$Reference$Step1FVal = function (a) {
+var $author$project$Reference$Step1$Step1FVal = function (a) {
 	return {$: 'Step1FVal', a: a};
 };
-var $author$project$Reference$Step1IVal = function (a) {
+var $author$project$Reference$Step1$Step1IVal = function (a) {
 	return {$: 'Step1IVal', a: a};
 };
-var $author$project$Reference$Step1TStep = function (a) {
+var $author$project$Reference$Step1$Step1TStep = function (a) {
 	return {$: 'Step1TStep', a: a};
 };
-var $author$project$Reference$step1ViewElement = F2(
-	function (step1Param, step1InteractToMsg) {
+var $author$project$Reference$Step1$view = F2(
+	function (model, msgToMainMsg) {
 		var tStepStr = function ($) {
 			return $.tStepStr;
-		}(step1Param);
+		}(model);
 		var iValStr = function ($) {
 			return $.iValStr;
-		}(step1Param);
+		}(model);
 		var fValStr = function ($) {
 			return $.fValStr;
-		}(step1Param);
+		}(model);
 		return A2(
 			$mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -24033,59 +26599,345 @@ var $author$project$Reference$step1ViewElement = F2(
 							$author$project$UI$textField,
 							iValStr,
 							'iVal',
-							A2($elm$core$Basics$composeL, step1InteractToMsg, $author$project$Reference$Step1IVal)),
+							A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Reference$Step1$Step1IVal)),
 							A3(
 							$author$project$UI$textField,
 							tStepStr,
 							'Tstep',
-							A2($elm$core$Basics$composeL, step1InteractToMsg, $author$project$Reference$Step1TStep)),
+							A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Reference$Step1$Step1TStep)),
 							A3(
 							$author$project$UI$textField,
 							fValStr,
 							'fVal',
-							A2($elm$core$Basics$composeL, step1InteractToMsg, $author$project$Reference$Step1FVal))
+							A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Reference$Step1$Step1FVal))
 						]))
 				]));
 	});
-var $author$project$Reference$viewRefElement = F2(
-	function (refParam, refInteractToMsg) {
-		var stepParam = refParam.a;
+var $author$project$Reference$view = F2(
+	function (model, msgToMainMsg) {
+		var stepParam = model.a;
 		return A2(
-			$author$project$Reference$step1ViewElement,
+			$author$project$Reference$Step1$view,
 			stepParam,
-			A2($elm$core$Basics$composeL, refInteractToMsg, $author$project$Reference$Step1I));
+			A2($elm$core$Basics$composeL, msgToMainMsg, $author$project$Reference$Step1Msg));
 	});
+var $mdgriffith$elm_ui$Internal$Model$FontFamily = F2(
+	function (a, b) {
+		return {$: 'FontFamily', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$fontFamily = $mdgriffith$elm_ui$Internal$Flag$flag(5);
+var $elm$core$String$words = _String_words;
+var $mdgriffith$elm_ui$Internal$Model$renderFontClassName = F2(
+	function (font, current) {
+		return _Utils_ap(
+			current,
+			function () {
+				switch (font.$) {
+					case 'Serif':
+						return 'serif';
+					case 'SansSerif':
+						return 'sans-serif';
+					case 'Monospace':
+						return 'monospace';
+					case 'Typeface':
+						var name = font.a;
+						return A2(
+							$elm$core$String$join,
+							'-',
+							$elm$core$String$words(
+								$elm$core$String$toLower(name)));
+					case 'ImportFont':
+						var name = font.a;
+						var url = font.b;
+						return A2(
+							$elm$core$String$join,
+							'-',
+							$elm$core$String$words(
+								$elm$core$String$toLower(name)));
+					default:
+						var name = font.a.name;
+						return A2(
+							$elm$core$String$join,
+							'-',
+							$elm$core$String$words(
+								$elm$core$String$toLower(name)));
+				}
+			}());
+	});
+var $mdgriffith$elm_ui$Element$Font$family = function (families) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$fontFamily,
+		A2(
+			$mdgriffith$elm_ui$Internal$Model$FontFamily,
+			A3($elm$core$List$foldl, $mdgriffith$elm_ui$Internal$Model$renderFontClassName, 'ff-', families),
+			families));
+};
+var $mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
+	function (a, b) {
+		return {$: 'OnlyDynamic', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Internal$Model$StaticRootAndDynamic = F2(
+	function (a, b) {
+		return {$: 'StaticRootAndDynamic', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Internal$Model$AllowHover = {$: 'AllowHover'};
+var $mdgriffith$elm_ui$Internal$Model$Layout = {$: 'Layout'};
+var $mdgriffith$elm_ui$Internal$Model$focusDefaultStyle = {
+	backgroundColor: $elm$core$Maybe$Nothing,
+	borderColor: $elm$core$Maybe$Nothing,
+	shadow: $elm$core$Maybe$Just(
+		{
+			blur: 0,
+			color: A4($mdgriffith$elm_ui$Internal$Model$Rgba, 155 / 255, 203 / 255, 1, 1),
+			offset: _Utils_Tuple2(0, 0),
+			size: 3
+		})
+};
+var $mdgriffith$elm_ui$Internal$Model$optionsToRecord = function (options) {
+	var combine = F2(
+		function (opt, record) {
+			switch (opt.$) {
+				case 'HoverOption':
+					var hoverable = opt.a;
+					var _v4 = record.hover;
+					if (_v4.$ === 'Nothing') {
+						return _Utils_update(
+							record,
+							{
+								hover: $elm$core$Maybe$Just(hoverable)
+							});
+					} else {
+						return record;
+					}
+				case 'FocusStyleOption':
+					var focusStyle = opt.a;
+					var _v5 = record.focus;
+					if (_v5.$ === 'Nothing') {
+						return _Utils_update(
+							record,
+							{
+								focus: $elm$core$Maybe$Just(focusStyle)
+							});
+					} else {
+						return record;
+					}
+				default:
+					var renderMode = opt.a;
+					var _v6 = record.mode;
+					if (_v6.$ === 'Nothing') {
+						return _Utils_update(
+							record,
+							{
+								mode: $elm$core$Maybe$Just(renderMode)
+							});
+					} else {
+						return record;
+					}
+			}
+		});
+	var andFinally = function (record) {
+		return {
+			focus: function () {
+				var _v0 = record.focus;
+				if (_v0.$ === 'Nothing') {
+					return $mdgriffith$elm_ui$Internal$Model$focusDefaultStyle;
+				} else {
+					var focusable = _v0.a;
+					return focusable;
+				}
+			}(),
+			hover: function () {
+				var _v1 = record.hover;
+				if (_v1.$ === 'Nothing') {
+					return $mdgriffith$elm_ui$Internal$Model$AllowHover;
+				} else {
+					var hoverable = _v1.a;
+					return hoverable;
+				}
+			}(),
+			mode: function () {
+				var _v2 = record.mode;
+				if (_v2.$ === 'Nothing') {
+					return $mdgriffith$elm_ui$Internal$Model$Layout;
+				} else {
+					var actualMode = _v2.a;
+					return actualMode;
+				}
+			}()
+		};
+	};
+	return andFinally(
+		A3(
+			$elm$core$List$foldr,
+			combine,
+			{focus: $elm$core$Maybe$Nothing, hover: $elm$core$Maybe$Nothing, mode: $elm$core$Maybe$Nothing},
+			options));
+};
+var $mdgriffith$elm_ui$Internal$Model$toHtml = F2(
+	function (mode, el) {
+		switch (el.$) {
+			case 'Unstyled':
+				var html = el.a;
+				return html($mdgriffith$elm_ui$Internal$Model$asEl);
+			case 'Styled':
+				var styles = el.a.styles;
+				var html = el.a.html;
+				return A2(
+					html,
+					mode(styles),
+					$mdgriffith$elm_ui$Internal$Model$asEl);
+			case 'Text':
+				var text = el.a;
+				return $mdgriffith$elm_ui$Internal$Model$textElement(text);
+			default:
+				return $mdgriffith$elm_ui$Internal$Model$textElement('');
+		}
+	});
+var $mdgriffith$elm_ui$Internal$Model$renderRoot = F3(
+	function (optionList, attributes, child) {
+		var options = $mdgriffith$elm_ui$Internal$Model$optionsToRecord(optionList);
+		var embedStyle = function () {
+			var _v0 = options.mode;
+			if (_v0.$ === 'NoStaticStyleSheet') {
+				return $mdgriffith$elm_ui$Internal$Model$OnlyDynamic(options);
+			} else {
+				return $mdgriffith$elm_ui$Internal$Model$StaticRootAndDynamic(options);
+			}
+		}();
+		return A2(
+			$mdgriffith$elm_ui$Internal$Model$toHtml,
+			embedStyle,
+			A4(
+				$mdgriffith$elm_ui$Internal$Model$element,
+				$mdgriffith$elm_ui$Internal$Model$asEl,
+				$mdgriffith$elm_ui$Internal$Model$div,
+				attributes,
+				$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+					_List_fromArray(
+						[child]))));
+	});
+var $mdgriffith$elm_ui$Internal$Model$SansSerif = {$: 'SansSerif'};
+var $mdgriffith$elm_ui$Internal$Model$Typeface = function (a) {
+	return {$: 'Typeface', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$rootStyle = function () {
+	var families = _List_fromArray(
+		[
+			$mdgriffith$elm_ui$Internal$Model$Typeface('Open Sans'),
+			$mdgriffith$elm_ui$Internal$Model$Typeface('Helvetica'),
+			$mdgriffith$elm_ui$Internal$Model$Typeface('Verdana'),
+			$mdgriffith$elm_ui$Internal$Model$SansSerif
+		]);
+	return _List_fromArray(
+		[
+			A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$bgColor,
+			A3(
+				$mdgriffith$elm_ui$Internal$Model$Colored,
+				'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(
+					A4($mdgriffith$elm_ui$Internal$Model$Rgba, 1, 1, 1, 0)),
+				'background-color',
+				A4($mdgriffith$elm_ui$Internal$Model$Rgba, 1, 1, 1, 0))),
+			A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$fontColor,
+			A3(
+				$mdgriffith$elm_ui$Internal$Model$Colored,
+				'fc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(
+					A4($mdgriffith$elm_ui$Internal$Model$Rgba, 0, 0, 0, 1)),
+				'color',
+				A4($mdgriffith$elm_ui$Internal$Model$Rgba, 0, 0, 0, 1))),
+			A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$fontSize,
+			$mdgriffith$elm_ui$Internal$Model$FontSize(20)),
+			A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$fontFamily,
+			A2(
+				$mdgriffith$elm_ui$Internal$Model$FontFamily,
+				A3($elm$core$List$foldl, $mdgriffith$elm_ui$Internal$Model$renderFontClassName, 'font-', families),
+				families))
+		]);
+}();
+var $mdgriffith$elm_ui$Element$layoutWith = F3(
+	function (_v0, attrs, child) {
+		var options = _v0.options;
+		return A3(
+			$mdgriffith$elm_ui$Internal$Model$renderRoot,
+			options,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass(
+					A2(
+						$elm$core$String$join,
+						' ',
+						_List_fromArray(
+							[$mdgriffith$elm_ui$Internal$Style$classes.root, $mdgriffith$elm_ui$Internal$Style$classes.any, $mdgriffith$elm_ui$Internal$Style$classes.single]))),
+				_Utils_ap($mdgriffith$elm_ui$Internal$Model$rootStyle, attrs)),
+			child);
+	});
+var $mdgriffith$elm_ui$Element$layout = $mdgriffith$elm_ui$Element$layoutWith(
+	{options: _List_Nil});
+var $mdgriffith$elm_ui$Element$Font$sansSerif = $mdgriffith$elm_ui$Internal$Model$SansSerif;
+var $mdgriffith$elm_ui$Element$Font$typeface = $mdgriffith$elm_ui$Internal$Model$Typeface;
+var $author$project$UI$view = function (children) {
+	return A2(
+		$mdgriffith$elm_ui$Element$layout,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$Font$family(
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$Font$typeface('IBM Plex Sans'),
+						$mdgriffith$elm_ui$Element$Font$sansSerif
+					]))
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$width(
+					A2($mdgriffith$elm_ui$Element$maximum, 1060, $mdgriffith$elm_ui$Element$fill)),
+					$mdgriffith$elm_ui$Element$paddingEach(
+					{bottom: 20, left: 50, right: 50, top: 30}),
+					$mdgriffith$elm_ui$Element$centerX,
+					$mdgriffith$elm_ui$Element$Font$size(16),
+					$mdgriffith$elm_ui$Element$Font$color(
+					A3($mdgriffith$elm_ui$Element$rgb255, 80, 80, 80)),
+					$mdgriffith$elm_ui$Element$spacing(50)
+				]),
+			children));
+};
 var $author$project$Main$view = function (bigModel) {
 	var model = $author$project$Main$modelFromBigModel(bigModel);
-	var modelParam = function ($) {
-		return $.modelParam;
+	var modelSystemModel = function ($) {
+		return $.modelSystemModel;
 	}(model);
-	var refParam = function ($) {
-		return $.refParam;
+	var refModel = function ($) {
+		return $.refModel;
 	}(model);
-	var refFunc = $author$project$Reference$refFunctionFromRefParam(refParam);
+	var refFunc = $author$project$Reference$refFunctionFromModel(refModel);
 	var edoParam = function ($) {
 		return $.edoParam;
 	}(model);
 	var edoIStates = function ($) {
 		return $.edoIStates;
 	}(model);
-	var controlParam = function ($) {
-		return $.controlParam;
+	var controlModel = function ($) {
+		return $.controlModel;
 	}(model);
-	var controller = $author$project$Controller$controllerFromControlParam(controlParam);
-	var chartsParam = function ($) {
-		return $.chartsParam;
+	var controller = $author$project$Controller$controllerFromModel(controlModel);
+	var chartsModel = function ($) {
+		return $.chartsModel;
 	}(model);
 	var chartData = function ($) {
 		return $.chartData;
 	}(model);
-	var chartsTuple = A4(
-		$author$project$MyChart$chartsTuple,
-		chartsParam,
-		chartData,
-		A2($author$project$Main$fcomposition23, $author$project$Main$ChangeInteract, $author$project$Main$MChart),
-		A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$MCharts));
+	var chartsTuple = A3($author$project$MyCharts$chartsTuple, chartsModel, chartData, $author$project$Main$MyChartsMsg);
 	var _v0 = function () {
 		if (chartData.b) {
 			var cd = chartData.a;
@@ -24096,15 +26948,27 @@ var $author$project$Main$view = function (bigModel) {
 				$author$project$DataConvert$usFromDatum(cd));
 		} else {
 			if (bigModel.$ === 'SolvingEdo') {
-				var xlist = $author$project$Models$xsFromModelParam(modelParam);
-				var _v3 = A5($author$project$EdoSolver$getRsUs, xlist, edoParam, $author$project$Models$outputX1, refFunc, controller);
+				var xlist = $author$project$ModelSystem$xsFromModel(modelSystemModel);
+				var _v3 = A5(
+					$author$project$EdoSolver$getRsUs,
+					xlist,
+					edoParam,
+					$author$project$ModelSystem$output(model.modelSystemType),
+					refFunc,
+					controller);
 				var rlist = _v3.a;
 				var ulist = _v3.b;
 				return _Utils_Tuple3(xlist, rlist, ulist);
 			} else {
 				var animationEdoParam = bigModel.b;
 				var xsAnimation = bigModel.c;
-				var _v4 = A5($author$project$EdoSolver$getRsUs, xsAnimation, animationEdoParam, $author$project$Models$outputX1, refFunc, controller);
+				var _v4 = A5(
+					$author$project$EdoSolver$getRsUs,
+					xsAnimation,
+					animationEdoParam,
+					$author$project$ModelSystem$output(model.modelSystemType),
+					refFunc,
+					controller);
 				var rlist = _v4.a;
 				var ulist = _v4.b;
 				return _Utils_Tuple3(xsAnimation, rlist, ulist);
@@ -24153,23 +27017,11 @@ var $author$project$Main$view = function (bigModel) {
 										]),
 									_List_fromArray(
 										[
-											A2(
-											$author$project$EdoSolver$viewEdoElement,
-											edoIStates,
-											A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Edo)),
-											A2(
-											$author$project$Models$viewModelElement,
-											modelParam,
-											A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Models))
+											A2($author$project$EdoSolver$view, edoIStates, $author$project$Main$EdoMsg),
+											A2($author$project$ModelSystem$view, modelSystemModel, $author$project$Main$ModelSystemMsg)
 										])),
-									A2(
-									$author$project$Controller$viewControllerElement,
-									controlParam,
-									A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Control)),
-									A2(
-									$author$project$Reference$viewRefElement,
-									refParam,
-									A2($elm$core$Basics$composeL, $author$project$Main$ChangeInteract, $author$project$Main$Ref)),
+									A2($author$project$Controller$view, controlModel, $author$project$Main$ControlMsg),
+									A2($author$project$Reference$view, refModel, $author$project$Main$RefMsg),
 									A2(
 									$mdgriffith$elm_ui$Element$row,
 									_List_fromArray(
@@ -24199,7 +27051,7 @@ var $author$project$Main$view = function (bigModel) {
 									$mdgriffith$elm_ui$Element$padding(40)
 								]),
 							$mdgriffith$elm_ui$Element$html(
-								A4($author$project$Models$modelSim, xs, rs, us, modelParam)))
+								A4($author$project$ModelSystem$simulation, xs, rs, us, modelSystemModel)))
 						]))
 				]),
 			A2(
